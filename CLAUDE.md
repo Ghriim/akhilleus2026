@@ -4,9 +4,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 A complete plan for this project as been written in @dev-plan.md
 ## Project status
 
-This is a **greenfield Symfony 8 / PHP 8.4 skeleton**. As of now `src/` only contains `Kernel.php` and an empty `Controller/` directory — none of the domain code described in the specs has been implemented yet. When asked to build a feature, you are expected to scaffold it from scratch following the conventions below.
+The project is mid-build, executing the plan in `specifications/dev-plan.md`. Always start a session by reading `dev-plan.md` to see which subsections are checked off (`[x]`) and which are next (`[ ]`).
 
-No fixtures bundle, ORM, or auth layer is installed yet (`composer.json` only requires `symfony/console`, `symfony/dotenv`, `symfony/flex`, `symfony/framework-bundle`, `symfony/runtime`, `symfony/yaml`). When work requires Doctrine, JWT auth, the FixtureBundle, etc., add the dependency rather than assuming it exists. The quality toolchain (PHPUnit, PHPStan, PHP-CS-Fixer) is the project standard — see **Commands** below.
+At the time of writing, the foundation (Phase 0) is complete and the entity layer (Phase 1.1 + 1.2) is in place — `composer.json` has the full toolchain (Doctrine, Lexik JWT, Nelmio CORS / ApiDoc, Security, Validator, Serializer, Uid, Clock, plus PHPUnit / PHPStan / PHP-CS-Fixer / captainhook / dama). MySQL 8.4 runs in Docker (`compose.yaml`); the `akhilleus` database exists; the captainhook pre-commit hook is installed. The 9 DataModels and 4 registries are written and `doctrine:schema:validate` reports the mapping clean. Phase 1.3 (Gateway interfaces) is the next pending subsection.
+
+When picking up work, never rebuild what's already in place — always check the on-disk reality first (`composer.json`, `src/`, `config/packages/`, the dev-plan checkboxes) before scaffolding.
+
+## Working mode
+
+Implementation work proceeds **step-by-step**, where each "step" is one numbered subsection of `specifications/dev-plan.md` (e.g. `0.1`, `0.2`, …, `1.1`, `1.2`, …). After completing a step:
+
+1. Run `composer qa` (or the relevant subset) to confirm green.
+2. Update `specifications/dev-plan.md` — flip `[ ]` to `[x]` for everything genuinely done in that step.
+3. **Pause** and summarize what was done and what design choices were made (especially anything that deviates from `conventions.md` — flag those clearly so the user can roll back).
+4. Wait for the user to say "next" / "go" / similar before starting the next step.
+
+Do not commit, push, or chain multiple steps without explicit user confirmation. If you encounter a decision that materially deviates from `conventions.md` or the dev-plan, raise it for review before applying — don't silently take the deviation.
 
 ## Authoritative specifications
 

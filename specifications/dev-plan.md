@@ -28,6 +28,40 @@ A `⏸ checkpoint` marks the end of the admin path — work pauses there to star
 - A "Workout cancellation" status is not in the spec but seems likely needed (e.g. abandoned in-progress workouts). Including `CANCELED` in the status registry; trivial to drop later.
 - Personal-best "speed" is `distance / duration` (not `duration * distance` as the spec text says — that would equal volume). Will confirm before implementing M6.
 
+## Decisions / deviations from `conventions.md` and the original plan
+
+Every item below was decided during implementation and is **not** explicitly covered (or is a measured deviation) from `specifications/conventions.md`. A future session can rely on these as the working contract; if the user wants to roll any of them back, the line that introduced it is called out so the change is contained.
+
+### Architecture / convention
+- **Domain stays free of Symfony imports.** `conventions.md` lists four allowed-in-Domain external namespaces (`Doctrine\DBAL\Types\Types`, `Doctrine\ORM\Mapping`, `Symfony\Component\Security` only inside `UserDataModel`, `\Exception` only in `Domain/Exception`). When the question came up of allowing `Symfony\Component\Uid\Ulid` for ID typing, we chose to **keep the rule strict and model ids as plain `string` in Domain** — `DataModelInterface` declares `public string $id { get; set; }`. ULIDs are generated at the edges (UseCases, fixtures, persisters via `(string) new Ulid()`).
+- **`Doctrine\Common\Collections\Collection` + `ArrayCollection`** are imported in `MovementDataModel` for its two M:N relations (`secondaryMuscles`, `equipments`). This is a *5th* de-facto exception, parallel in spirit to the existing Doctrine ones — Doctrine forces `Collection` typing on to-many relations, there's no ergonomic workaround. **Status: pending user confirmation.** If you'd rather keep the rule strict, the alternative is to model both M:N as explicit join entities (`MovementSecondaryMuscleDataModel`, `MovementEquipmentDataModel`), each owning two M:1 relations.
+- **All inverse 1:M sides are intentionally skipped in Phase 1** (no `Workout->exercises`, no `Exercise->exerciseSets`, no `User->player`). The DB schema is determined entirely by FK columns on the owning side, so deferring the inverse sides costs nothing now and avoids additional `Collection` uses. They get added per UseCase need (likely Phase 6's `FinishWorkoutUseCase` for `Workout->exercises`).
+- **DataModel classes are not `final`.** `conventions.md` says "final by default *except DataModels*"; abstract base classes (`DomainException`, `AbstractBaseMysqlPersister`, `AbstractPublicUseCase`, `AbstractLoggedUserUseCase`, `AbstractLoggedUserValidator`) are also non-final since subclasses extend them. Concrete classes everywhere else are `final`.
+- **`UserDataModel` has 4 getter methods** (`getRoles`, `getPassword`, `getUserIdentifier`, `eraseCredentials`) — required by `UserInterface` / `PasswordAuthenticatedUserInterface`. This is the single exception to "DTOs have public properties and no getters/setters". `email` is annotated `@var non-empty-string` so PHPStan accepts the `getUserIdentifier(): non-empty-string` return.
+
+### Persistence / column conventions
+- **Decimal columns use `?string` + `@var numeric-string` PHPDoc.** Doctrine returns `NUMERIC` columns as PHP `string` to preserve precision. The chosen scales:
+  - weight: `NUMERIC(6,2)` — kg, up to 9999.99
+  - duration: `INT` — seconds
+  - distance: `NUMERIC(10,2)` — meters, up to 99,999,999.99 (covers ultra-distance)
+  - incline percent: `NUMERIC(5,2)` — up to 999.99 %
+  - incline meters: `NUMERIC(8,2)` — up to 999,999.99 m
+  - personal_best.value: `NUMERIC(15,4)` — wide enough for any of the seven categories
+- **M:N join columns are explicitly named** via `#[ORM\JoinColumn(name: 'movement_id', …)]` + `#[ORM\InverseJoinColumn(name: 'muscle_id'/'equipment_id', …)]` on `MovementDataModel` — Doctrine's auto-generated names would have been `movement_data_model_id` / `muscle_data_model_id`, which are noisy.
+- **All FK relations have explicit `#[ORM\JoinColumn(nullable: false)]`** unless the relation is genuinely optional (`PersonalBestDataModel.workout` and `.exerciseSet` are nullable provenance pointers).
+- **`PersonalBestDataModel`** has a unique constraint on `(player_id, movement_id, type)` so the upsert-on-improvement pattern in Phase 6's evaluator is safe at the DB level.
+
+### Tooling / build
+- **`phpunit.xml.dist` was renamed `phpunit.dist.xml`** (current Symfony Flex / PHPUnit 13 convention). Functionally equivalent.
+- **PHPUnit's empty-suite exits with code 1.** To keep the captainhook pre-commit hook from failing while there are no real tests yet, `tests/Unit/SmokeTest.php` exists as a single-assertion anchor that verifies the `App\` autoloader. It will be replaced by real per-UseCase tests in Phase 4+ and can be deleted once any other Unit test exists.
+- **Pre-commit hook runs Unit suite only.** Integration tests need a live DB and would block every commit if MySQL isn't running. Integration tests run via `composer test:integration` / CI instead. Composer scripts: `cs`, `cs:fix`, `stan`, `test`, `test:unit`, `test:integration`, `qa` (= `cs` + `stan` + `test`).
+- **`final_class` PHP-CS-Fixer rule is intentionally NOT enabled** — it would auto-finalize DataModels, which `conventions.md` explicitly excludes. Concrete classes are made `final` manually.
+- **`nelmio/api-doc-bundle` is installed but not registered in `config/bundles.php`.** Its Flex recipe was IGNORED because `composer.json` has `extra.symfony.allow-contrib: false`. We'll register it manually when Phase 4/5 actually exposes the OpenAPI route.
+- **Doctrine fixtures bundle is in `require-dev`** (not `require` as the original plan had it) — fixtures are not a runtime concern.
+
+### Tracking
+- The dev-plan uses `[x]` / `[ ]` checkboxes on every subsection header and every leaf bullet. Tick items off as soon as a step finishes; this is the source of truth for "what's done."
+
 ---
 
 ## Phase 0 — Foundation
