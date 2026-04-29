@@ -1,0 +1,38 @@
+name: akhilleus2026
+
+services:
+    database:
+        image: mysql:8.4
+        environment:
+            MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+            MYSQL_DATABASE: ${MYSQL_DATABASE:-akhilleus}
+            MYSQL_USER: ${MYSQL_USER:-app}
+            MYSQL_PASSWORD: ${MYSQL_PASSWORD:-!ChangeMe!}
+        ports:
+            - "${MYSQL_HOST_PORT:-3306}:3306"
+        volumes:
+            - database_data:/var/lib/mysql
+        healthcheck:
+            test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-root}"]
+            interval: 5s
+            timeout: 5s
+            retries: 20
+
+    php:
+        build:
+            context: .
+            dockerfile: docker/php/Dockerfile
+        working_dir: /app
+        volumes:
+            - .:/app
+        environment:
+            DATABASE_URL: ${DATABASE_URL:-mysql://app:!ChangeMe!@database:3306/akhilleus?serverVersion=8.4}
+            PHP_IDE_CONFIG: serverName=akhilleus2026
+        ports:
+            - "${APP_HOST_PORT:-8000}:8000"
+        depends_on:
+            database:
+                condition: service_healthy
+
+volumes:
+    database_data:
