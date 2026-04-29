@@ -33,11 +33,14 @@ A `⏸ checkpoint` marks the end of the admin path — work pauses there to star
 Every item below was decided during implementation and is **not** explicitly covered (or is a measured deviation) from `specifications/conventions.md`. A future session can rely on these as the working contract; if the user wants to roll any of them back, the line that introduced it is called out so the change is contained.
 
 ### Architecture / convention
-- **Domain stays free of Symfony imports.** `conventions.md` lists four allowed-in-Domain external namespaces (`Doctrine\DBAL\Types\Types`, `Doctrine\ORM\Mapping`, `Symfony\Component\Security` only inside `UserDataModel`, `\Exception` only in `Domain/Exception`). When the question came up of allowing `Symfony\Component\Uid\Ulid` for ID typing, we chose to **keep the rule strict and model ids as plain `string` in Domain** — `DataModelInterface` declares `public string $id { get; set; }`. ULIDs are generated at the edges (UseCases, fixtures, persisters via `(string) new Ulid()`).
-- **`Doctrine\Common\Collections\Collection` + `ArrayCollection`** are imported in `MovementDataModel` for its two M:N relations (`secondaryMuscles`, `equipments`). This is a *5th* de-facto exception, parallel in spirit to the existing Doctrine ones — Doctrine forces `Collection` typing on to-many relations, there's no ergonomic workaround. **Status: pending user confirmation.** If you'd rather keep the rule strict, the alternative is to model both M:N as explicit join entities (`MovementSecondaryMuscleDataModel`, `MovementEquipmentDataModel`), each owning two M:1 relations.
+- **Domain stays free of Symfony imports.** `conventions.md` lists five allowed-in-Domain external namespaces (`Doctrine\DBAL\Types\Types`, `Doctrine\ORM\Mapping`, `Doctrine\Common\Collections\{Collection, ArrayCollection}`, `Symfony\Component\Security` only inside `UserDataModel`, `\Exception` only in `Domain/Exception`). When the question came up of allowing `Symfony\Component\Uid\Ulid` for ID typing, we chose to **keep the rule strict and model ids as plain `string` in Domain** — `DataModelInterface` declares `public string $id { get; set; }`. ULIDs are generated at the edges (UseCases, fixtures, persisters via `(string) new Ulid()`).
+- **`Doctrine\Common\Collections\Collection` + `ArrayCollection`** are imported in `MovementDataModel` for its two M:N relations (`secondaryMuscles`, `equipments`). Formalized as the 5th allowed-in-Domain exception in `conventions.md` (scope: `Domain/DTO/DataModel/{SubDomain}` only) — Doctrine ORM forces `Collection<…>` typing on to-many associations and offers no array-based fallback, so this is the same flavor of exception as `Doctrine\ORM\Mapping` and `Doctrine\DBAL\Types\Types`.
 - **All inverse 1:M sides are intentionally skipped in Phase 1** (no `Workout->exercises`, no `Exercise->exerciseSets`, no `User->player`). The DB schema is determined entirely by FK columns on the owning side, so deferring the inverse sides costs nothing now and avoids additional `Collection` uses. They get added per UseCase need (likely Phase 6's `FinishWorkoutUseCase` for `Workout->exercises`).
 - **DataModel classes are not `final`.** `conventions.md` says "final by default *except DataModels*"; abstract base classes (`DomainException`, `AbstractBaseMysqlPersister`, `AbstractPublicUseCase`, `AbstractLoggedUserUseCase`, `AbstractLoggedUserValidator`) are also non-final since subclasses extend them. Concrete classes everywhere else are `final`.
 - **`UserDataModel` has 4 getter methods** (`getRoles`, `getPassword`, `getUserIdentifier`, `eraseCredentials`) — required by `UserInterface` / `PasswordAuthenticatedUserInterface`. This is the single exception to "DTOs have public properties and no getters/setters". `email` is annotated `@var non-empty-string` so PHPStan accepts the `getUserIdentifier(): non-empty-string` return.
+- **Gateway interfaces are scaffolded phase by phase, not all up-front.** Phase 1.3 ships only the 3 admin gateway pairs (Muscle / Equipment / Movement); the other 6 are added when their phase begins (User/Player in Phase 3, Workout/Exercise/ExerciseSet/PersonalBest in Phase 6). Rationale: interfaces with zero known consumers are dead code that biases the design.
+- **Gateway file layout is flat** under `Domain/Gateway/Provider/` and `Domain/Gateway/Persister/` (one file per entity per role). No per-entity sub-folders, despite the Registry layout using them — gateways are 1 file per entity per role, sub-folders would be needless ceremony.
+- **Persisters return the managed entity from `create` and `update`** (typed narrowly per entity in the gateway interface; `delete` stays `void`). `AbstractBaseMysqlPersister::create`/`update` therefore return `DataModelInterface`; every concrete persister must `override` both methods with the narrowed return type to satisfy PHP's covariance rules — small boilerplate, in exchange for type-safe `$muscle = $persister->create($muscle)` at the UseCase site.
 
 ### Persistence / column conventions
 - **Decimal columns use `?string` + `@var numeric-string` PHPDoc.** Doctrine returns `NUMERIC` columns as PHP `string` to preserve precision. The chosen scales:
@@ -183,19 +186,35 @@ Per-entity checkboxes:
 
 The muscle list from the spec is **not** a registry — muscles are admin-managed reference data and the list isn't definitive. Seed the initial 20 entries via `MuscleFixtures` only.
 
-### [ ] 1.3 Gateways (interfaces only — implementations come in M2/M6)
-For every DataModel, declare in `Domain/Gateway/`:
-- [ ] `Provider/{Entity}ProviderGateway` (read methods, named after their context — never `find`/`findOneBy` per conventions).
-- [ ] `Persister/{Entity}PersisterGateway` (write methods: `create`, `update`, `delete`).
+### [~] 1.3 Gateways (interfaces only — implementations come in M2/M6)
 
-### [ ] 1.4 Migrations + schema doc
-- [ ] Run `php bin/console make:migration` once whole schema is mapped → review/clean the generated migration → `doctrine:migrations:migrate`.
-- [ ] Generate `specifications/database-schema.html` (per conventions) with a small CLI or manually rendered HTML5 view (tables + FK list). Re-generate whenever schema changes.
+Scope decision: **gateway interfaces are created phase by phase, alongside their first consumer**, to avoid empty / dead-code interfaces. Phase 1.3 therefore covers only the 3 admin entities (Muscle, Equipment, Movement) whose Phase 2 contexts are already known. The 6 remaining entities (User, Player, Workout, Exercise, ExerciseSet, PersonalBest) get their gateways in Phase 3 (User/Player) and Phase 6 (Workout/Exercise/ExerciseSet/PersonalBest).
 
-### [ ] 1.5 Verification
-- [ ] Migration applies cleanly to a fresh MySQL database.
-- [ ] `php bin/console doctrine:schema:validate` returns "in sync".
-- [ ] `composer stan` passes.
+Layout: files at the **root** of `Domain/Gateway/Provider/` and `Domain/Gateway/Persister/` (one file per entity per role, no per-entity sub-folders).
+
+Persister convention: `create` and `update` return the managed `*DataModel` instance (typed narrowly per entity); `delete` returns `void`. `AbstractBaseMysqlPersister::create`/`update` therefore also return `DataModelInterface` — concrete persisters in Phase 2+ must `override` both methods to narrow the return type, since PHP variance forbids the inherited wider return from satisfying the narrower gateway contract.
+
+- [x] `Provider/MuscleProviderGateway` — `findOneForAdminDetails`, `findAllForAdminList`, `findOneBySlugForUniqueness`.
+- [x] `Provider/EquipmentProviderGateway` — same 3 methods.
+- [x] `Provider/MovementProviderGateway` — same 3 methods.
+- [x] `Persister/MusclePersisterGateway` — `create`, `update`, `delete`.
+- [x] `Persister/EquipmentPersisterGateway` — `create`, `update`, `delete`.
+- [x] `Persister/MovementPersisterGateway` — `create`, `update`, `delete`.
+- [ ] `Provider/UserProviderGateway` + `Persister/UserPersisterGateway` (Phase 3).
+- [ ] `Provider/PlayerProviderGateway` + `Persister/PlayerPersisterGateway` (Phase 3).
+- [ ] `Provider/WorkoutProviderGateway` + `Persister/WorkoutPersisterGateway` (Phase 6).
+- [ ] `Provider/ExerciseProviderGateway` + `Persister/ExercisePersisterGateway` (Phase 6).
+- [ ] `Provider/ExerciseSetProviderGateway` + `Persister/ExerciseSetPersisterGateway` (Phase 6).
+- [ ] `Provider/PersonalBestProviderGateway` + `Persister/PersonalBestPersisterGateway` (Phase 6).
+
+### [x] 1.4 Migrations + schema doc
+- [x] Run `php bin/console make:migration` once whole schema is mapped → review/clean the generated migration → `doctrine:migrations:migrate`. Initial migration: `migrations/Version20260429165952.php` (11 tables, 14 FKs).
+- [x] Generate `specifications/database-schema.html` (per conventions) with a small CLI or manually rendered HTML5 view (tables + FK list). Re-generate whenever schema changes.
+
+### [x] 1.5 Verification
+- [x] Migration applies cleanly to a fresh MySQL database.
+- [x] `php bin/console doctrine:schema:validate` returns "in sync".
+- [x] `composer stan` passes.
 
 ---
 
@@ -417,7 +436,7 @@ All routes under `/api/player/*`, `ROLE_PLAYER` required. The `AbstractLoggedUse
 | Phase | How to verify | Status |
 |---|---|---|
 | 0 | `composer qa` green; pre-commit hook fires; `docker compose up` healthy | [x] |
-| 1 | Migration applies; `doctrine:schema:validate` clean; PHPStan green | [ ] |
+| 1 | Migration applies; `doctrine:schema:validate` clean; PHPStan green | [x] |
 | 2 | Fixtures load; repository test asserts eager fetch | [ ] |
 | 3 | Register → Login → JWT-protected endpoint check via cURL | [ ] |
 | 4 | Integration test per UseCase (15 total: 5 × Equipment/Muscle/Movement); cURL CRUD smoke check for each entity | [ ] |

@@ -22,9 +22,10 @@
 - Store it in `specifications/database-schema.html`
 
 ## Conventions for Domain
-- No namespace from the outside of Domain can be used in Domain, three exceptions are:
-  - `use Doctrine\DBAL\Types\Types` can only be found the `Domain\DTO\DataModel\{SubDomain}`
+- No namespace from the outside of Domain can be used in Domain, five exceptions are:
+  - `use Doctrine\DBAL\Types\Types` can only be found in `Domain\DTO\DataModel\{SubDomain}`
   - `use Doctrine\ORM\Mapping as ORM` can only be found in `Domain\DTO\DataModel\{SubDomain}`
+  - `use Doctrine\Common\Collections\Collection` and `use Doctrine\Common\Collections\ArrayCollection` can only be found in `Domain\DTO\DataModel\{SubDomain}` — required because Doctrine ORM forces to-many associations to be typed as `Collection<…>` and instantiated with `ArrayCollection`; there is no array-based alternative supported by the framework.
   - `UserDataModel` can have namespace from `Symfony\Component\Security`
   - `\Exception` : can only be found in `Domain\Exception`
 

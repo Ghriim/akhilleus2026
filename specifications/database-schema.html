@@ -14,6 +14,9 @@
             --fk: #eef4ff;
             --uniq: #ecf7ee;
             --null: #f6f6f6;
+            --lane-ref: #fbf3e6;
+            --lane-flow: #eef2fb;
+            --lane-stats: #ecf7ee;
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -74,6 +77,75 @@
         .meta { color: var(--muted); font-size: 0.88rem; }
         .legend { font-size: 0.88rem; margin: 1rem 0 2rem; }
         .legend .badge { font-size: 0.75rem; }
+
+        /* SVG schema diagram */
+        .schema-diagram { width: 100%; height: auto; margin: 1rem 0 1.5rem; display: block; }
+        .schema-diagram .lane { stroke: var(--rule); stroke-width: 1; }
+        .schema-diagram .lane-ref { fill: var(--lane-ref); }
+        .schema-diagram .lane-flow { fill: var(--lane-flow); }
+        .schema-diagram .lane-stats { fill: var(--lane-stats); }
+        .schema-diagram .lane-title {
+            font-size: 12px;
+            fill: var(--muted);
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+        }
+        .schema-diagram .entity rect {
+            fill: #fff;
+            stroke: var(--accent);
+            stroke-width: 1.5;
+        }
+        .schema-diagram .entity text.entity-name {
+            font-family: ui-monospace, "SF Mono", Menlo, monospace;
+            font-size: 14px;
+            fill: var(--ink);
+            font-weight: 700;
+        }
+        .schema-diagram .entity text.entity-meta {
+            font-family: ui-monospace, "SF Mono", Menlo, monospace;
+            font-size: 11px;
+            fill: var(--muted);
+        }
+        .schema-diagram .rel-fk {
+            stroke: var(--accent);
+            stroke-width: 1.5;
+            fill: none;
+        }
+        .schema-diagram .rel-fk-opt {
+            stroke: var(--accent);
+            stroke-width: 1.5;
+            stroke-dasharray: 5,3;
+            fill: none;
+        }
+        .schema-diagram .rel-mtm {
+            stroke: #4a8c54;
+            stroke-width: 1.8;
+            stroke-dasharray: 7,3;
+            fill: none;
+        }
+        .schema-diagram .rel-label {
+            font-size: 11px;
+            fill: var(--muted);
+            font-family: ui-monospace, "SF Mono", Menlo, monospace;
+        }
+        .schema-diagram .arrow-fk { fill: var(--accent); }
+        .schema-diagram .arrow-mtm { fill: #4a8c54; }
+        .diagram-legend {
+            font-size: 0.85rem;
+            color: var(--muted);
+            margin: 0 0 1.5rem;
+        }
+        .diagram-legend .swatch {
+            display: inline-block;
+            width: 1.6rem;
+            border-top: 1.5px solid var(--accent);
+            vertical-align: middle;
+            margin: 0 0.3rem 0.2rem 0.5rem;
+        }
+        .diagram-legend .swatch-opt { border-top-style: dashed; }
+        .diagram-legend .swatch-mtm { border-top: 1.8px dashed #4a8c54; }
     </style>
 </head>
 <body>
@@ -95,53 +167,137 @@
 
 <h2>Entity overview</h2>
 <ul>
-    <li><a href="#user"><code>user</code></a> — accounts (auth credentials, roles)</li>
-    <li><a href="#muscle"><code>muscle</code></a> — admin-managed reference (biceps, triceps, …)</li>
     <li><a href="#equipment"><code>equipment</code></a> — admin-managed reference (barbell, dumbbell, …)</li>
-    <li><a href="#movement"><code>movement</code></a> — admin-managed exercise definition (slug, label, main muscle, tracking flags)</li>
-    <li><a href="#movement_secondary_muscle"><code>movement_secondary_muscle</code></a> — M:N join, secondary muscles per movement</li>
-    <li><a href="#movement_equipment"><code>movement_equipment</code></a> — M:N join, equipment options per movement</li>
-    <li><a href="#player"><code>player</code></a> — player profile attached 1:1 to a user</li>
-    <li><a href="#workout"><code>workout</code></a> — a planned, in-progress, completed or canceled training session</li>
     <li><a href="#exercise"><code>exercise</code></a> — one movement inside a workout, ordered by position</li>
     <li><a href="#exercise_set"><code>exercise_set</code></a> — one set inside an exercise, with planned/achieved metrics</li>
+    <li><a href="#movement"><code>movement</code></a> — admin-managed exercise definition (slug, label, main muscle, tracking flags)</li>
+    <li><a href="#movement_equipment"><code>movement_equipment</code></a> — M:N join, equipment options per movement</li>
+    <li><a href="#movement_secondary_muscle"><code>movement_secondary_muscle</code></a> — M:N join, secondary muscles per movement</li>
+    <li><a href="#muscle"><code>muscle</code></a> — admin-managed reference (biceps, triceps, …)</li>
     <li><a href="#personal_best"><code>personal_best</code></a> — current best for a (player, movement, type) tuple</li>
+    <li><a href="#player"><code>player</code></a> — player profile attached 1:1 to a user</li>
+    <li><a href="#user"><code>user</code></a> — accounts (auth credentials, roles)</li>
+    <li><a href="#workout"><code>workout</code></a> — a planned, in-progress, completed or canceled training session</li>
 </ul>
+
+<h2>Relationships at a glance</h2>
+<p class="diagram-legend">
+    <span class="swatch"></span> required FK (one-to-many / one-to-one)
+    <span class="swatch swatch-opt"></span> optional / nullable FK
+    <span class="swatch swatch-mtm"></span> many-to-many (via join table)
+</p>
+<svg class="schema-diagram" viewBox="0 0 1100 460" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Akhilleus database schema diagram">
+    <defs>
+        <marker id="arrow-fk" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M 0 0 L 9 3 L 0 6 z" class="arrow-fk" />
+        </marker>
+        <marker id="arrow-mtm-end" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M 0 0 L 9 3 L 0 6 z" class="arrow-mtm" />
+        </marker>
+        <marker id="arrow-mtm-start" markerWidth="10" markerHeight="10" refX="1" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M 9 0 L 0 3 L 9 6 z" class="arrow-mtm" />
+        </marker>
+    </defs>
+
+    <!-- Lanes -->
+    <rect x="20" y="40" width="1060" height="120" rx="10" class="lane lane-ref" />
+    <rect x="20" y="180" width="1060" height="120" rx="10" class="lane lane-flow" />
+    <rect x="20" y="320" width="1060" height="120" rx="10" class="lane lane-stats" />
+
+    <text x="40" y="32" class="lane-title">Reference data</text>
+    <text x="40" y="172" class="lane-title">Authentication &amp; workout</text>
+    <text x="40" y="312" class="lane-title">Player achievements</text>
+
+    <!-- Lane 1: muscle, movement, equipment -->
+    <g class="entity">
+        <rect x="115" y="70" width="150" height="60" rx="6" />
+        <text x="190" y="107" text-anchor="middle" class="entity-name">muscle</text>
+    </g>
+    <g class="entity">
+        <rect x="475" y="70" width="150" height="60" rx="6" />
+        <text x="550" y="107" text-anchor="middle" class="entity-name">movement</text>
+    </g>
+    <g class="entity">
+        <rect x="835" y="70" width="150" height="60" rx="6" />
+        <text x="910" y="107" text-anchor="middle" class="entity-name">equipment</text>
+    </g>
+
+    <!-- Lane 2: user, player, workout, exercise, exercise_set -->
+    <g class="entity">
+        <rect x="35" y="210" width="140" height="60" rx="6" />
+        <text x="105" y="247" text-anchor="middle" class="entity-name">user</text>
+    </g>
+    <g class="entity">
+        <rect x="220" y="210" width="140" height="60" rx="6" />
+        <text x="290" y="247" text-anchor="middle" class="entity-name">player</text>
+    </g>
+    <g class="entity">
+        <rect x="405" y="210" width="140" height="60" rx="6" />
+        <text x="475" y="247" text-anchor="middle" class="entity-name">workout</text>
+    </g>
+    <g class="entity">
+        <rect x="590" y="210" width="140" height="60" rx="6" />
+        <text x="660" y="247" text-anchor="middle" class="entity-name">exercise</text>
+    </g>
+    <g class="entity">
+        <rect x="775" y="210" width="170" height="60" rx="6" />
+        <text x="860" y="247" text-anchor="middle" class="entity-name">exercise_set</text>
+    </g>
+
+    <!-- Lane 3: personal_best -->
+    <g class="entity">
+        <rect x="365" y="350" width="370" height="60" rx="6" />
+        <text x="550" y="378" text-anchor="middle" class="entity-name">personal_best</text>
+        <text x="550" y="397" text-anchor="middle" class="entity-meta">FKs: player, movement, workout?, exercise_set?</text>
+    </g>
+
+    <!-- Lane 1 relationships -->
+    <!-- movement → muscle (main_muscle) -->
+    <line x1="475" y1="105" x2="270" y2="105" class="rel-fk" marker-end="url(#arrow-fk)" />
+    <text x="372" y="100" class="rel-label" text-anchor="middle">main muscle (N:1)</text>
+
+    <!-- movement ↔ muscle (M:N secondary, curved above) -->
+    <path d="M 510 70 Q 370 25 220 70" class="rel-mtm" marker-end="url(#arrow-mtm-end)" marker-start="url(#arrow-mtm-start)" />
+    <text x="365" y="32" class="rel-label" text-anchor="middle">M:N secondary</text>
+
+    <!-- movement ↔ equipment (M:N) -->
+    <line x1="625" y1="105" x2="835" y2="105" class="rel-mtm" marker-end="url(#arrow-mtm-end)" marker-start="url(#arrow-mtm-start)" />
+    <text x="730" y="100" class="rel-label" text-anchor="middle">M:N</text>
+
+    <!-- Lane 2 horizontal flow -->
+    <line x1="175" y1="240" x2="220" y2="240" class="rel-fk" marker-end="url(#arrow-fk)" />
+    <text x="197" y="232" class="rel-label" text-anchor="middle">1:1</text>
+
+    <line x1="360" y1="240" x2="405" y2="240" class="rel-fk" marker-end="url(#arrow-fk)" />
+    <text x="382" y="232" class="rel-label" text-anchor="middle">1:N</text>
+
+    <line x1="545" y1="240" x2="590" y2="240" class="rel-fk" marker-end="url(#arrow-fk)" />
+    <text x="567" y="232" class="rel-label" text-anchor="middle">1:N</text>
+
+    <line x1="730" y1="240" x2="775" y2="240" class="rel-fk" marker-end="url(#arrow-fk)" />
+    <text x="752" y="232" class="rel-label" text-anchor="middle">1:N</text>
+
+    <!-- exercise → movement (FK movement_id) -->
+    <path d="M 660 210 Q 615 170 575 130" class="rel-fk" marker-end="url(#arrow-fk)" />
+    <text x="640" y="178" class="rel-label" text-anchor="middle">N:1</text>
+
+    <!-- player → personal_best -->
+    <path d="M 290 270 Q 290 320 410 350" class="rel-fk" marker-end="url(#arrow-fk)" />
+    <text x="265" y="320" class="rel-label">1:N</text>
+
+    <!-- workout → personal_best -->
+    <line x1="475" y1="270" x2="495" y2="350" class="rel-fk" marker-end="url(#arrow-fk)" />
+    <text x="500" y="320" class="rel-label">1:N (opt)</text>
+
+    <!-- exercise_set → personal_best -->
+    <path d="M 860 270 Q 860 320 700 350" class="rel-fk-opt" marker-end="url(#arrow-fk)" />
+    <text x="800" y="320" class="rel-label">1:N (opt)</text>
+</svg>
+<p class="meta">
+    The <code>movement → personal_best</code> link (one PB per movement, per player, per type) is shown by the FK list inside the <code>personal_best</code> box rather than a separate arrow, to keep the diagram readable.
+</p>
 
 <h2>Tables</h2>
-
-<h3 id="user">user</h3>
-<p class="summary">Authentication account. Implements Symfony's <code>UserInterface</code> + <code>PasswordAuthenticatedUserInterface</code>. The only DataModel allowed to import <code>Symfony\Component\Security</code>.</p>
-<table>
-    <thead><tr><th>Column</th><th>Type</th><th>Flags</th><th>Notes</th></tr></thead>
-    <tbody>
-        <tr class="pk"><td class="col">id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-pk">PK</span></td><td>ULID</td></tr>
-        <tr class="uniq"><td class="col">email</td><td class="type">VARCHAR(180)</td><td class="flags"><span class="badge badge-uniq">UNIQUE</span></td><td>login identifier</td></tr>
-        <tr><td class="col">password</td><td class="type">VARCHAR(255)</td><td></td><td>bcrypt / sodium hash</td></tr>
-        <tr><td class="col">roles</td><td class="type">JSON</td><td></td><td>list&lt;string&gt; — see <code>UserRoleRegistry</code></td></tr>
-        <tr><td class="col">created_at</td><td class="type">DATETIME</td><td></td><td>set by persister</td></tr>
-        <tr><td class="col">updated_at</td><td class="type">DATETIME</td><td></td><td>set by persister</td></tr>
-    </tbody>
-</table>
-<ul class="idx">
-    <li><span class="badge badge-uniq">UNIQUE</span> <code>UNIQ_8D93D649E7927C74 (email)</code></li>
-</ul>
-
-<h3 id="muscle">muscle</h3>
-<p class="summary">Reference list of muscle groups. 20 default rows seeded by <code>MuscleFixtures</code>; admins can add more.</p>
-<table>
-    <thead><tr><th>Column</th><th>Type</th><th>Flags</th><th>Notes</th></tr></thead>
-    <tbody>
-        <tr class="pk"><td class="col">id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-pk">PK</span></td><td>ULID</td></tr>
-        <tr class="uniq"><td class="col">slug</td><td class="type">VARCHAR(50)</td><td class="flags"><span class="badge badge-uniq">UNIQUE</span></td><td>e.g. <code>biceps</code></td></tr>
-        <tr><td class="col">label</td><td class="type">VARCHAR(100)</td><td></td><td>display name</td></tr>
-        <tr><td class="col">created_at</td><td class="type">DATETIME</td><td></td><td></td></tr>
-        <tr><td class="col">updated_at</td><td class="type">DATETIME</td><td></td><td></td></tr>
-    </tbody>
-</table>
-<ul class="idx">
-    <li><span class="badge badge-uniq">UNIQUE</span> <code>UNIQ_F31119EF989D9B62 (slug)</code></li>
-</ul>
 
 <h3 id="equipment">equipment</h3>
 <p class="summary">Reference list of equipment (barbell, dumbbell, kettlebell, machine, bodyweight, treadmill, bike, rower, …).</p>
@@ -157,102 +313,6 @@
 </table>
 <ul class="idx">
     <li><span class="badge badge-uniq">UNIQUE</span> <code>UNIQ_D338D583989D9B62 (slug)</code></li>
-</ul>
-
-<h3 id="movement">movement</h3>
-<p class="summary">Exercise definition. Six boolean flags declare which metrics each movement should track in its sets (reps, weight, duration, distance, incline %, incline meters).</p>
-<table>
-    <thead><tr><th>Column</th><th>Type</th><th>Flags</th><th>Notes</th></tr></thead>
-    <tbody>
-        <tr class="pk"><td class="col">id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-pk">PK</span></td><td>ULID</td></tr>
-        <tr class="uniq"><td class="col">slug</td><td class="type">VARCHAR(80)</td><td class="flags"><span class="badge badge-uniq">UNIQUE</span></td><td>e.g. <code>bench-press-close-grip</code></td></tr>
-        <tr><td class="col">label</td><td class="type">VARCHAR(150)</td><td></td><td></td></tr>
-        <tr class="fk"><td class="col">main_muscle_id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-fk">FK</span></td><td>→ <code>muscle.id</code></td></tr>
-        <tr><td class="col">tracks_repetitions</td><td class="type">TINYINT(1)</td><td></td><td>default <code>0</code></td></tr>
-        <tr><td class="col">tracks_weight</td><td class="type">TINYINT(1)</td><td></td><td>default <code>0</code></td></tr>
-        <tr><td class="col">tracks_duration</td><td class="type">TINYINT(1)</td><td></td><td>default <code>0</code></td></tr>
-        <tr><td class="col">tracks_distance</td><td class="type">TINYINT(1)</td><td></td><td>default <code>0</code></td></tr>
-        <tr><td class="col">tracks_incline_percent</td><td class="type">TINYINT(1)</td><td></td><td>default <code>0</code></td></tr>
-        <tr><td class="col">tracks_incline_meters</td><td class="type">TINYINT(1)</td><td></td><td>default <code>0</code></td></tr>
-        <tr><td class="col">created_at</td><td class="type">DATETIME</td><td></td><td></td></tr>
-        <tr><td class="col">updated_at</td><td class="type">DATETIME</td><td></td><td></td></tr>
-    </tbody>
-</table>
-<ul class="idx">
-    <li><span class="badge badge-uniq">UNIQUE</span> <code>UNIQ_F4DD95F7989D9B62 (slug)</code></li>
-    <li><span class="badge badge-idx">IDX</span> <code>IDX_F4DD95F715F97C16 (main_muscle_id)</code></li>
-</ul>
-<ul class="fks">
-    <li><span class="badge badge-fk">FK</span> <code>main_muscle_id</code> → <code>muscle.id</code></li>
-</ul>
-
-<h3 id="movement_secondary_muscle">movement_secondary_muscle</h3>
-<p class="summary">M:N join — the secondary muscles a movement also recruits. Composite primary key. Both FKs cascade-delete with the parent rows.</p>
-<table>
-    <thead><tr><th>Column</th><th>Type</th><th>Flags</th><th>Notes</th></tr></thead>
-    <tbody>
-        <tr class="pk fk"><td class="col">movement_id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-pk">PK</span><span class="badge badge-fk">FK</span></td><td>→ <code>movement.id</code> ON DELETE CASCADE</td></tr>
-        <tr class="pk fk"><td class="col">muscle_id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-pk">PK</span><span class="badge badge-fk">FK</span></td><td>→ <code>muscle.id</code> ON DELETE CASCADE</td></tr>
-    </tbody>
-</table>
-<ul class="idx">
-    <li><span class="badge badge-idx">IDX</span> <code>IDX_8C94D076229E70A7 (movement_id)</code></li>
-    <li><span class="badge badge-idx">IDX</span> <code>IDX_8C94D076354FDBB4 (muscle_id)</code></li>
-</ul>
-
-<h3 id="movement_equipment">movement_equipment</h3>
-<p class="summary">M:N join — the equipment options a movement can be performed with.</p>
-<table>
-    <thead><tr><th>Column</th><th>Type</th><th>Flags</th><th>Notes</th></tr></thead>
-    <tbody>
-        <tr class="pk fk"><td class="col">movement_id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-pk">PK</span><span class="badge badge-fk">FK</span></td><td>→ <code>movement.id</code> ON DELETE CASCADE</td></tr>
-        <tr class="pk fk"><td class="col">equipment_id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-pk">PK</span><span class="badge badge-fk">FK</span></td><td>→ <code>equipment.id</code> ON DELETE CASCADE</td></tr>
-    </tbody>
-</table>
-<ul class="idx">
-    <li><span class="badge badge-idx">IDX</span> <code>IDX_E11F9908229E70A7 (movement_id)</code></li>
-    <li><span class="badge badge-idx">IDX</span> <code>IDX_E11F9908517FE9FE (equipment_id)</code></li>
-</ul>
-
-<h3 id="player">player</h3>
-<p class="summary">A player profile, attached 1:1 to exactly one user account. Workouts, exercise sets, and personal bests all hang off this row.</p>
-<table>
-    <thead><tr><th>Column</th><th>Type</th><th>Flags</th><th>Notes</th></tr></thead>
-    <tbody>
-        <tr class="pk"><td class="col">id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-pk">PK</span></td><td>ULID</td></tr>
-        <tr class="uniq fk"><td class="col">user_id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-uniq">UNIQUE</span><span class="badge badge-fk">FK</span></td><td>→ <code>user.id</code> (1:1)</td></tr>
-        <tr><td class="col">display_name</td><td class="type">VARCHAR(100)</td><td></td><td></td></tr>
-        <tr><td class="col">created_at</td><td class="type">DATETIME</td><td></td><td></td></tr>
-        <tr><td class="col">updated_at</td><td class="type">DATETIME</td><td></td><td></td></tr>
-    </tbody>
-</table>
-<ul class="idx">
-    <li><span class="badge badge-uniq">UNIQUE</span> <code>UNIQ_98197A65A76ED395 (user_id)</code></li>
-</ul>
-<ul class="fks">
-    <li><span class="badge badge-fk">FK</span> <code>user_id</code> → <code>user.id</code></li>
-</ul>
-
-<h3 id="workout">workout</h3>
-<p class="summary">A training session in one of four states (<code>PLANNED</code>, <code>IN_PROGRESS</code>, <code>COMPLETED</code>, <code>CANCELED</code> — see <code>WorkoutStatusRegistry</code>). <code>plannedAt</code> is set on plan, <code>dateStart</code> on start, <code>dateEnd</code> on finish.</p>
-<table>
-    <thead><tr><th>Column</th><th>Type</th><th>Flags</th><th>Notes</th></tr></thead>
-    <tbody>
-        <tr class="pk"><td class="col">id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-pk">PK</span></td><td>ULID</td></tr>
-        <tr class="fk"><td class="col">player_id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-fk">FK</span></td><td>→ <code>player.id</code></td></tr>
-        <tr><td class="col">status</td><td class="type">VARCHAR(20)</td><td></td><td><code>WorkoutStatusRegistry</code></td></tr>
-        <tr><td class="col">date_start</td><td class="type">DATETIME</td><td class="flags"><span class="badge badge-null">NULL</span></td><td>set when work starts</td></tr>
-        <tr><td class="col">date_end</td><td class="type">DATETIME</td><td class="flags"><span class="badge badge-null">NULL</span></td><td>set on completion</td></tr>
-        <tr><td class="col">planned_at</td><td class="type">DATETIME</td><td class="flags"><span class="badge badge-null">NULL</span></td><td>set when planned</td></tr>
-        <tr><td class="col">created_at</td><td class="type">DATETIME</td><td></td><td></td></tr>
-        <tr><td class="col">updated_at</td><td class="type">DATETIME</td><td></td><td></td></tr>
-    </tbody>
-</table>
-<ul class="idx">
-    <li><span class="badge badge-idx">IDX</span> <code>IDX_649FFB7299E6F5DF (player_id)</code></li>
-</ul>
-<ul class="fks">
-    <li><span class="badge badge-fk">FK</span> <code>player_id</code> → <code>player.id</code></li>
 </ul>
 
 <h3 id="exercise">exercise</h3>
@@ -310,6 +370,77 @@
     <li><span class="badge badge-fk">FK</span> <code>exercise_id</code> → <code>exercise.id</code></li>
 </ul>
 
+<h3 id="movement">movement</h3>
+<p class="summary">Exercise definition. Six boolean flags declare which metrics each movement should track in its sets (reps, weight, duration, distance, incline %, incline meters).</p>
+<table>
+    <thead><tr><th>Column</th><th>Type</th><th>Flags</th><th>Notes</th></tr></thead>
+    <tbody>
+        <tr class="pk"><td class="col">id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-pk">PK</span></td><td>ULID</td></tr>
+        <tr class="uniq"><td class="col">slug</td><td class="type">VARCHAR(80)</td><td class="flags"><span class="badge badge-uniq">UNIQUE</span></td><td>e.g. <code>bench-press-close-grip</code></td></tr>
+        <tr><td class="col">label</td><td class="type">VARCHAR(150)</td><td></td><td></td></tr>
+        <tr class="fk"><td class="col">main_muscle_id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-fk">FK</span></td><td>→ <code>muscle.id</code></td></tr>
+        <tr><td class="col">tracks_repetitions</td><td class="type">TINYINT(1)</td><td></td><td>default <code>0</code></td></tr>
+        <tr><td class="col">tracks_weight</td><td class="type">TINYINT(1)</td><td></td><td>default <code>0</code></td></tr>
+        <tr><td class="col">tracks_duration</td><td class="type">TINYINT(1)</td><td></td><td>default <code>0</code></td></tr>
+        <tr><td class="col">tracks_distance</td><td class="type">TINYINT(1)</td><td></td><td>default <code>0</code></td></tr>
+        <tr><td class="col">tracks_incline_percent</td><td class="type">TINYINT(1)</td><td></td><td>default <code>0</code></td></tr>
+        <tr><td class="col">tracks_incline_meters</td><td class="type">TINYINT(1)</td><td></td><td>default <code>0</code></td></tr>
+        <tr><td class="col">created_at</td><td class="type">DATETIME</td><td></td><td></td></tr>
+        <tr><td class="col">updated_at</td><td class="type">DATETIME</td><td></td><td></td></tr>
+    </tbody>
+</table>
+<ul class="idx">
+    <li><span class="badge badge-uniq">UNIQUE</span> <code>UNIQ_F4DD95F7989D9B62 (slug)</code></li>
+    <li><span class="badge badge-idx">IDX</span> <code>IDX_F4DD95F715F97C16 (main_muscle_id)</code></li>
+</ul>
+<ul class="fks">
+    <li><span class="badge badge-fk">FK</span> <code>main_muscle_id</code> → <code>muscle.id</code></li>
+</ul>
+
+<h3 id="movement_equipment">movement_equipment</h3>
+<p class="summary">M:N join — the equipment options a movement can be performed with.</p>
+<table>
+    <thead><tr><th>Column</th><th>Type</th><th>Flags</th><th>Notes</th></tr></thead>
+    <tbody>
+        <tr class="pk fk"><td class="col">movement_id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-pk">PK</span><span class="badge badge-fk">FK</span></td><td>→ <code>movement.id</code> ON DELETE CASCADE</td></tr>
+        <tr class="pk fk"><td class="col">equipment_id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-pk">PK</span><span class="badge badge-fk">FK</span></td><td>→ <code>equipment.id</code> ON DELETE CASCADE</td></tr>
+    </tbody>
+</table>
+<ul class="idx">
+    <li><span class="badge badge-idx">IDX</span> <code>IDX_E11F9908229E70A7 (movement_id)</code></li>
+    <li><span class="badge badge-idx">IDX</span> <code>IDX_E11F9908517FE9FE (equipment_id)</code></li>
+</ul>
+
+<h3 id="movement_secondary_muscle">movement_secondary_muscle</h3>
+<p class="summary">M:N join — the secondary muscles a movement also recruits. Composite primary key. Both FKs cascade-delete with the parent rows.</p>
+<table>
+    <thead><tr><th>Column</th><th>Type</th><th>Flags</th><th>Notes</th></tr></thead>
+    <tbody>
+        <tr class="pk fk"><td class="col">movement_id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-pk">PK</span><span class="badge badge-fk">FK</span></td><td>→ <code>movement.id</code> ON DELETE CASCADE</td></tr>
+        <tr class="pk fk"><td class="col">muscle_id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-pk">PK</span><span class="badge badge-fk">FK</span></td><td>→ <code>muscle.id</code> ON DELETE CASCADE</td></tr>
+    </tbody>
+</table>
+<ul class="idx">
+    <li><span class="badge badge-idx">IDX</span> <code>IDX_8C94D076229E70A7 (movement_id)</code></li>
+    <li><span class="badge badge-idx">IDX</span> <code>IDX_8C94D076354FDBB4 (muscle_id)</code></li>
+</ul>
+
+<h3 id="muscle">muscle</h3>
+<p class="summary">Reference list of muscle groups. 20 default rows seeded by <code>MuscleFixtures</code>; admins can add more.</p>
+<table>
+    <thead><tr><th>Column</th><th>Type</th><th>Flags</th><th>Notes</th></tr></thead>
+    <tbody>
+        <tr class="pk"><td class="col">id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-pk">PK</span></td><td>ULID</td></tr>
+        <tr class="uniq"><td class="col">slug</td><td class="type">VARCHAR(50)</td><td class="flags"><span class="badge badge-uniq">UNIQUE</span></td><td>e.g. <code>biceps</code></td></tr>
+        <tr><td class="col">label</td><td class="type">VARCHAR(100)</td><td></td><td>display name</td></tr>
+        <tr><td class="col">created_at</td><td class="type">DATETIME</td><td></td><td></td></tr>
+        <tr><td class="col">updated_at</td><td class="type">DATETIME</td><td></td><td></td></tr>
+    </tbody>
+</table>
+<ul class="idx">
+    <li><span class="badge badge-uniq">UNIQUE</span> <code>UNIQ_F31119EF989D9B62 (slug)</code></li>
+</ul>
+
 <h3 id="personal_best">personal_best</h3>
 <p class="summary">Current best result for a (player, movement, type) tuple. <code>type</code> is one of <code>HIGHEST_WEIGHT</code>, <code>HIGHEST_REPS</code>, <code>HIGHEST_VOLUME_ONE_SET</code>, <code>HIGHEST_VOLUME_WORKOUT</code>, <code>HIGHEST_DURATION</code>, <code>HIGHEST_DISTANCE</code>, <code>HIGHEST_SPEED</code> (see <code>PersonalBestTypeRegistry</code>). The unique constraint on (player, movement, type) makes the upsert-on-improvement pattern safe.</p>
 <table>
@@ -341,20 +472,63 @@
     <li><span class="badge badge-fk">FK</span> <code>exercise_set_id</code> → <code>exercise_set.id</code> (nullable)</li>
 </ul>
 
-<h2>Relationships at a glance</h2>
-<pre style="background: #f3ede2; padding: 1rem; border-left: 4px solid var(--accent); overflow-x: auto;">
-user        ─1:1─▶ player ─1:N─▶ workout ─1:N─▶ exercise ─1:N─▶ exercise_set
-                                  │                │                  │
-                                  │                ▼                  │
-                                  │             movement              │
-                                  │             /  │  \\               │
-                                  │     main_muscle  M:N: secondary,  │
-                                  │       (FK)         equipment      │
-                                  │                                   │
-                                  └──── personal_best ◀────movement───┘
-                                            │   │
-                                       (workout, exercise_set: provenance, nullable)
-</pre>
+<h3 id="player">player</h3>
+<p class="summary">A player profile, attached 1:1 to exactly one user account. Workouts, exercise sets, and personal bests all hang off this row.</p>
+<table>
+    <thead><tr><th>Column</th><th>Type</th><th>Flags</th><th>Notes</th></tr></thead>
+    <tbody>
+        <tr class="pk"><td class="col">id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-pk">PK</span></td><td>ULID</td></tr>
+        <tr class="uniq fk"><td class="col">user_id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-uniq">UNIQUE</span><span class="badge badge-fk">FK</span></td><td>→ <code>user.id</code> (1:1)</td></tr>
+        <tr><td class="col">display_name</td><td class="type">VARCHAR(100)</td><td></td><td></td></tr>
+        <tr><td class="col">created_at</td><td class="type">DATETIME</td><td></td><td></td></tr>
+        <tr><td class="col">updated_at</td><td class="type">DATETIME</td><td></td><td></td></tr>
+    </tbody>
+</table>
+<ul class="idx">
+    <li><span class="badge badge-uniq">UNIQUE</span> <code>UNIQ_98197A65A76ED395 (user_id)</code></li>
+</ul>
+<ul class="fks">
+    <li><span class="badge badge-fk">FK</span> <code>user_id</code> → <code>user.id</code></li>
+</ul>
+
+<h3 id="user">user</h3>
+<p class="summary">Authentication account. Implements Symfony's <code>UserInterface</code> + <code>PasswordAuthenticatedUserInterface</code>. The only DataModel allowed to import <code>Symfony\Component\Security</code>.</p>
+<table>
+    <thead><tr><th>Column</th><th>Type</th><th>Flags</th><th>Notes</th></tr></thead>
+    <tbody>
+        <tr class="pk"><td class="col">id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-pk">PK</span></td><td>ULID</td></tr>
+        <tr class="uniq"><td class="col">email</td><td class="type">VARCHAR(180)</td><td class="flags"><span class="badge badge-uniq">UNIQUE</span></td><td>login identifier</td></tr>
+        <tr><td class="col">password</td><td class="type">VARCHAR(255)</td><td></td><td>bcrypt / sodium hash</td></tr>
+        <tr><td class="col">roles</td><td class="type">JSON</td><td></td><td>list&lt;string&gt; — see <code>UserRoleRegistry</code></td></tr>
+        <tr><td class="col">created_at</td><td class="type">DATETIME</td><td></td><td>set by persister</td></tr>
+        <tr><td class="col">updated_at</td><td class="type">DATETIME</td><td></td><td>set by persister</td></tr>
+    </tbody>
+</table>
+<ul class="idx">
+    <li><span class="badge badge-uniq">UNIQUE</span> <code>UNIQ_8D93D649E7927C74 (email)</code></li>
+</ul>
+
+<h3 id="workout">workout</h3>
+<p class="summary">A training session in one of four states (<code>PLANNED</code>, <code>IN_PROGRESS</code>, <code>COMPLETED</code>, <code>CANCELED</code> — see <code>WorkoutStatusRegistry</code>). <code>plannedAt</code> is set on plan, <code>dateStart</code> on start, <code>dateEnd</code> on finish.</p>
+<table>
+    <thead><tr><th>Column</th><th>Type</th><th>Flags</th><th>Notes</th></tr></thead>
+    <tbody>
+        <tr class="pk"><td class="col">id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-pk">PK</span></td><td>ULID</td></tr>
+        <tr class="fk"><td class="col">player_id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-fk">FK</span></td><td>→ <code>player.id</code></td></tr>
+        <tr><td class="col">status</td><td class="type">VARCHAR(20)</td><td></td><td><code>WorkoutStatusRegistry</code></td></tr>
+        <tr><td class="col">date_start</td><td class="type">DATETIME</td><td class="flags"><span class="badge badge-null">NULL</span></td><td>set when work starts</td></tr>
+        <tr><td class="col">date_end</td><td class="type">DATETIME</td><td class="flags"><span class="badge badge-null">NULL</span></td><td>set on completion</td></tr>
+        <tr><td class="col">planned_at</td><td class="type">DATETIME</td><td class="flags"><span class="badge badge-null">NULL</span></td><td>set when planned</td></tr>
+        <tr><td class="col">created_at</td><td class="type">DATETIME</td><td></td><td></td></tr>
+        <tr><td class="col">updated_at</td><td class="type">DATETIME</td><td></td><td></td></tr>
+    </tbody>
+</table>
+<ul class="idx">
+    <li><span class="badge badge-idx">IDX</span> <code>IDX_649FFB7299E6F5DF (player_id)</code></li>
+</ul>
+<ul class="fks">
+    <li><span class="badge badge-fk">FK</span> <code>player_id</code> → <code>player.id</code></li>
+</ul>
 
 </body>
 </html>
