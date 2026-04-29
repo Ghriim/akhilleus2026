@@ -71,12 +71,10 @@ class MovementDataModel implements DataModelInterface
 
     public function __construct(
         string $id,
-        string $slug,
         string $label,
         MuscleDataModel $mainMuscle,
     ) {
         $this->id = $id;
-        $this->slug = $slug;
         $this->label = $label;
         $this->mainMuscle = $mainMuscle;
         $this->secondaryMuscles = new ArrayCollection();

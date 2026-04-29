@@ -40,7 +40,7 @@ Every item below was decided during implementation and is **not** explicitly cov
 - **`UserDataModel` has 4 getter methods** (`getRoles`, `getPassword`, `getUserIdentifier`, `eraseCredentials`) — required by `UserInterface` / `PasswordAuthenticatedUserInterface`. This is the single exception to "DTOs have public properties and no getters/setters". `email` is annotated `@var non-empty-string` so PHPStan accepts the `getUserIdentifier(): non-empty-string` return.
 - **Gateway interfaces are scaffolded phase by phase, not all up-front.** Phase 1.3 ships only the 3 admin gateway pairs (Muscle / Equipment / Movement); the other 6 are added when their phase begins (User/Player in Phase 3, Workout/Exercise/ExerciseSet/PersonalBest in Phase 6). Rationale: interfaces with zero known consumers are dead code that biases the design.
 - **Gateway file layout is flat** under `Domain/Gateway/Provider/` and `Domain/Gateway/Persister/` (one file per entity per role). No per-entity sub-folders, despite the Registry layout using them — gateways are 1 file per entity per role, sub-folders would be needless ceremony.
-- **Persisters return the managed entity from `create` and `update`** (typed narrowly per entity in the gateway interface; `delete` stays `void`). `AbstractBaseMysqlPersister::create`/`update` therefore return `DataModelInterface`; every concrete persister must `override` both methods with the narrowed return type to satisfy PHP's covariance rules — small boilerplate, in exchange for type-safe `$muscle = $persister->create($muscle)` at the UseCase site.
+- **Persisters return the managed entity from `create` and `update`** (typed narrowly per entity in the gateway interface; `delete` stays `void`). `AbstractBaseMysqlPersister` exposes only **protected** helpers `doCreate` / `doUpdate` / `doDelete` (typed `DataModelInterface`); each concrete persister implements its own `public create/update/delete` typed per `DataModel` (matching the gateway) and delegates to those helpers. This is required by PHP's variance rules: parameter contravariance forbids narrowing a parent's `public create(DataModelInterface)` to `public create(MuscleDataModel)` in a child, and return covariance forbids inheriting the wider `DataModelInterface` return when the gateway requires `MuscleDataModel`. The protected-helper pattern sidesteps both at once.
 
 ### Persistence / column conventions
 - **Decimal columns use `?string` + `@var numeric-string` PHPDoc.** Doctrine returns `NUMERIC` columns as PHP `string` to preserve precision. The chosen scales:
@@ -192,7 +192,7 @@ Scope decision: **gateway interfaces are created phase by phase, alongside their
 
 Layout: files at the **root** of `Domain/Gateway/Provider/` and `Domain/Gateway/Persister/` (one file per entity per role, no per-entity sub-folders).
 
-Persister convention: `create` and `update` return the managed `*DataModel` instance (typed narrowly per entity); `delete` returns `void`. `AbstractBaseMysqlPersister::create`/`update` therefore also return `DataModelInterface` — concrete persisters in Phase 2+ must `override` both methods to narrow the return type, since PHP variance forbids the inherited wider return from satisfying the narrower gateway contract.
+Persister convention: `create` and `update` return the managed `*DataModel` instance (typed narrowly per entity); `delete` returns `void`. `AbstractBaseMysqlPersister` only exposes **protected** helpers `doCreate`/`doUpdate`/`doDelete` typed `DataModelInterface`; each concrete persister in Phase 2+ implements its own public `create`/`update`/`delete` typed per `DataModel` and delegates to those helpers. PHP's variance rules forbid both narrowing a parent's `public create(DataModelInterface)` parameter to `create(MuscleDataModel)` (parameter contravariance) and inheriting the wider `DataModelInterface` return when the gateway requires `MuscleDataModel` (return covariance) — the protected-helper pattern sidesteps both.
 
 - [x] `Provider/MuscleProviderGateway` — `findOneForAdminDetails`, `findAllForAdminList`, `findOneBySlugForUniqueness`.
 - [x] `Provider/EquipmentProviderGateway` — same 3 methods.
@@ -222,18 +222,22 @@ Persister convention: `create` and `update` return the managed `*DataModel` inst
 
 For each of the three entities — Muscle, Equipment, Movement:
 
-- [ ] `Infrastructure/Repository/{Entity}Repository extends ServiceEntityRepository implements {Entity}ProviderGateway` — context-named methods: `findOneForAdminDetails(Ulid $id)`, `findAllForAdminList()`, `findOneBySlugForUniqueness(string $slug)`. No lazy loading — eager fetch joins for Movement (mainMuscle, secondaryMuscles, equipments).
-- [ ] `Infrastructure/Persister/{Entity}Persister extends AbstractBaseMysqlPersister implements {Entity}PersisterGateway`.
-- [ ] `Infrastructure/DataFixtures/{Entity}Fixtures` —
-  - [ ] `MuscleFixtures`: load all 20 slugs from the spec list (biceps, triceps, quadriceps, calves, chest, glutes, hamstrings, abdominal, abductors, adductors, forearms, lower-back, cardio, full-body, neck, shoulders, lats, traps, upper-back, other) — kept inline in the fixture, not promoted to a registry.
-  - [ ] `EquipmentFixtures`: minimal demo set (barbell, dumbbell, kettlebell, machine, bodyweight, treadmill, bike, rower).
-  - [ ] `MovementFixtures`: ~10 sample movements demonstrating each tracking-field combination (e.g. `bench-press` → reps+weight; `running` → duration+distance+incline%).
+- [x] `Infrastructure/Repository/{Entity}Repository extends ServiceEntityRepository implements {Entity}ProviderGateway` — context-named methods: `findOneForAdminDetails(string $id)`, `findAllForAdminList()`, `findOneBySlugForUniqueness(string $slug)`. No lazy loading — eager fetch joins for Movement (mainMuscle, secondaryMuscles, equipments).
+- [x] `Infrastructure/Persister/{Entity}Persister extends AbstractBaseMysqlPersister implements {Entity}PersisterGateway`.
+- [x] `Infrastructure/DataFixtures/{Entity}Fixtures` — fixtures **inject the matching `*PersisterGateway`** and call `$persister->create($model)` (never set timestamps or call `$manager->persist/flush` directly).
+  - [x] `MuscleFixtures`: load all 20 slugs from the spec list (abdominal, abductors, adductors, biceps, calves, cardio, chest, forearms, full-body, glutes, hamstrings, lats, lower-back, neck, other, quadriceps, shoulders, traps, triceps, upper-back) — kept inline in the fixture, not promoted to a registry.
+  - [x] `EquipmentFixtures`: minimal demo set (barbell, bike, bodyweight, dumbbell, kettlebell, machine, rower, treadmill).
+  - [x] `MovementFixtures`: 10 sample movements covering every tracking-field combo (back-squat / bench-press / bicep-curl / deadlift / pull-up: reps+weight; plank: duration only; rowing: duration+distance; running / stationary-cycling: duration+distance+incline%; trail-run: duration+distance+incline%+incline_meters).
 
 User/Player infra is deferred to Phase 3 (where it's needed for auth).
 
-### [ ] Verification
-- [ ] `doctrine:fixtures:load` populates the three tables.
-- [ ] A repository smoke test loads a Movement and asserts mainMuscle/equipments are eager-fetched (no LazyCriteriaCollection).
+### [x] Verification
+- [x] `doctrine:fixtures:load` populates the three tables (20 muscles, 8 equipments, 10 movements, 24 secondary-muscle joins, 13 equipment joins).
+- [x] A repository integration test (`MovementRepositoryEagerFetchTest`) seeds a movement with 2 secondary muscles + 2 equipments, fetches it via `findOneForAdminDetails`, and asserts `mainMuscle` is not an uninitialized lazy object and the two `PersistentCollection`s are initialized.
+
+Side-effect of running the integration suite for the first time:
+- Created the `akhilleus_test` database (Symfony Flex's `dbname_suffix: '_test%env(default::TEST_TOKEN)%'` in `config/packages/doctrine.yaml`) and ran `APP_ENV=test php bin/console doctrine:migrations:migrate` against it.
+- Registered `DAMA\DoctrineTestBundle\DAMADoctrineTestBundle` in `config/bundles.php` for the `test` env so that the dama PHPUnit extension actually wraps each test in a rollback'd transaction (the bundle wasn't auto-registered by Flex).
 
 ---
 
@@ -437,7 +441,7 @@ All routes under `/api/player/*`, `ROLE_PLAYER` required. The `AbstractLoggedUse
 |---|---|---|
 | 0 | `composer qa` green; pre-commit hook fires; `docker compose up` healthy | [x] |
 | 1 | Migration applies; `doctrine:schema:validate` clean; PHPStan green | [x] |
-| 2 | Fixtures load; repository test asserts eager fetch | [ ] |
+| 2 | Fixtures load; repository test asserts eager fetch | [x] |
 | 3 | Register → Login → JWT-protected endpoint check via cURL | [ ] |
 | 4 | Integration test per UseCase (15 total: 5 × Equipment/Muscle/Movement); cURL CRUD smoke check for each entity | [ ] |
 | 5 | Manual CRUD in React Admin UI, logged in as the seeded admin | [ ] |

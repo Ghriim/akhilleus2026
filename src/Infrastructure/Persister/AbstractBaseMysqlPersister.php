@@ -16,7 +16,7 @@ abstract class AbstractBaseMysqlPersister
     ) {
     }
 
-    public function create(DataModelInterface $model): DataModelInterface
+    protected function doCreate(DataModelInterface $model): void
     {
         $now = $this->clock->now();
         $model->createdAt = $now;
@@ -24,20 +24,16 @@ abstract class AbstractBaseMysqlPersister
         $this->entityManager->persist($model);
         $this->entityManager->flush();
         $this->postCreate($model);
-
-        return $model;
     }
 
-    public function update(DataModelInterface $model): DataModelInterface
+    protected function doUpdate(DataModelInterface $model): void
     {
         $model->updatedAt = $this->clock->now();
         $this->entityManager->flush();
         $this->postUpdate($model);
-
-        return $model;
     }
 
-    public function delete(DataModelInterface $model): void
+    protected function doDelete(DataModelInterface $model): void
     {
         $this->entityManager->remove($model);
         $this->entityManager->flush();

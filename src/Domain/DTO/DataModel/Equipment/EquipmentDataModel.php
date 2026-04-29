@@ -31,11 +31,9 @@ class EquipmentDataModel implements DataModelInterface
 
     public function __construct(
         string $id,
-        string $slug,
         string $label,
     ) {
         $this->id = $id;
-        $this->slug = $slug;
         $this->label = $label;
     }
 }
