@@ -76,8 +76,16 @@ in the repository using the context as name (for example findOneForWorkoutDetail
 - UseCase only return DataOutputInterface or an array of DataOutputInterface
 - UseCase implement the `UseCaseInterface`
 - UseCase extends one of the following classes:
-  - `AbstractPublicUseCase` : constructor will inject DomainValidatorInterface,
-  - `AbstractLoggedUserUseCase`  : constructor will inject AbstractLoggedUserValidator
+  - `AbstractPublicUseCase` : constructor will inject `DomainValidatorInterface` (no auth resolution; use this for Get / List / Register endpoints).
+  - `AbstractLoggedAdminUseCase` : constructor will inject `AbstractLoggedAdminValidator`. Use for `UseCase/Admin/...`. Validators that extend `AbstractLoggedAdminValidator` get `final protected getLoggedAdmin(): UserDataModel` from the parent.
+  - `AbstractLoggedPlayerUseCase` : constructor will inject `AbstractLoggedPlayerValidator`. Use for `UseCase/Player/...`. Validators that extend `AbstractLoggedPlayerValidator` get `final protected getLoggedPlayer(): PlayerDataModel` from the parent (resolves the `PlayerDataModel` linked to the authenticated `UserDataModel` via `LoggedPlayerResolverInterface` → `PlayerProviderGateway`; throws `UnauthorizedException` if no profile is linked).
+- The previous `AbstractLoggedUserUseCase` / `AbstractLoggedUserValidator` pair has been **removed** in favor of the Admin/Player split above. Do not re-introduce it. If a future role (Coach…) lands, mirror the same pattern (`AbstractLoggedCoachUseCase` + `AbstractLoggedCoachValidator` with a `LoggedCoachResolverInterface`).
+
+## Conventions for DataOutput JSON serialization
+- `JsonResponse` calls `json_encode` directly. `\DateTimeImmutable` would be dumped as `{date, timezone_type, timezone}` — unusable by API consumers. Therefore:
+  - **DataOutput classes whose fields carry dates type them as `?string`**, formatted as ISO 8601 / RFC 3339 (`\DateTimeInterface::ATOM`).
+  - The use case formats at the DTO boundary: `$model->plannedAt?->format(\DateTimeInterface::ATOM)`.
+  - DataInput, by contrast, can hold typed `\DateTimeImmutable` (controllers parse ISO strings into `\DateTimeImmutable` and surface parse errors as 422 `ValidationException`).
 
 ## Tests
 
