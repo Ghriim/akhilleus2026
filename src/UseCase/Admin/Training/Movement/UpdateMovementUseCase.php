@@ -16,10 +16,10 @@ use App\Domain\Gateway\Provider\Training\Equipment\EquipmentProviderGateway;
 use App\Domain\Gateway\Provider\Training\Movement\MovementProviderGateway;
 use App\Domain\Gateway\Provider\Training\Muscle\MuscleProviderGateway;
 use App\Domain\Validator\Admin\Training\Movement\UpdateMovementValidator;
-use App\UseCase\AbstractLoggedUserUseCase;
+use App\UseCase\AbstractLoggedAdminUseCase;
 use Doctrine\Common\Collections\ArrayCollection;
 
-final class UpdateMovementUseCase extends AbstractLoggedUserUseCase
+final class UpdateMovementUseCase extends AbstractLoggedAdminUseCase
 {
     public function __construct(
         private readonly UpdateMovementValidator $updateMovementValidator,

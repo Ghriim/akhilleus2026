@@ -11,9 +11,9 @@ use App\Domain\Gateway\Provider\Training\Equipment\EquipmentProviderGateway;
 use App\Domain\Gateway\Provider\Training\Movement\MovementProviderGateway;
 use App\Domain\Gateway\Provider\Training\Muscle\MuscleProviderGateway;
 use App\Domain\Security\LoggedUserResolverInterface;
-use App\Domain\Validator\AbstractLoggedUserValidator;
+use App\Domain\Validator\AbstractLoggedAdminValidator;
 
-final readonly class UpdateMovementValidator extends AbstractLoggedUserValidator
+final readonly class UpdateMovementValidator extends AbstractLoggedAdminValidator
 {
     public const string ERROR_CODE = 'UPDATE_MOVEMENT_VALIDATION_FAILED';
 

@@ -11,9 +11,9 @@ use App\Domain\Exception\EntityNotFoundException;
 use App\Domain\Gateway\Persister\Training\Muscle\MusclePersisterGateway;
 use App\Domain\Gateway\Provider\Training\Muscle\MuscleProviderGateway;
 use App\Domain\Validator\Admin\Training\Muscle\UpdateMuscleValidator;
-use App\UseCase\AbstractLoggedUserUseCase;
+use App\UseCase\AbstractLoggedAdminUseCase;
 
-final class UpdateMuscleUseCase extends AbstractLoggedUserUseCase
+final class UpdateMuscleUseCase extends AbstractLoggedAdminUseCase
 {
     public function __construct(
         private readonly UpdateMuscleValidator $updateMuscleValidator,

@@ -11,9 +11,9 @@ use App\Domain\Exception\EntityNotFoundException;
 use App\Domain\Gateway\Persister\Training\Movement\MovementPersisterGateway;
 use App\Domain\Gateway\Provider\Training\Movement\MovementProviderGateway;
 use App\Domain\Validator\Admin\Training\Movement\DeleteMovementValidator;
-use App\UseCase\AbstractLoggedUserUseCase;
+use App\UseCase\AbstractLoggedAdminUseCase;
 
-final class DeleteMovementUseCase extends AbstractLoggedUserUseCase
+final class DeleteMovementUseCase extends AbstractLoggedAdminUseCase
 {
     public function __construct(
         private readonly DeleteMovementValidator $deleteMovementValidator,

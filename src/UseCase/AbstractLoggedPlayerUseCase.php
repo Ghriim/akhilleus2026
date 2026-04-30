@@ -6,12 +6,12 @@ namespace App\UseCase;
 
 use App\Domain\DTO\DataInput\DataInputInterface;
 use App\Domain\DTO\DataOutput\DataOutputInterface;
-use App\Domain\Validator\AbstractLoggedUserValidator;
+use App\Domain\Validator\AbstractLoggedPlayerValidator;
 
-abstract class AbstractLoggedUserUseCase implements UseCaseInterface
+abstract class AbstractLoggedPlayerUseCase implements UseCaseInterface
 {
     public function __construct(
-        protected readonly AbstractLoggedUserValidator $validator,
+        protected readonly AbstractLoggedPlayerValidator $validator,
     ) {
     }
 

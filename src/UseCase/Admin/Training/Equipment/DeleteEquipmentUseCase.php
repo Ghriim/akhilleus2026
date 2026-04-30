@@ -11,9 +11,9 @@ use App\Domain\Exception\EntityNotFoundException;
 use App\Domain\Gateway\Persister\Training\Equipment\EquipmentPersisterGateway;
 use App\Domain\Gateway\Provider\Training\Equipment\EquipmentProviderGateway;
 use App\Domain\Validator\Admin\Training\Equipment\DeleteEquipmentValidator;
-use App\UseCase\AbstractLoggedUserUseCase;
+use App\UseCase\AbstractLoggedAdminUseCase;
 
-final class DeleteEquipmentUseCase extends AbstractLoggedUserUseCase
+final class DeleteEquipmentUseCase extends AbstractLoggedAdminUseCase
 {
     public function __construct(
         private readonly DeleteEquipmentValidator $deleteEquipmentValidator,

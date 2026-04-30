@@ -15,9 +15,9 @@ use App\Domain\Gateway\Persister\Training\Movement\MovementPersisterGateway;
 use App\Domain\Gateway\Provider\Training\Equipment\EquipmentProviderGateway;
 use App\Domain\Gateway\Provider\Training\Muscle\MuscleProviderGateway;
 use App\Domain\Validator\Admin\Training\Movement\CreateMovementValidator;
-use App\UseCase\AbstractLoggedUserUseCase;
+use App\UseCase\AbstractLoggedAdminUseCase;
 
-final class CreateMovementUseCase extends AbstractLoggedUserUseCase
+final class CreateMovementUseCase extends AbstractLoggedAdminUseCase
 {
     public function __construct(
         private readonly CreateMovementValidator $createMovementValidator,

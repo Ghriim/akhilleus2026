@@ -9,9 +9,9 @@ use App\Domain\DTO\DataInput\Admin\Training\Muscle\UpdateMuscleDataInput;
 use App\Domain\Exception\ValidationException;
 use App\Domain\Gateway\Provider\Training\Muscle\MuscleProviderGateway;
 use App\Domain\Security\LoggedUserResolverInterface;
-use App\Domain\Validator\AbstractLoggedUserValidator;
+use App\Domain\Validator\AbstractLoggedAdminValidator;
 
-final readonly class UpdateMuscleValidator extends AbstractLoggedUserValidator
+final readonly class UpdateMuscleValidator extends AbstractLoggedAdminValidator
 {
     public const string ERROR_CODE = 'UPDATE_EQUIPMENT_VALIDATION_FAILED';
 

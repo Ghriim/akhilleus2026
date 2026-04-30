@@ -9,9 +9,9 @@ use App\Domain\DTO\DataInput\Admin\Training\Equipment\UpdateEquipmentDataInput;
 use App\Domain\Exception\ValidationException;
 use App\Domain\Gateway\Provider\Training\Equipment\EquipmentProviderGateway;
 use App\Domain\Security\LoggedUserResolverInterface;
-use App\Domain\Validator\AbstractLoggedUserValidator;
+use App\Domain\Validator\AbstractLoggedAdminValidator;
 
-final readonly class UpdateEquipmentValidator extends AbstractLoggedUserValidator
+final readonly class UpdateEquipmentValidator extends AbstractLoggedAdminValidator
 {
     public const string ERROR_CODE = 'UPDATE_EQUIPMENT_VALIDATION_FAILED';
 

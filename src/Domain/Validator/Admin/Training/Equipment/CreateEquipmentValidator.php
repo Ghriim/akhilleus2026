@@ -9,9 +9,9 @@ use App\Domain\DTO\DataInput\Admin\Training\Equipment\CreateEquipmentDataInput;
 use App\Domain\Exception\ValidationException;
 use App\Domain\Gateway\Provider\Training\Equipment\EquipmentProviderGateway;
 use App\Domain\Security\LoggedUserResolverInterface;
-use App\Domain\Validator\AbstractLoggedUserValidator;
+use App\Domain\Validator\AbstractLoggedAdminValidator;
 
-final readonly class CreateEquipmentValidator extends AbstractLoggedUserValidator
+final readonly class CreateEquipmentValidator extends AbstractLoggedAdminValidator
 {
     public const string ERROR_CODE = 'CREATE_EQUIPMENT_VALIDATION_FAILED';
 

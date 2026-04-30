@@ -11,9 +11,9 @@ use App\Domain\Exception\EntityNotFoundException;
 use App\Domain\Gateway\Persister\Training\Muscle\MusclePersisterGateway;
 use App\Domain\Gateway\Provider\Training\Muscle\MuscleProviderGateway;
 use App\Domain\Validator\Admin\Training\Muscle\DeleteMuscleValidator;
-use App\UseCase\AbstractLoggedUserUseCase;
+use App\UseCase\AbstractLoggedAdminUseCase;
 
-final class DeleteMuscleUseCase extends AbstractLoggedUserUseCase
+final class DeleteMuscleUseCase extends AbstractLoggedAdminUseCase
 {
     public function __construct(
         private readonly DeleteMuscleValidator $deleteMuscleValidator,

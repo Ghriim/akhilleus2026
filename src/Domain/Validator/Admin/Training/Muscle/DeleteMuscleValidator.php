@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Domain\Validator\Admin\Training\Muscle;
 
 use App\Domain\DTO\DataInput\Admin\Training\Muscle\DeleteMuscleDataInput;
-use App\Domain\Validator\AbstractLoggedUserValidator;
+use App\Domain\Validator\AbstractLoggedAdminValidator;
 
-final readonly class DeleteMuscleValidator extends AbstractLoggedUserValidator
+final readonly class DeleteMuscleValidator extends AbstractLoggedAdminValidator
 {
     public function validate(object $input): void
     {

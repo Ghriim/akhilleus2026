@@ -10,9 +10,9 @@ use App\Domain\DTO\DataModel\Training\Equipment\EquipmentDataModel;
 use App\Domain\DTO\DataOutput\Admin\Training\Equipment\EquipmentDataOutput;
 use App\Domain\Gateway\Persister\Training\Equipment\EquipmentPersisterGateway;
 use App\Domain\Validator\Admin\Training\Equipment\CreateEquipmentValidator;
-use App\UseCase\AbstractLoggedUserUseCase;
+use App\UseCase\AbstractLoggedAdminUseCase;
 
-final class CreateEquipmentUseCase extends AbstractLoggedUserUseCase
+final class CreateEquipmentUseCase extends AbstractLoggedAdminUseCase
 {
     public function __construct(
         private readonly CreateEquipmentValidator $createEquipmentValidator,

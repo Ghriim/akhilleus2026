@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Domain\Validator\Admin\Training\Equipment;
 
 use App\Domain\DTO\DataInput\Admin\Training\Equipment\DeleteEquipmentDataInput;
-use App\Domain\Validator\AbstractLoggedUserValidator;
+use App\Domain\Validator\AbstractLoggedAdminValidator;
 
-final readonly class DeleteEquipmentValidator extends AbstractLoggedUserValidator
+final readonly class DeleteEquipmentValidator extends AbstractLoggedAdminValidator
 {
     public function validate(object $input): void
     {
