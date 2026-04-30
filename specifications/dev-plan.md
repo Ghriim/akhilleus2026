@@ -200,8 +200,10 @@ Persister convention: `create` and `update` return the managed `*DataModel` inst
 - [x] `Persister/MusclePersisterGateway` — `create`, `update`, `delete`.
 - [x] `Persister/EquipmentPersisterGateway` — `create`, `update`, `delete`.
 - [x] `Persister/MovementPersisterGateway` — `create`, `update`, `delete`.
-- [ ] `Provider/UserProviderGateway` + `Persister/UserPersisterGateway` (Phase 3).
-- [ ] `Provider/PlayerProviderGateway` + `Persister/PlayerPersisterGateway` (Phase 3).
+- [x] `Provider/UserProviderGateway` (Phase 3) — `findOneByEmailForAuthentication`, `findOneByEmailForUniquenessCheck`.
+- [x] `Persister/UserPersisterGateway` (Phase 3) — `create`, `update`, `delete`.
+- [x] `Provider/PlayerProviderGateway` (Phase 3) — `findOneByUserForLoggedPlayer`.
+- [x] `Persister/PlayerPersisterGateway` (Phase 3) — `create`, `update`, `delete`.
 - [ ] `Provider/WorkoutProviderGateway` + `Persister/WorkoutPersisterGateway` (Phase 6).
 - [ ] `Provider/ExerciseProviderGateway` + `Persister/ExercisePersisterGateway` (Phase 6).
 - [ ] `Provider/ExerciseSetProviderGateway` + `Persister/ExerciseSetPersisterGateway` (Phase 6).
@@ -243,18 +245,19 @@ Side-effect of running the integration suite for the first time:
 
 ## Phase 3 — Authentication (just enough for Admin)
 
-### [ ] 3.1 User + Player infra
-- [ ] `UserRepository` (implements `UserProviderGateway`, plus Symfony `UserLoaderInterface` indirectly via security wiring), `UserPersister`.
-- [ ] `PlayerRepository`, `PlayerPersister`.
-- [ ] `UserFixtures` — one ROLE_ADMIN seed, one ROLE_PLAYER seed (env-gated).
+### [x] 3.1 User + Player infra
+- [x] `UserRepository` (implements `UserProviderGateway`, plus Symfony `UserLoaderInterface` indirectly via security wiring) and `UserPersister` (no slug — only timestamps).
+- [x] `PlayerRepository` (eager-fetches the `user` association in `findOneByUserForLoggedPlayer`) and `PlayerPersister`.
+- [x] `UserFixtures` — `admin@akhilleus.test` (ROLE_ADMIN, password `AdminAdmin1!`) and `player@akhilleus.test` (ROLE_PLAYER, password `PlayerHero1!`) plus the linked `PlayerDataModel` (display name "Player Hero"). Passwords are hashed via `UserPasswordHasherInterface` before persisting. Fixtures bundle is dev/test-gated by `config/bundles.php`.
 
-### [ ] 3.2 Security configuration
-- [ ] `config/packages/security.yaml`:
-  - [ ] Password hasher: `auto`.
-  - [ ] Provider: custom `Infrastructure/Security/UserProvider` backed by `UserProviderGateway`.
-  - [ ] Firewalls: `security` (anonymous access for `POST /api/security/registration` and `POST /api/security/login` — Lexik JSON login → JWT), `api` (everything else under `/api`, stateless, JWT bearer).
-  - [ ] Access control: `/api/admin/*` requires `ROLE_ADMIN`; `/api/player/*` requires `ROLE_PLAYER`.
-- [ ] Lexik JWT bundle: generate keypair (Make target), wire in `lexik_jwt_authentication.yaml`.
+### [x] 3.2 Security configuration
+- [x] `config/packages/security.yaml`:
+  - [x] Password hasher: `auto` (already shipped by Phase 0; reduced cost for `when@test`).
+  - [x] Provider: custom `App\Infrastructure\Security\UserProvider` backed by `UserProviderGateway::findOneByEmailForAuthentication`.
+  - [x] Firewalls: `security` (`pattern: ^/api/security`, `stateless: true`, `json_login` on `/api/security/login` with email/password paths, success/failure handlers from Lexik); `api` (`pattern: ^/api`, `stateless: true`, `jwt: ~`).
+  - [x] Access control: `^/api/security` → `PUBLIC_ACCESS`, `^/api/admin` → `ROLE_ADMIN`, `^/api/player` → `ROLE_PLAYER`.
+- [x] Lexik JWT bundle: keypair generated via `php bin/console lexik:jwt:generate-keypair` (`config/jwt/private.pem` + `public.pem`, gitignored). `lexik_jwt_authentication.yaml` reads keys + passphrase from env (`.env`).
+- [x] Stub `App\Infrastructure\Controller\Security\SecurityController::login()` advanced from Phase 3.3 — only purpose is to register the `/api/security/login` route in the routing layer (the JSON-login authenticator intercepts before the action runs). The `register` and `logout` actions land in 3.3.
 
 ### [ ] 3.3 Auth UseCases & Controller
 - [ ] `UseCase/Auth/RegisterPlayerUseCase` (extends `AbstractPublicUseCase`):

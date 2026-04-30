@@ -24,6 +24,8 @@ class UserDataModel implements DataModelInterface, UserInterface, PasswordAuthen
     #[ORM\Column(type: Types::STRING, length: 180, unique: true)]
     public string $email;
 
+    public ?string $plainPassword = null;
+
     #[ORM\Column(type: Types::STRING, length: 255)]
     public string $password;
 
@@ -44,12 +46,12 @@ class UserDataModel implements DataModelInterface, UserInterface, PasswordAuthen
     public function __construct(
         string $id,
         string $email,
-        string $password,
+        string $plainPassword,
         array $roles = [UserRoleRegistry::ROLE_PLAYER],
     ) {
         $this->id = $id;
         $this->email = $email;
-        $this->password = $password;
+        $this->plainPassword = $plainPassword;
         $this->roles = $roles;
     }
 

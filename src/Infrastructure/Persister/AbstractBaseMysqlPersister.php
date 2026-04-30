@@ -8,11 +8,11 @@ use App\Domain\DTO\DataModel\DataModelInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Clock\ClockInterface;
 
-abstract class AbstractBaseMysqlPersister
+abstract readonly class AbstractBaseMysqlPersister
 {
     public function __construct(
-        protected readonly EntityManagerInterface $entityManager,
-        protected readonly ClockInterface $clock,
+        protected EntityManagerInterface $entityManager,
+        protected ClockInterface $clock,
     ) {
     }
 
