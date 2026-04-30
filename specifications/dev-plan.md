@@ -402,7 +402,9 @@ Foundations introduced in 6.1 (apply to all subsequent player phases):
 - [x] **`WorkoutProviderGateway::findOneByIdForPlayerAction(string $id, PlayerDataModel $player): ?WorkoutDataModel`** scopes lookups to the logged player at the gateway level — controllers/use cases never need to compare ids manually.
 - [x] **`WorkoutPersisterGateway` + `WorkoutPersister`** (no slug/computed fields, just `create/update/delete` over `AbstractBaseMysqlPersister`).
 - [x] **Shared `WorkoutDataOutput`** under `Domain/DTO/DataOutput/Player/Training/Workout/` returned by all 4 use cases (`id`, `status`, `plannedAt?`, `dateStart?`, `dateEnd?` as `\DateTimeImmutable` — controllers will JSON-serialize at the edge).
-- [x] **Tests**: 4 validator unit tests + 4 use case integration tests under `tests/{Unit,Integration}/UseCase/Player/Training/Workout/`. Integration tests build the use case manually with a stub `LoggedPlayerResolverInterface` (since no controller yet → DI graph would prune the gateway services). They use `EntityManagerInterface` + `ManagerRegistry` from the public Doctrine bindings to instantiate `WorkoutPersister` / `WorkoutRepository` directly. This pattern will fall away once Phase 6.5 controllers reference the player gateways and the container retains them.
+- [x] **Tests**: 4 validator unit tests + 4 use case integration tests under `tests/{Unit,Integration}/UseCase/Player/Training/Workout/`. Integration tests build the use case manually with a stub `LoggedPlayerResolverInterface` (the resolver always needs replacement; DI alone wouldn't help). They use `EntityManagerInterface` + `ManagerRegistry` from the public Doctrine bindings to instantiate `WorkoutPersister` / `WorkoutRepository` directly. With the controller now landed (see 6.5), the gateways are no longer pruned, but the manual pattern is kept since the resolver injection remains a test-time concern.
+- [x] **Controller**: `Infrastructure/Controller/Player/Training/WorkoutPlayerController` — 4 endpoints under `/api/player/workouts*`, all `POST`. Routes: `POST /api/player/workouts` (start empty, 201), `POST /api/player/workouts/planned` (plan, 201, body `{plannedAt}`), `POST /api/player/workouts/{id}/start` (start a planned), `POST /api/player/workouts/{id}/cancel`. Body parsing of `plannedAt` to `\DateTimeImmutable` is done in the controller; failures throw `ValidationException` with `errorCode: PLAN_WORKOUT_BODY_INVALID` (so the same DomainExceptionListener surfaces a 422 with structured violations).
+- [x] **cURL smoke flow**: login player → start empty (201) → plan future (201) → plan past date (422 `PLAN_WORKOUT_VALIDATION_FAILED`) → plan empty body (422 `PLAN_WORKOUT_BODY_INVALID`) → start unknown id (404) → start a planned (200) → cancel (200) → cancel a CANCELED (422 `CANCEL_WORKOUT_ILLEGAL_STATE`) → no token (401) → admin token (403). All green.
 
 ### [ ] 6.2 Workout content
 UseCases under `UseCase/Player/Exercise/` and `UseCase/Player/ExerciseSet/`:
@@ -439,14 +441,16 @@ UseCases under `UseCase/Player/Read/`:
 - [ ] `GetWorkoutDetailsUseCase` — full hydrate (movements + sets), used by both history and live workout views.
 - [ ] `ListPersonalBestsUseCase` — grouped by movement, returns one `PlayerMovementPersonalBestsDataOutput` per movement that has any PB.
 
-### [ ] 6.5 Controllers
-Under `Infrastructure/Controller/Player/`:
-- [ ] `WorkoutPlayerController` — start/plan/start-planned/cancel/finish/list/details.
-- [ ] `ExercisePlayerController` — add/remove/reorder/update rest.
-- [ ] `ExerciseSetPlayerController` — add/update planned/update achieved/remove/mark-complete.
-- [ ] `PersonalBestPlayerController` — list.
+### [~] 6.5 Controllers
+Under `Infrastructure/Controller/Player/`. Controllers are landed **per Phase 6.x batch** (alongside the use cases they expose) rather than all in one final pass — that lets us cURL-smoke each phase end-to-end and avoids the DI-container pruning that bites integration tests when a use case has no public consumer yet.
+- [~] `Training/WorkoutPlayerController` — start-empty / plan / start-planned / cancel done in 6.1; finish (6.3) and list/details (6.4) pending.
+- [ ] `Training/ExercisePlayerController` — add/remove/reorder/update rest (6.2).
+- [ ] `Training/ExerciseSetPlayerController` — add/update planned/update achieved/remove/mark-complete (6.2).
+- [ ] `Training/PersonalBestPlayerController` — list (6.4).
 
-All routes under `/api/player/*`, `ROLE_PLAYER` required. The `AbstractLoggedUserValidator` resolves the current `PlayerDataModel` once per request and is injected into every player UseCase.
+All routes under `/api/player/*`, `ROLE_PLAYER` required (already gated by `config/packages/security.yaml`). Player use cases extend `AbstractLoggedPlayerUseCase` and resolve the current `PlayerDataModel` via `LoggedPlayerResolverInterface`.
+
+Date serialization: `WorkoutDataOutput` uses `?string` (ISO 8601 / RFC 3339 / `\DateTimeInterface::ATOM`) for date fields rather than typed `\DateTimeImmutable`. Decision: `JsonResponse` calls `json_encode` directly, which would dump `\DateTimeImmutable` as `{date, timezone_type, timezone}` — ugly for API consumers. Use cases format dates at the DTO boundary with `?->format(\DateTimeInterface::ATOM)`. Apply the same pattern to every Player DataOutput that carries date fields.
 
 ### [ ] 6.6 Verification
 - [ ] Per-UseCase Integration tests covering: full happy path (StartEmptyWorkout → AddMovementToWorkout → AddExerciseSet → MarkExerciseSetCompleted → FinishWorkout → assert PBs persisted); `FinishWorkoutUseCase` throws `ValidationException` with code `WORKOUT_HAS_INCOMPLETE_SETS` when sets remain incomplete; a second workout that ties a previous best does not create a duplicate PB; a third that beats it updates the value.

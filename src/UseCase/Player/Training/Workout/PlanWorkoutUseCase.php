@@ -41,9 +41,9 @@ final class PlanWorkoutUseCase extends AbstractLoggedPlayerUseCase
         return new WorkoutDataOutput(
             $workout->id,
             $workout->status,
-            $workout->plannedAt,
-            $workout->dateStart,
-            $workout->dateEnd,
+            $workout->plannedAt->format(\DateTimeInterface::ATOM),
+            $workout->dateStart?->format(\DateTimeInterface::ATOM),
+            $workout->dateEnd?->format(\DateTimeInterface::ATOM),
         );
     }
 }

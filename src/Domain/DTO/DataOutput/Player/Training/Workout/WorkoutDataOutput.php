@@ -11,9 +11,9 @@ final readonly class WorkoutDataOutput implements DataOutputInterface
     public function __construct(
         public string $id,
         public string $status,
-        public ?\DateTimeImmutable $plannedAt,
-        public ?\DateTimeImmutable $dateStart,
-        public ?\DateTimeImmutable $dateEnd,
+        public ?string $plannedAt,
+        public ?string $dateStart,
+        public ?string $dateEnd,
     ) {
     }
 }

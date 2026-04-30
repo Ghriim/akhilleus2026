@@ -46,7 +46,7 @@ final class PlanWorkoutUseCaseTest extends KernelTestCase
         $output = $useCase->execute(new PlanWorkoutDataInput($plannedAt));
 
         self::assertSame(WorkoutStatusRegistry::PLANNED, $output->status);
-        self::assertEquals($plannedAt, $output->plannedAt);
+        self::assertSame($plannedAt->format(\DateTimeInterface::ATOM), $output->plannedAt);
         self::assertNull($output->dateStart);
 
         $persisted = $workoutRepository->findOneByIdForPlayerAction($output->id, $player);
