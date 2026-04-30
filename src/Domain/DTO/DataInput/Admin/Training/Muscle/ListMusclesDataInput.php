@@ -6,9 +6,14 @@ namespace App\Domain\DTO\DataInput\Admin\Training\Muscle;
 
 use App\Domain\DTO\DataInput\DataInputInterface;
 
-/**
- * Empty input for now; reserved for pagination / filtering once the admin UI needs them.
- */
 final readonly class ListMusclesDataInput implements DataInputInterface
 {
+    /** @var list<string> */
+    public const array ALLOWED_SORTS = ['label'];
+
+    public function __construct(
+        public string $sort = 'label',
+        public string $direction = 'ASC',
+    ) {
+    }
 }

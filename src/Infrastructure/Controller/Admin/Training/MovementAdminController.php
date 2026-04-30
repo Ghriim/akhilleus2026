@@ -21,9 +21,12 @@ use Symfony\Component\Routing\Attribute\Route;
 final readonly class MovementAdminController
 {
     #[Route(path: '/api/admin/movements', name: 'admin_movement_list', methods: ['GET'])]
-    public function list(ListMovementsUseCase $useCase): JsonResponse
+    public function list(Request $request, ListMovementsUseCase $useCase): JsonResponse
     {
-        return new JsonResponse($useCase->execute(new ListMovementsDataInput()));
+        $sort = (string) $request->query->get('sort', 'label');
+        $direction = (string) $request->query->get('direction', 'ASC');
+
+        return new JsonResponse($useCase->execute(new ListMovementsDataInput($sort, $direction)));
     }
 
     #[Route(path: '/api/admin/movements/{id}', name: 'admin_movement_get', methods: ['GET'])]

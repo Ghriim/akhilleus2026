@@ -29,12 +29,16 @@ final class MuscleRepository extends ServiceEntityRepository implements MusclePr
     }
 
     /**
+     * The `$sort` and `$direction` arguments are interpolated into the ORDER BY clause —
+     * the use case (List*Validator) is responsible for whitelisting them against
+     * `ListMusclesDataInput::ALLOWED_SORTS` + `ASC|DESC` before reaching this method.
+     *
      * @return list<MuscleDataModel>
      */
-    public function findAllForAdminList(): array
+    public function findAllForAdminList(string $sort = 'label', string $direction = 'ASC'): array
     {
         return $this->createQueryBuilder('m')
-            ->orderBy('m.label', 'ASC')
+            ->orderBy("m.{$sort}", $direction)
             ->getQuery()
             ->getResult();
     }

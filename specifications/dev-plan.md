@@ -337,26 +337,53 @@ Dev-only seed:
 
 ---
 
-## Phase 5 — Admin frontend (React Admin TS)
+## Phase 5 — Admin frontend (React + TypeScript + Ant Design)
 
-- [ ] Bootstrap `frontend/admin/` with Vite + React 18 + TypeScript + `react-admin` v5.
-- [ ] Auth provider posts to `/api/security/login`, stores JWT in localStorage, attaches `Authorization: Bearer …` to all data-provider requests, calls `POST /api/security/logout` and clears storage on user logout or 401.
-- [ ] Data provider: `ra-data-simple-rest` against `/api/admin`.
-- [ ] Resources:
-  - [ ] `equipments` — List(slug, label), Edit, Create, Show.
-  - [ ] `muscles` — List(slug, label), Edit, Create.
-  - [ ] `movements` — List(label, mainMuscle, equipment count), Edit/Create with: slug, label, AutocompleteInput on mainMuscle, AutocompleteArrayInput on secondaryMuscles, AutocompleteArrayInput on equipments, six BooleanInput fields for tracking flags.
-- [ ] Theme: simple Material UI default — D&D theming is reserved for the player site per the spec. Plain admin look reduces noise.
-- [ ] Add npm scripts: `dev`, `build`, `lint`, `typecheck`. CI gate: `typecheck` + `build`.
+**Stack pivot from the original plan**: we deliberately drop react-admin and build a regular React TS app. Rationale: full control over UX, no abstraction lock-in, and the same Vite + react-router + TanStack Query + Ant Design building blocks will be reused for the player site (same component library, same patterns). The convention is **small, focused, reusable components** — no monolithic multi-task pages. Light / dark theme toggle is required and persists across sessions.
 
-### [ ] Verification
-- [ ] `npm run dev` from `frontend/admin/` opens the admin; log in with the admin seed; CRUD all three resources end-to-end.
+### [ ] 5.1 Foundation
+
+- [ ] Add a Node 22 service `frontend-admin` to `compose.yaml` (built from `docker/node/Dockerfile`), bind-mounting `./frontend/admin`, exposing the Vite dev port (5173). Run `npm run dev` inside the container so the host doesn't need Node installed.
+- [ ] Bootstrap `frontend/admin/` with Vite + React 18 + TypeScript. Toolchain: ESLint + Prettier, strict TS, npm scripts (`dev`, `build`, `typecheck`, `lint`, `lint:fix`).
+- [ ] Dependencies: `react`, `react-dom`, `react-router-dom`, `antd`, `@ant-design/icons`, `@tanstack/react-query`, `@tanstack/react-query-devtools` (dev only). No styling library beyond antd's tokens.
+
+### [ ] 5.2 App-level concerns
+
+- [ ] **Theme**: `ThemeProvider` (custom) wraps antd's `ConfigProvider` and switches between `theme.defaultAlgorithm` (light) and `theme.darkAlgorithm` (dark). Mode persisted in `localStorage`. Toggle button in the app header.
+- [ ] **Auth**: `AuthContext` + `useAuth()` hook. `login(email, password)` POSTs `/api/security/login` and stores the JWT. `logout()` POSTs `/api/security/logout` and clears storage. JWT lives in `localStorage`. On any 401 from the API client, the auth context clears storage and forces a redirect to `/login`.
+- [ ] **API client**: `httpClient.ts` — fetch wrapper that injects `Authorization: Bearer <jwt>`, JSON-encodes/decodes, throws typed errors on 4xx/5xx (carrying the backend `{message, errorCode, violations}` payload for 422). Per-resource hooks built on TanStack Query (`useEquipmentsQuery`, `useCreateEquipmentMutation`, …). Server URL configurable via `VITE_API_BASE_URL` env (defaults to `https://127.0.0.1:8000`).
+- [ ] **Routing**: `react-router-dom` with `<ProtectedRoute />` that redirects unauthenticated visitors to `/login`. Public routes: `/login`. Protected routes: `/`, `/equipments`, `/equipments/new`, `/equipments/:id`, same for muscles and movements.
+
+### [ ] 5.3 Layout + reusable components
+
+- [ ] `<AppLayout />` — antd `<Layout>` with `<Sider>` (nav links: Equipments, Muscles, Movements), `<Header>` (theme toggle + logout button + admin display name), `<Content>` for the route.
+- [ ] `<DataTable />` — generic antd `<Table>` wrapper, takes a column config + a TanStack query and renders the list with a loading state and a row-action column (Edit / Delete).
+- [ ] `<EntityForm />` — antd `<Form>` wrapper that handles submit, surfaces backend `violations` per field (mapped to antd field errors), shows success / error feedback via `notification`.
+- [ ] `<DeleteConfirmButton />` — antd `<Popconfirm>` + delete mutation hook.
+- [ ] `<LoadingState />`, `<ErrorState />` — small atomic display components used everywhere.
+
+### [ ] 5.4 Resources
+
+For each resource, the page set lives under `src/features/{entity}/`:
+
+- [ ] `equipments` — `EquipmentList`, `EquipmentCreate`, `EquipmentEdit`. Form has a single `label` input. List shows `slug` + `label` + actions.
+- [ ] `muscles` — same shape as equipments.
+- [ ] `movements` — more complex: `MovementForm` reuses `<EntityForm />` and adds:
+  - `Select` (single) for `mainMuscleId`, options fed by `useMusclesQuery()`.
+  - `Select` (multiple) for `secondaryMuscleIds`, same source.
+  - `Select` (multiple) for `equipmentIds`, fed by `useEquipmentsQuery()`.
+  - 6 `Checkbox` for the tracking flags.
+  - At-least-one-tracking-flag validation mirrored client-side for instant feedback (the backend re-validates anyway).
+
+### [ ] 5.5 Verification
+- [ ] `docker compose up -d frontend-admin` then visit the dev URL; log in with `admin@akhilleus.test` / `AdminAdmin1!`; CRUD all three resources end-to-end (with the dark theme toggled at least once during the run).
+- [ ] `npm run typecheck` + `npm run lint` + `npm run build` pass clean.
 
 ---
 
 ## ⏸ Checkpoint — admin path complete
 
-At this point an admin can log in and manage Equipment / Muscle / Movement reference data through the React Admin UI, backed by a tested REST API and a fixture-seeded MySQL database. **Pause here** — the player website work is a separate stage.
+At this point an admin can log in and manage Equipment / Muscle / Movement reference data through the React + AntD admin UI, backed by a tested REST API and a fixture-seeded MySQL database. **Pause here** — the player website work is a separate stage.
 
 ---
 
@@ -469,7 +496,7 @@ All routes under `/api/player/*`, `ROLE_PLAYER` required. The `AbstractLoggedUse
 | 2 | Fixtures load; repository test asserts eager fetch | [x] |
 | 3 | Register → Login → JWT-protected endpoint check via cURL | [~] (admin/player role check deferred to Phase 4) |
 | 4 | Integration test per UseCase (15 total: 5 × Equipment/Muscle/Movement); cURL CRUD smoke check for each entity | [x] (OpenAPI annotations deferred) |
-| 5 | Manual CRUD in React Admin UI, logged in as the seeded admin | [ ] |
+| 5 | Manual CRUD in React + AntD admin UI, logged in as the seeded admin (light + dark theme exercised) | [ ] |
 | ⏸ | Admin path complete — pause | [ ] |
 | 6 | Integration test per Player UseCase, plus PB-evaluator scenarios cover the full workout lifecycle | [ ] |
 | 7 | Manual UI run-through of the player flows | [ ] |

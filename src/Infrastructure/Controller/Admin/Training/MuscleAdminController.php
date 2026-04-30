@@ -21,9 +21,12 @@ use Symfony\Component\Routing\Attribute\Route;
 final readonly class MuscleAdminController
 {
     #[Route(path: '/api/admin/muscles', name: 'admin_muscle_list', methods: ['GET'])]
-    public function list(ListMusclesUseCase $useCase): JsonResponse
+    public function list(Request $request, ListMusclesUseCase $useCase): JsonResponse
     {
-        return new JsonResponse($useCase->execute(new ListMusclesDataInput()));
+        $sort = (string) $request->query->get('sort', 'label');
+        $direction = (string) $request->query->get('direction', 'ASC');
+
+        return new JsonResponse($useCase->execute(new ListMusclesDataInput($sort, $direction)));
     }
 
     #[Route(path: '/api/admin/muscles/{id}', name: 'admin_muscle_get', methods: ['GET'])]

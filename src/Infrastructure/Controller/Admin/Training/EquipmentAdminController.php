@@ -21,9 +21,12 @@ use Symfony\Component\Routing\Attribute\Route;
 final readonly class EquipmentAdminController
 {
     #[Route(path: '/api/admin/equipments', name: 'admin_equipment_list', methods: ['GET'])]
-    public function list(ListEquipmentsUseCase $useCase): JsonResponse
+    public function list(Request $request, ListEquipmentsUseCase $useCase): JsonResponse
     {
-        return new JsonResponse($useCase->execute(new ListEquipmentsDataInput()));
+        $sort = (string) $request->query->get('sort', 'label');
+        $direction = (string) $request->query->get('direction', 'ASC');
+
+        return new JsonResponse($useCase->execute(new ListEquipmentsDataInput($sort, $direction)));
     }
 
     #[Route(path: '/api/admin/equipments/{id}', name: 'admin_equipment_get', methods: ['GET'])]

@@ -11,9 +11,9 @@ It will provide:
 
 ## Technical information
 
-- We will rely on Docker for development. We will need a database container for MySQL
+- We will rely on Docker for development. We will need a database container for MySQL.
 - A rest API will be created, the authentication will be managed using JWT.
-- The admin will be built using React Admin in its TypeScript version.
+- The admin will be built using **React + TypeScript + Ant Design**. We deliberately do NOT use react-admin: the app stays a regular React TS project (Vite + react-router + TanStack Query + antd's components), which gives full control over UX and lets us reuse the same building blocks across the player website later. Components must be **small, focused, and reusable** — no monolithic multi-task pages. The admin **must support a light / dark theme toggle** persisted across sessions.
 - The website will be built using React TypeScript.
 - Rely on the coding conventions defined in the `specifications/conventions.md` to create all PHP/Symfony code.
 

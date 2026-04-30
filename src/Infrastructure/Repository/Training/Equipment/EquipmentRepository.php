@@ -29,12 +29,16 @@ final class EquipmentRepository extends ServiceEntityRepository implements Equip
     }
 
     /**
+     * The `$sort` and `$direction` arguments are interpolated into the ORDER BY clause —
+     * the use case (List*Validator) is responsible for whitelisting them against
+     * `ListEquipmentsDataInput::ALLOWED_SORTS` + `ASC|DESC` before reaching this method.
+     *
      * @return list<EquipmentDataModel>
      */
-    public function findAllForAdminList(): array
+    public function findAllForAdminList(string $sort = 'label', string $direction = 'ASC'): array
     {
         return $this->createQueryBuilder('e')
-            ->orderBy('e.label', 'ASC')
+            ->orderBy("e.{$sort}", $direction)
             ->getQuery()
             ->getResult();
     }

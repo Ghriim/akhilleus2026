@@ -32,15 +32,19 @@ final class MovementRepository extends ServiceEntityRepository implements Moveme
     }
 
     /**
+     * The `$sort` and `$direction` arguments are interpolated into the ORDER BY clause —
+     * the use case (List*Validator) is responsible for whitelisting them against
+     * `ListMovementsDataInput::ALLOWED_SORTS` + `ASC|DESC` before reaching this method.
+     *
      * @return list<MovementDataModel>
      */
-    public function findAllForAdminList(): array
+    public function findAllForAdminList(string $sort = 'label', string $direction = 'ASC'): array
     {
         return $this->createQueryBuilder('m')
             ->leftJoin('m.mainMuscle', 'mm')->addSelect('mm')
             ->leftJoin('m.secondaryMuscles', 'sm')->addSelect('sm')
             ->leftJoin('m.equipments', 'eq')->addSelect('eq')
-            ->orderBy('m.label', 'ASC')
+            ->orderBy("m.{$sort}", $direction)
             ->getQuery()
             ->getResult();
     }

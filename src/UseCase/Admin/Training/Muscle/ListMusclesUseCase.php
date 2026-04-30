@@ -4,27 +4,34 @@ declare(strict_types=1);
 
 namespace App\UseCase\Admin\Training\Muscle;
 
+use App\Domain\DTO\DataInput\Admin\Training\Muscle\ListMusclesDataInput;
 use App\Domain\DTO\DataInput\DataInputInterface;
 use App\Domain\DTO\DataOutput\Admin\Training\Muscle\MuscleListItemDataOutput;
 use App\Domain\Gateway\Provider\Training\Muscle\MuscleProviderGateway;
-use App\Domain\Validator\EmptyDomainValidator;
+use App\Domain\Validator\Admin\Training\Muscle\ListMusclesValidator;
 use App\UseCase\AbstractPublicUseCase;
 
 final class ListMusclesUseCase extends AbstractPublicUseCase
 {
     public function __construct(
-        EmptyDomainValidator $validator,
+        private readonly ListMusclesValidator $listMusclesValidator,
         private readonly MuscleProviderGateway $muscleProvider,
     ) {
-        parent::__construct($validator);
+        parent::__construct($listMusclesValidator);
     }
 
     /**
      * @return list<MuscleListItemDataOutput>
      */
-    public function execute(DataInputInterface $input): array
+    public function execute(ListMusclesDataInput|DataInputInterface $input): array
     {
-        $muscles = $this->muscleProvider->findAllForAdminList();
+        if (false === $input instanceof ListMusclesDataInput) {
+            throw new \LogicException(sprintf('Expected %s, got %s.', ListMusclesDataInput::class, $input::class));
+        }
+
+        $this->listMusclesValidator->validate($input);
+
+        $muscles = $this->muscleProvider->findAllForAdminList($input->sort, $input->direction);
 
         return array_map(
             static fn ($muscle) => new MuscleListItemDataOutput(

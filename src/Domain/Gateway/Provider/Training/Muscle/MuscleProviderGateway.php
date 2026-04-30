@@ -13,7 +13,7 @@ interface MuscleProviderGateway
     /**
      * @return list<MuscleDataModel>
      */
-    public function findAllForAdminList(): array;
+    public function findAllForAdminList(string $sort = 'label', string $direction = 'ASC'): array;
 
     public function findOneBySlugForUniqueness(string $slug): ?MuscleDataModel;
 }

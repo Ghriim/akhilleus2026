@@ -9,16 +9,16 @@ use App\Domain\DTO\DataInput\DataInputInterface;
 use App\Domain\DTO\DataOutput\Admin\Training\Muscle\MuscleDataOutput;
 use App\Domain\Exception\EntityNotFoundException;
 use App\Domain\Gateway\Provider\Training\Muscle\MuscleProviderGateway;
-use App\Domain\Validator\EmptyDomainValidator;
+use App\Domain\Validator\Admin\Training\Muscle\GetMuscleDetailsValidator;
 use App\UseCase\AbstractPublicUseCase;
 
 final class GetMuscleDetailsUseCase extends AbstractPublicUseCase
 {
     public function __construct(
-        EmptyDomainValidator $validator,
+        private readonly GetMuscleDetailsValidator $getMuscleDetailsValidator,
         private readonly MuscleProviderGateway $muscleProvider,
     ) {
-        parent::__construct($validator);
+        parent::__construct($getMuscleDetailsValidator);
     }
 
     public function execute(GetMuscleDetailsDataInput|DataInputInterface $input): MuscleDataOutput
@@ -26,6 +26,8 @@ final class GetMuscleDetailsUseCase extends AbstractPublicUseCase
         if (false === $input instanceof GetMuscleDetailsDataInput) {
             throw new \LogicException(sprintf('Expected %s, got %s.', GetMuscleDetailsDataInput::class, $input::class));
         }
+
+        $this->getMuscleDetailsValidator->validate($input);
 
         $muscle = $this->muscleProvider->findOneForAdminDetails($input->id);
         if (null === $muscle) {
