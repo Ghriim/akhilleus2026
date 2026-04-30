@@ -39,13 +39,11 @@ class ExerciseDataModel implements DataModelInterface
     public \DateTimeImmutable $updatedAt;
 
     public function __construct(
-        string $id,
         WorkoutDataModel $workout,
         MovementDataModel $movement,
         int $position,
         int $restDurationSeconds = 0,
     ) {
-        $this->id = $id;
         $this->workout = $workout;
         $this->movement = $movement;
         $this->position = $position;

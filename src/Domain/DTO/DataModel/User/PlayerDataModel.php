@@ -18,7 +18,7 @@ class PlayerDataModel implements DataModelInterface
     public string $id;
 
     #[ORM\OneToOne(targetEntity: UserDataModel::class)]
-    #[ORM\JoinColumn(nullable: false, unique: true)]
+    #[ORM\JoinColumn(unique: true, nullable: false)]
     public UserDataModel $user;
 
     #[ORM\Column(type: Types::STRING, length: 100)]
@@ -31,11 +31,9 @@ class PlayerDataModel implements DataModelInterface
     public \DateTimeImmutable $updatedAt;
 
     public function __construct(
-        string $id,
         UserDataModel $user,
         string $displayName,
     ) {
-        $this->id = $id;
         $this->user = $user;
         $this->displayName = $displayName;
     }

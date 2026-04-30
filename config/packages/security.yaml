@@ -11,9 +11,15 @@ security:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
             security: false
 
-        # Anonymous access for /api/security/registration; JSON login on
-        # /api/security/login exchanges credentials for a JWT via Lexik's
-        # success handler.
+        # Public registration endpoints (one per concrete user-owning layer:
+        # player today, admin/coach later). Declared before the api firewall
+        # so requests don't hit the JWT authenticator.
+        public_registration:
+            pattern: ^/api/player/registration
+            stateless: true
+
+        # JSON login on /api/security/login exchanges credentials for a JWT
+        # via Lexik's success handler. /api/security/logout is anonymous too.
         security:
             pattern: ^/api/security
             stateless: true
@@ -34,6 +40,7 @@ security:
 
     access_control:
         - { path: ^/api/security, roles: PUBLIC_ACCESS }
+        - { path: ^/api/player/registration, roles: PUBLIC_ACCESS }
         - { path: ^/api/admin, roles: ROLE_ADMIN }
         - { path: ^/api/player, roles: ROLE_PLAYER }
 

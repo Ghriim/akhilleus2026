@@ -14,7 +14,6 @@ use App\Infrastructure\DataFixtures\Training\Muscle\MuscleFixtures;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Common\DataFixtures\DependentFixtureInterface;
 use Doctrine\Persistence\ObjectManager;
-use Symfony\Component\Uid\Ulid;
 
 final class MovementFixtures extends Fixture implements DependentFixtureInterface
 {
@@ -122,7 +121,6 @@ final class MovementFixtures extends Fixture implements DependentFixtureInterfac
             );
 
             $movement = new MovementDataModel(
-                (string) new Ulid(),
                 $spec['label'],
                 $mainMuscle,
             );

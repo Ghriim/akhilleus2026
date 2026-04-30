@@ -8,7 +8,6 @@ use App\Domain\DTO\DataModel\Training\Equipment\EquipmentDataModel;
 use App\Domain\Gateway\Persister\Training\Equipment\EquipmentPersisterGateway;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
-use Symfony\Component\Uid\Ulid;
 
 final class EquipmentFixtures extends Fixture
 {
@@ -34,7 +33,7 @@ final class EquipmentFixtures extends Fixture
     public function load(ObjectManager $manager): void
     {
         foreach (self::EQUIPMENTS as $label) {
-            $equipment = new EquipmentDataModel((string) new Ulid(), $label);
+            $equipment = new EquipmentDataModel($label);
             $this->persister->create($equipment);
             $this->addReference(self::REFERENCE_PREFIX.$equipment->slug, $equipment);
         }

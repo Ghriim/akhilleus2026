@@ -70,11 +70,9 @@ class MovementDataModel implements DataModelInterface
     public \DateTimeImmutable $updatedAt;
 
     public function __construct(
-        string $id,
         string $label,
         MuscleDataModel $mainMuscle,
     ) {
-        $this->id = $id;
         $this->label = $label;
         $this->mainMuscle = $mainMuscle;
         $this->secondaryMuscles = new ArrayCollection();

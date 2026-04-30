@@ -11,6 +11,9 @@ use App\Infrastructure\Persister\AbstractBaseMysqlPersister;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Clock\ClockInterface;
 
+/**
+ * @extends AbstractBaseMysqlPersister<MuscleDataModel>
+ */
 final readonly class MusclePersister extends AbstractBaseMysqlPersister implements MusclePersisterGateway
 {
     public function __construct(

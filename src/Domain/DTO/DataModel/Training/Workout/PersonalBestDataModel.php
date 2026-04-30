@@ -56,14 +56,12 @@ class PersonalBestDataModel implements DataModelInterface
      * @param numeric-string $value
      */
     public function __construct(
-        string $id,
         PlayerDataModel $player,
         MovementDataModel $movement,
         string $type,
         string $value,
         \DateTimeImmutable $achievedAt,
     ) {
-        $this->id = $id;
         $this->player = $player;
         $this->movement = $movement;
         $this->type = $type;

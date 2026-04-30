@@ -41,11 +41,9 @@ class WorkoutDataModel implements DataModelInterface
     public \DateTimeImmutable $updatedAt;
 
     public function __construct(
-        string $id,
         PlayerDataModel $player,
         string $status,
     ) {
-        $this->id = $id;
         $this->player = $player;
         $this->status = $status;
     }

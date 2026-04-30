@@ -11,6 +11,9 @@ use App\Infrastructure\Persister\AbstractBaseMysqlPersister;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Clock\ClockInterface;
 
+/**
+ * @extends AbstractBaseMysqlPersister<MovementDataModel>
+ */
 final readonly class MovementPersister extends AbstractBaseMysqlPersister implements MovementPersisterGateway
 {
     public function __construct(

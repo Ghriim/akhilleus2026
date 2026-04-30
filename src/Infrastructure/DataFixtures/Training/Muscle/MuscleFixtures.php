@@ -8,7 +8,6 @@ use App\Domain\DTO\DataModel\Training\Muscle\MuscleDataModel;
 use App\Domain\Gateway\Persister\Training\Muscle\MusclePersisterGateway;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
-use Symfony\Component\Uid\Ulid;
 
 final class MuscleFixtures extends Fixture
 {
@@ -46,7 +45,7 @@ final class MuscleFixtures extends Fixture
     public function load(ObjectManager $manager): void
     {
         foreach (self::MUSCLES as $label) {
-            $muscle = new MuscleDataModel((string) new Ulid(), $label);
+            $muscle = new MuscleDataModel($label);
             $this->persister->create($muscle);
             $this->addReference(self::REFERENCE_PREFIX.$muscle->slug, $muscle);
         }

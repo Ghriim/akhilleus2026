@@ -30,10 +30,8 @@ class EquipmentDataModel implements DataModelInterface
     public \DateTimeImmutable $updatedAt;
 
     public function __construct(
-        string $id,
         string $label,
     ) {
-        $this->id = $id;
         $this->label = $label;
     }
 }

@@ -15,8 +15,5 @@ abstract class AbstractPublicUseCase implements UseCaseInterface
     ) {
     }
 
-    /**
-     * @return DataOutputInterface|list<DataOutputInterface>
-     */
-    abstract public function execute(DataInputInterface $input): DataOutputInterface|array;
+    abstract public function execute(DataInputInterface $input): DataOutputInterface;
 }

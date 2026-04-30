@@ -78,11 +78,9 @@ class ExerciseSetDataModel implements DataModelInterface
     public \DateTimeImmutable $updatedAt;
 
     public function __construct(
-        string $id,
         ExerciseDataModel $exercise,
         int $position,
     ) {
-        $this->id = $id;
         $this->exercise = $exercise;
         $this->position = $position;
     }

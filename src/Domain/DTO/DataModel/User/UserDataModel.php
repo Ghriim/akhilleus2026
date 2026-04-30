@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Domain\DTO\DataModel\User;
 
 use App\Domain\DTO\DataModel\DataModelInterface;
-use App\Domain\Registry\User\UserRoleRegistry;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
@@ -44,12 +43,10 @@ class UserDataModel implements DataModelInterface, UserInterface, PasswordAuthen
      * @param list<string>     $roles
      */
     public function __construct(
-        string $id,
         string $email,
         string $plainPassword,
-        array $roles = [UserRoleRegistry::ROLE_PLAYER],
+        array $roles,
     ) {
-        $this->id = $id;
         $this->email = $email;
         $this->plainPassword = $plainPassword;
         $this->roles = $roles;

@@ -11,6 +11,9 @@ use App\Infrastructure\Persister\AbstractBaseMysqlPersister;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Clock\ClockInterface;
 
+/**
+ * @extends AbstractBaseMysqlPersister<EquipmentDataModel>
+ */
 final readonly class EquipmentPersister extends AbstractBaseMysqlPersister implements EquipmentPersisterGateway
 {
     public function __construct(

@@ -11,6 +11,9 @@ use Doctrine\ORM\EntityManagerInterface;
 use Psr\Clock\ClockInterface;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
+/**
+ * @extends AbstractBaseMysqlPersister<UserDataModel>
+ */
 final readonly class UserPersister extends AbstractBaseMysqlPersister implements UserPersisterGateway
 {
     public function __construct(
@@ -25,6 +28,10 @@ final readonly class UserPersister extends AbstractBaseMysqlPersister implements
     {
         if (null === $model->plainPassword) {
             throw new \LogicException('UserDataModel::$plainPassword must be set before UserPersister::create().');
+        }
+
+        if (true === empty($model->roles)) {
+            throw new \LogicException('UserDataModel::$roles must be set and not empty before UserPersister::create().');
         }
 
         $model->password = $this->passwordHasher->hashPassword($model, $model->plainPassword);

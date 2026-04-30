@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Validator;
 
+use App\Domain\DTO\DataInput\DataInputInterface;
 use App\Domain\Exception\ValidationException;
 
 interface DomainValidatorInterface
@@ -11,5 +12,5 @@ interface DomainValidatorInterface
     /**
      * @throws ValidationException
      */
-    public function validate(object $input): void;
+    public function validate(DataInputInterface $input): void;
 }

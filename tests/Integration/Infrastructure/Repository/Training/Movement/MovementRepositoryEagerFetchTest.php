@@ -14,7 +14,6 @@ use App\Domain\Gateway\Provider\Training\Movement\MovementProviderGateway;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\PersistentCollection;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
-use Symfony\Component\Uid\Ulid;
 
 final class MovementRepositoryEagerFetchTest extends KernelTestCase
 {
@@ -29,14 +28,14 @@ final class MovementRepositoryEagerFetchTest extends KernelTestCase
         $repository = $container->get(MovementProviderGateway::class);
         $entityManager = $container->get(EntityManagerInterface::class);
 
-        $main = $musclePersister->create(new MuscleDataModel((string) new Ulid(), 'Eager-test main'));
-        $secondary1 = $musclePersister->create(new MuscleDataModel((string) new Ulid(), 'Eager-test secondary 1'));
-        $secondary2 = $musclePersister->create(new MuscleDataModel((string) new Ulid(), 'Eager-test secondary 2'));
+        $main = $musclePersister->create(new MuscleDataModel('Eager-test main'));
+        $secondary1 = $musclePersister->create(new MuscleDataModel('Eager-test secondary 1'));
+        $secondary2 = $musclePersister->create(new MuscleDataModel('Eager-test secondary 2'));
 
-        $eq1 = $equipmentPersister->create(new EquipmentDataModel((string) new Ulid(), 'Eager-test equipment 1'));
-        $eq2 = $equipmentPersister->create(new EquipmentDataModel((string) new Ulid(), 'Eager-test equipment 2'));
+        $eq1 = $equipmentPersister->create(new EquipmentDataModel('Eager-test equipment 1'));
+        $eq2 = $equipmentPersister->create(new EquipmentDataModel('Eager-test equipment 2'));
 
-        $movement = new MovementDataModel((string) new Ulid(), 'Eager-test movement', $main);
+        $movement = new MovementDataModel('Eager-test movement', $main);
         $movement->secondaryMuscles->add($secondary1);
         $movement->secondaryMuscles->add($secondary2);
         $movement->equipments->add($eq1);

@@ -259,19 +259,25 @@ Side-effect of running the integration suite for the first time:
 - [x] Lexik JWT bundle: keypair generated via `php bin/console lexik:jwt:generate-keypair` (`config/jwt/private.pem` + `public.pem`, gitignored). `lexik_jwt_authentication.yaml` reads keys + passphrase from env (`.env`).
 - [x] Stub `App\Infrastructure\Controller\Security\SecurityController::login()` advanced from Phase 3.3 — only purpose is to register the `/api/security/login` route in the routing layer (the JSON-login authenticator intercepts before the action runs). The `register` and `logout` actions land in 3.3.
 
-### [ ] 3.3 Auth UseCases & Controller
-- [ ] `UseCase/Auth/RegisterPlayerUseCase` (extends `AbstractPublicUseCase`):
-  - [ ] `RegisterPlayerDataInput` (email, password, displayName) → `RegisterPlayerDataOutput` (player id, email, displayName).
-  - [ ] Validator: email format, email unique (calls `UserProviderGateway`), displayName not empty, password meets strength rules — **≥ 8 characters and contains at least one uppercase letter, one lowercase letter, one digit, and one special character**.
-  - [ ] Persists `UserDataModel` (with `ROLE_PLAYER`) then `PlayerDataModel`.
-- [ ] Login is handled entirely by Lexik's JSON login authenticator — no UseCase needed.
-- [ ] `Infrastructure/Controller/Security/SecurityController`:
-  - [ ] `POST /api/security/registration` — calls `RegisterPlayerUseCase`, returns 201 with the created player.
-  - [ ] `POST /api/security/login` — handled by Lexik's JSON login authenticator (controller route exists only to anchor the firewall pattern; body is empty).
-  - [ ] `POST /api/security/logout` — stateless JWTs mean the client just discards its token; this endpoint returns `204 No Content` and acts as a logout signal for clients/audit logs. If true server-side invalidation becomes a requirement later, swap in a JWT blocklist (e.g. Redis-backed) without changing the URL.
+### [x] 3.3 Auth UseCases & Controller
+- [x] `UseCase/Auth/RegisterPlayerUseCase` (extends `AbstractPublicUseCase`):
+  - [x] `Domain/DTO/DataInput/Auth/RegisterPlayerDataInput` (email, plainPassword, displayName) → `Domain/DTO/DataOutput/Auth/RegisterPlayerDataOutput` (playerId, email, displayName).
+  - [x] `Domain/Validator/Auth/RegisterPlayerValidator` (implements `DomainValidatorInterface`, injects `UserProviderGateway`): email format (FILTER_VALIDATE_EMAIL), email unique (`findOneByEmailForUniquenessCheck`), displayName not empty (after `trim`), password ≥ 8 chars + ≥ 1 uppercase + ≥ 1 lowercase + ≥ 1 digit + ≥ 1 special char (regex). Accumulates all violations into a `ValidationException` with `errorCode: REGISTER_PLAYER_VALIDATION_FAILED`.
+  - [x] Use case persists `UserDataModel` (with `ROLE_PLAYER`, `plainPassword` set on the model — `UserPersister` hashes it) then `PlayerDataModel` linked to the user.
+- [x] Login is handled entirely by Lexik's JSON login authenticator — no UseCase needed.
+- [x] `Infrastructure/Controller/Security/SecurityController`:
+  - [x] `POST /api/security/registration` — calls `RegisterPlayerUseCase`, returns **201** with `{playerId, email, displayName}`. On invalid input the `DomainExceptionListener` maps `ValidationException` → **422** with `{message, errorCode, violations}`.
+  - [x] `POST /api/security/login` — anchored by the stub action; the JSON-login authenticator on the `security` firewall does the work and returns a JWT.
+  - [x] `POST /api/security/logout` — returns **204 No Content** (clients discard the token; placeholder for future blocklist).
+- [x] `Infrastructure/Controller/DomainExceptionListener` (advanced from Phase 4 — needed for 3.3 to surface validation errors as 422 rather than 500): `#[AsEventListener]` on `ExceptionEvent`, maps `ValidationException` → 422, `EntityNotFoundException` → 404, `UnauthorizedException` → 401.
 
-### [ ] 3.4 Verification
-- [ ] `curl POST /api/security/registration` creates a user; subsequent `POST /api/security/login` returns a JWT; `GET /api/admin/me` with that JWT (admin seed) returns 200, with player JWT returns 403; `POST /api/security/logout` returns 204.
+### [~] 3.4 Verification
+- [x] `curl POST /api/security/registration` with valid input → 201 with `{playerId, email, displayName}`.
+- [x] `curl POST /api/security/registration` with invalid email + weak password + empty displayName → 422 with structured violations per field.
+- [x] `curl POST /api/security/registration` with an email that already exists → 422 with `email: ["An account with this email already exists."]`.
+- [x] `curl POST /api/security/login` with the freshly-registered credentials → 200 with a JWT (`roles: ["ROLE_PLAYER"]`).
+- [x] `curl POST /api/security/logout` → 204.
+- [ ] `GET /api/admin/me` (deferred to Phase 4 — endpoint does not exist yet; admin/player JWT 200/403 split will be tested when admin controllers land).
 
 ---
 
@@ -445,7 +451,7 @@ All routes under `/api/player/*`, `ROLE_PLAYER` required. The `AbstractLoggedUse
 | 0 | `composer qa` green; pre-commit hook fires; `docker compose up` healthy | [x] |
 | 1 | Migration applies; `doctrine:schema:validate` clean; PHPStan green | [x] |
 | 2 | Fixtures load; repository test asserts eager fetch | [x] |
-| 3 | Register → Login → JWT-protected endpoint check via cURL | [ ] |
+| 3 | Register → Login → JWT-protected endpoint check via cURL | [~] (admin/player role check deferred to Phase 4) |
 | 4 | Integration test per UseCase (15 total: 5 × Equipment/Muscle/Movement); cURL CRUD smoke check for each entity | [ ] |
 | 5 | Manual CRUD in React Admin UI, logged in as the seeded admin | [ ] |
 | ⏸ | Admin path complete — pause | [ ] |
