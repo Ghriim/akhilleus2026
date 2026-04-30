@@ -283,41 +283,57 @@ Side-effect of running the integration suite for the first time:
 
 ## Phase 4 — Admin REST API (Equipment, Muscle, Movement CRUD)
 
-For each of the three entities, five UseCases under `UseCase/Admin/{Entity}/`:
+Layout follows the DataModel sub-domain pattern: `UseCase/Admin/Training/{Equipment,Muscle,Movement}/`, mirrored in `Domain/DTO/{DataInput,DataOutput}/Admin/Training/{Entity}/`, `Domain/Validator/Admin/Training/{Entity}/`, and `Infrastructure/Controller/Admin/Training/`.
 
-- [ ] `Create{Entity}UseCase` (extends `AbstractLoggedUserUseCase`)
-- [ ] `Update{Entity}UseCase`
-- [ ] `Delete{Entity}UseCase`
-- [ ] `List{Entity}sUseCase`
-- [ ] `Get{Entity}DetailsUseCase`
+**Foundation (Stage A)** — auth resolver:
+- [x] `Domain/Security/LoggedUserResolverInterface` + `Infrastructure/Security/LoggedUserResolver` (consumes `Symfony\Bundle\SecurityBundle\Security`).
+- [x] `Domain/Validator/AbstractLoggedUserValidator` upgraded — injects the resolver and exposes `final protected getLoggedUser(): UserDataModel`. All admin validators extend it.
+- [x] `Domain/Validator/EmptyDomainValidator` — shared no-op validator for `List` / `Get` use cases that have no input rules. Single unit test.
+- [x] `Domain/DataTransformer/StringDataTransformerInterface` extracted so Domain validators can `slugify` without depending on Infrastructure (the existing `Infrastructure/DataTransformer/StringDataTransformer` now `implements` it).
+- [x] `AbstractPublicUseCase::execute` widened to `DataOutputInterface|array` to match `UseCaseInterface` and let `List...UseCase` return `list<DataOutput>`.
+
+For each of the three entities (Equipment, Muscle, Movement), five UseCases under `UseCase/Admin/Training/{Entity}/`:
+
+- [x] `Create{Entity}UseCase` (extends `AbstractLoggedUserUseCase`).
+- [x] `Update{Entity}UseCase` (extends `AbstractLoggedUserUseCase`).
+- [x] `Delete{Entity}UseCase` (extends `AbstractLoggedUserUseCase`).
+- [x] `List{Entity}sUseCase` (extends `AbstractPublicUseCase` + `EmptyDomainValidator`; the JWT firewall + `^/api/admin` access_control rule already gate access by ROLE_ADMIN).
+- [x] `Get{Entity}DetailsUseCase` (extends `AbstractPublicUseCase` + `EmptyDomainValidator`; throws `EntityNotFoundException` on miss).
 
 DTOs (`Domain/DTO/...`):
-- [ ] `DataInput/Admin/{Entity}/Create{Entity}DataInput`
-- [ ] `DataInput/Admin/{Entity}/Update{Entity}DataInput`
-- [ ] `DataInput/Admin/{Entity}/Delete{Entity}DataInput` (just an id wrapper, kept for consistency)
-- [ ] `DataInput/Admin/{Entity}/Get{Entity}DetailsDataInput`
-- [ ] `DataOutput/Admin/{Entity}/{Entity}DataOutput`
-- [ ] `DataOutput/Admin/{Entity}/{Entity}ListItemDataOutput` (lightweight summary form for list endpoints)
+- [x] `DataInput/Admin/Training/{Entity}/Create{Entity}DataInput`
+- [x] `DataInput/Admin/Training/{Entity}/Update{Entity}DataInput`
+- [x] `DataInput/Admin/Training/{Entity}/Delete{Entity}DataInput`
+- [x] `DataInput/Admin/Training/{Entity}/Get{Entity}DetailsDataInput`
+- [x] `DataInput/Admin/Training/{Entity}/List{Entity}sDataInput` (empty for now; reserved for pagination/filter)
+- [x] `DataOutput/Admin/Training/{Entity}/{Entity}DataOutput`
+- [x] `DataOutput/Admin/Training/{Entity}/{Entity}ListItemDataOutput`
+- [x] `DataOutput/Admin/Training/{Entity}/Delete{Entity}DataOutput` (`{deletedId}`)
 
-Validators (`Domain/Validator/Admin/{Entity}/`):
-- [ ] `Create{Entity}Validator`, `Update{Entity}Validator`, `Delete{Entity}Validator`
-- [ ] Movement-specific rules: at least one tracking field true; mainMuscle exists; secondaryMuscles all exist; equipments all exist; slug unique.
+Validators (`Domain/Validator/Admin/Training/{Entity}/`):
+- [x] `Create{Entity}Validator`, `Update{Entity}Validator`, `Delete{Entity}Validator` (all extend `AbstractLoggedUserValidator`).
+- [x] Movement-specific rules: at least one tracking field true; main muscle exists; every secondary muscle exists; every equipment exists; slug derived from label is unique (allowing self-match on Update).
 
-Controllers (`Infrastructure/Controller/Admin/`):
-- [ ] `EquipmentAdminController`, `MuscleAdminController`, `MovementAdminController` — each with the standard 5 routes:
-  - [ ] `GET    /api/admin/{plural}`
-  - [ ] `GET    /api/admin/{plural}/{id}`
-  - [ ] `POST   /api/admin/{plural}`
-  - [ ] `PUT    /api/admin/{plural}/{id}`
-  - [ ] `DELETE /api/admin/{plural}/{id}`
+Controllers (`Infrastructure/Controller/Admin/Training/`):
+- [x] `EquipmentAdminController`, `MuscleAdminController`, `MovementAdminController` — each with the standard 5 routes:
+  - [x] `GET    /api/admin/{plural}` (list)
+  - [x] `GET    /api/admin/{plural}/{id}` (details)
+  - [x] `POST   /api/admin/{plural}` (create) → 201
+  - [x] `PUT    /api/admin/{plural}/{id}` (update)
+  - [x] `DELETE /api/admin/{plural}/{id}` → 204
 
 Cross-cutting:
-- [ ] A small `Infrastructure/Controller/ExceptionListener` (or kernel.exception subscriber) translates `EntityNotFoundException` → 404, `ValidationException` → 422 with structured errors, `UnauthorizedException` → 401/403.
-- [ ] OpenAPI annotations on each controller (NelmioApiDoc) — exposed at `/api/doc.json` for the React Admin data provider to consume.
+- [x] `Infrastructure/Controller/DomainExceptionListener` — already advanced from this phase during Phase 3.3. Maps `ValidationException` → 422 (with structured `violations` + `errorCode`), `EntityNotFoundException` → 404, `UnauthorizedException` → 401.
+- [ ] OpenAPI annotations on each controller (NelmioApiDoc) — deferred. Bundle is installed but not registered. Hook in when Phase 5 React Admin needs `/api/doc.json`.
 
-### [ ] Verification
-- [ ] **One Integration test class per UseCase** (not per Controller). Each test resolves the UseCase from the container, calls `execute()` against a real (transactional) MySQL DB via `dama/doctrine-test-bundle`, and covers happy path + validation errors + not-found / unauthorized cases. Controllers themselves are thin and verified via cURL smoke checks rather than dedicated test classes.
-- [ ] Manual cURL flow for each entity: list → create → get → update → delete (covers HTTP wiring, serialization, exception listener mapping to 404/422/401/403).
+Dev-only seed:
+- [x] `Infrastructure/DataFixtures/User/AdminFixtures` — `admin@akhilleus.test` / `AdminAdmin1!` (ROLE_ADMIN). Bypasses the "user is created via a higher-level persister (Player / Admin / Coach)" rule for now since no `AdminPersister` exists yet. To replace by a proper RegisterAdmin path once the admin onboarding flow lands.
+
+### [x] Verification
+- [x] One Integration test class per UseCase (15 total) — `tests/Integration/UseCase/Admin/Training/{Entity}/{Name}UseCaseTest.php`. Each test resolves the use case from the container and exercises happy path + at least one error branch (validation, not-found, or role).
+- [x] One Unit test class per Validator (9 total) — `tests/Unit/Domain/Validator/Admin/Training/{Entity}/{Name}ValidatorTest.php`. Mocks the gateways and `LoggedUserResolverInterface`, exercises every rule.
+- [x] cURL smoke flow: admin login → JWT; `GET /api/admin/equipments` 200; `POST` 201 with payload; `POST` with empty label → 422 with `violations.label`; same path with player JWT → 403; same without JWT → 401. Movement create → details (verifies nested mainMuscle / secondaryMuscles / equipments serialization) → delete 204 → details after delete 404. All green.
+- [x] `composer qa` green: cs ✅, stan ✅, phpunit ✅ (81 tests / 153 assertions).
 
 ---
 
@@ -452,7 +468,7 @@ All routes under `/api/player/*`, `ROLE_PLAYER` required. The `AbstractLoggedUse
 | 1 | Migration applies; `doctrine:schema:validate` clean; PHPStan green | [x] |
 | 2 | Fixtures load; repository test asserts eager fetch | [x] |
 | 3 | Register → Login → JWT-protected endpoint check via cURL | [~] (admin/player role check deferred to Phase 4) |
-| 4 | Integration test per UseCase (15 total: 5 × Equipment/Muscle/Movement); cURL CRUD smoke check for each entity | [ ] |
+| 4 | Integration test per UseCase (15 total: 5 × Equipment/Muscle/Movement); cURL CRUD smoke check for each entity | [x] (OpenAPI annotations deferred) |
 | 5 | Manual CRUD in React Admin UI, logged in as the seeded admin | [ ] |
 | ⏸ | Admin path complete — pause | [ ] |
 | 6 | Integration test per Player UseCase, plus PB-evaluator scenarios cover the full workout lifecycle | [ ] |

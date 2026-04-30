@@ -165,6 +165,7 @@
 
 <h2>Entity overview</h2>
 <ul>
+    <li><a href="#admin"><code>admin</code></a> — admin profile attached 1:1 to a user</li>
     <li><a href="#equipment"><code>equipment</code></a> — admin-managed reference (barbell, dumbbell, …)</li>
     <li><a href="#exercise"><code>exercise</code></a> — one movement inside a workout, ordered by position</li>
     <li><a href="#exercise_set"><code>exercise_set</code></a> — one set inside an exercise, with planned/achieved metrics</li>
@@ -239,7 +240,11 @@
         <text x="550" y="407" text-anchor="middle" class="entity-meta">FKs: player, movement, workout?, exercise_set?</text>
     </g>
 
-    <!-- User zone: User / Player -->
+    <!-- User zone: Admin / User / Player (admin and player both 1:1 user) -->
+    <g class="entity">
+        <rect x="115" y="510" width="150" height="55" rx="6" />
+        <text x="190" y="544" text-anchor="middle" class="entity-name">admin</text>
+    </g>
     <g class="entity">
         <rect x="295" y="510" width="150" height="55" rx="6" />
         <text x="370" y="544" text-anchor="middle" class="entity-name">user</text>
@@ -287,8 +292,12 @@
     <line x1="550" y1="420" x2="550" y2="510" class="rel-fk" marker-end="url(#arrow-fk)" />
     <text x="558" y="465" class="rel-label">1:N</text>
 
-    <!-- User: user -> player (1:1) -->
-    <line x1="445" y1="537" x2="475" y2="537" class="rel-fk" marker-end="url(#arrow-fk)" />
+    <!-- User zone: admin -> user (1:1, FK on admin) -->
+    <line x1="265" y1="537" x2="295" y2="537" class="rel-fk" marker-end="url(#arrow-fk)" />
+    <text x="280" y="530" class="rel-label" text-anchor="middle">1:1</text>
+
+    <!-- User zone: player -> user (1:1, FK on player) -->
+    <line x1="475" y1="537" x2="445" y2="537" class="rel-fk" marker-end="url(#arrow-fk)" />
     <text x="460" y="530" class="rel-label" text-anchor="middle">1:1</text>
 </svg>
 <p class="meta">
@@ -296,6 +305,29 @@
 </p>
 
 <h2>Tables</h2>
+
+<h3 id="admin">admin</h3>
+<p class="summary">An admin profile, attached 1:1 to exactly one user account (with <code>ROLE_ADMIN</code> on the user). Carries the HR fields needed to manage admin staff: first/last name, job title, hire date, and an active/inactive <code>status</code> (so that the account of an admin who leaves the company can be deactivated without being deleted). Created via <code>App\Infrastructure\Persister\User\AdminPersister::create(RegisterAdminDataInput)</code>, which seeds the user with the admin role and the admin profile in one call. <code>status</code> defaults to <code>ACTIVE</code> on creation — see <code>AdminStatusRegistry</code>.</p>
+<table>
+    <thead><tr><th>Column</th><th>Type</th><th>Flags</th><th>Notes</th></tr></thead>
+    <tbody>
+        <tr class="pk"><td class="col">id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-pk">PK</span></td><td>ULID</td></tr>
+        <tr class="uniq fk"><td class="col">user_id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-uniq">UNIQUE</span><span class="badge badge-fk">FK</span></td><td>→ <code>user.id</code> (1:1)</td></tr>
+        <tr><td class="col">first_name</td><td class="type">VARCHAR(100)</td><td></td><td></td></tr>
+        <tr><td class="col">last_name</td><td class="type">VARCHAR(100)</td><td></td><td></td></tr>
+        <tr><td class="col">job_title</td><td class="type">VARCHAR(150)</td><td></td><td></td></tr>
+        <tr><td class="col">hired_at</td><td class="type">DATE</td><td></td><td>day the admin joined the company</td></tr>
+        <tr><td class="col">status</td><td class="type">VARCHAR(20)</td><td></td><td><code>ACTIVE</code> / <code>INACTIVE</code> — see <code>AdminStatusRegistry</code></td></tr>
+        <tr><td class="col">created_at</td><td class="type">DATETIME</td><td></td><td></td></tr>
+        <tr><td class="col">updated_at</td><td class="type">DATETIME</td><td></td><td></td></tr>
+    </tbody>
+</table>
+<ul class="idx">
+    <li><span class="badge badge-uniq">UNIQUE</span> <code>UNIQ_880E0D76A76ED395 (user_id)</code></li>
+</ul>
+<ul class="fks">
+    <li><span class="badge badge-fk">FK</span> <code>user_id</code> → <code>user.id</code></li>
+</ul>
 
 <h3 id="equipment">equipment</h3>
 <p class="summary">Reference list of equipment (barbell, dumbbell, kettlebell, machine, bodyweight, treadmill, bike, rower, …).</p>

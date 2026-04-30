@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\DataTransformer;
 
+use App\Domain\DataTransformer\StringDataTransformerInterface;
 use Symfony\Component\String\Slugger\SluggerInterface;
 
-final readonly class StringDataTransformer
+final readonly class StringDataTransformer implements StringDataTransformerInterface
 {
     public function __construct(
         private SluggerInterface $slugger,
