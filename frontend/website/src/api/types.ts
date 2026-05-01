@@ -127,3 +127,32 @@ export interface PlayerMovementPersonalBestsDataOutput {
   movement: MovementSummaryDataOutput;
   personalBests: PersonalBestEntryDataOutput[];
 }
+
+export interface PlayerMovementListItemDataOutput {
+  id: string;
+  slug: string;
+  label: string;
+  mainMuscleSlug: string;
+  tracksRepetitions: boolean;
+  tracksWeight: boolean;
+  tracksDuration: boolean;
+  tracksDistance: boolean;
+  tracksInclinePercent: boolean;
+  tracksInclineMeters: boolean;
+}
+
+export interface ExerciseDataOutput {
+  id: string;
+  workoutId: string;
+  position: number;
+  restDurationSeconds: number;
+  movement: ExerciseMovementDataOutput;
+}
+
+export interface RemoveExerciseDataOutput {
+  exerciseId: string;
+}
+
+export interface RemoveExerciseSetDataOutput {
+  exerciseSetId: string;
+}
