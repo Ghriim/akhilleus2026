@@ -190,7 +190,7 @@ final class PlayerWorkoutLifecycleTest extends KernelTestCase
 
         return new LifecycleUseCases(
             startEmpty: new StartEmptyWorkoutUseCase(
-                new StartEmptyWorkoutValidator($resolver),
+                new StartEmptyWorkoutValidator($resolver, $workoutRepo),
                 $resolver,
                 $workoutPersister,
                 $clock,

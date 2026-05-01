@@ -40,7 +40,7 @@ final class StartEmptyWorkoutUseCaseTest extends KernelTestCase
         $workoutRepository = new WorkoutRepository($registry);
 
         $useCase = new StartEmptyWorkoutUseCase(
-            new StartEmptyWorkoutValidator($resolver),
+            new StartEmptyWorkoutValidator($resolver, $workoutRepository),
             $resolver,
             $workoutPersister,
             $clock,

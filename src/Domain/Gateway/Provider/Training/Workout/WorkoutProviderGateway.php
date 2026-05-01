@@ -24,4 +24,6 @@ interface WorkoutProviderGateway
      * @return list<WorkoutDataModel>
      */
     public function findPlannedOrInProgressByPlayer(PlayerDataModel $player): array;
+
+    public function findInProgressByPlayer(PlayerDataModel $player): ?WorkoutDataModel;
 }

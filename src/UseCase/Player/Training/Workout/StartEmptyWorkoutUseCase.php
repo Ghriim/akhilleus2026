@@ -30,9 +30,9 @@ final class StartEmptyWorkoutUseCase extends AbstractLoggedPlayerUseCase
      */
     public function execute(DataInputInterface $input): WorkoutDataOutput
     {
-        $this->startEmptyWorkoutValidator->validate($input);
-
         $player = $this->loggedPlayerResolver->getLoggedPlayer();
+        $this->startEmptyWorkoutValidator->validate($player, $input);
+
         $workout = new WorkoutDataModel($player, WorkoutStatusRegistry::IN_PROGRESS);
         $workout->dateStart = $this->clock->now();
 

@@ -10,27 +10,35 @@ use App\Domain\DTO\DataModel\User\PlayerDataModel;
 use App\Domain\DTO\DataModel\User\UserDataModel;
 use App\Domain\Exception\UnauthorizedException;
 use App\Domain\Exception\ValidationException;
+use App\Domain\Gateway\Provider\Training\Workout\WorkoutProviderGateway;
 use App\Domain\Registry\Training\Workout\WorkoutStatusRegistry;
 use App\Domain\Security\LoggedPlayerResolverInterface;
 use App\Domain\Validator\Player\Training\Workout\StartPlannedWorkoutValidator;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 #[AllowMockObjectsWithoutExpectations]
 final class StartPlannedWorkoutValidatorTest extends TestCase
 {
+    private WorkoutProviderGateway&MockObject $workoutProvider;
     private StartPlannedWorkoutValidator $validator;
     private PlayerDataModel $player;
 
     protected function setUp(): void
     {
-        $this->validator = new StartPlannedWorkoutValidator($this->createMock(LoggedPlayerResolverInterface::class));
+        $this->workoutProvider = $this->createMock(WorkoutProviderGateway::class);
+        $this->validator = new StartPlannedWorkoutValidator(
+            $this->createMock(LoggedPlayerResolverInterface::class),
+            $this->workoutProvider,
+        );
         $this->player = self::buildPlayer('player-1');
     }
 
     public function testItPassesForAPlannedWorkoutOwnedByThePlayer(): void
     {
         $workout = self::buildWorkout($this->player, WorkoutStatusRegistry::PLANNED);
+        $this->workoutProvider->method('findInProgressByPlayer')->willReturn(null);
 
         $this->validator->validate($this->player, new StartPlannedWorkoutDataInput($workout->id), $workout);
 
@@ -75,6 +83,20 @@ final class StartPlannedWorkoutValidatorTest extends TestCase
         $this->expectException(ValidationException::class);
 
         $this->validator->validate($this->player, new StartPlannedWorkoutDataInput($workout->id), $workout);
+    }
+
+    public function testItRejectsWhenAnotherWorkoutIsAlreadyInProgress(): void
+    {
+        $workout = self::buildWorkout($this->player, WorkoutStatusRegistry::PLANNED);
+        $other = self::buildWorkout($this->player, WorkoutStatusRegistry::IN_PROGRESS);
+        $this->workoutProvider->method('findInProgressByPlayer')->willReturn($other);
+
+        try {
+            $this->validator->validate($this->player, new StartPlannedWorkoutDataInput($workout->id), $workout);
+            self::fail('Expected ValidationException');
+        } catch (ValidationException $e) {
+            self::assertSame(StartPlannedWorkoutValidator::ALREADY_IN_PROGRESS_CODE, $e->errorCode);
+        }
     }
 
     private static function buildPlayer(string $id): PlayerDataModel

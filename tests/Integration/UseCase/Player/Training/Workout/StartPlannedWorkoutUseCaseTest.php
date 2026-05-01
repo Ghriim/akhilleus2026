@@ -43,7 +43,7 @@ final class StartPlannedWorkoutUseCaseTest extends KernelTestCase
 
         $resolver = self::stubResolver($player);
         $useCase = new StartPlannedWorkoutUseCase(
-            new StartPlannedWorkoutValidator($resolver),
+            new StartPlannedWorkoutValidator($resolver, $workoutRepository),
             $resolver,
             $workoutRepository,
             $workoutPersister,
@@ -76,7 +76,7 @@ final class StartPlannedWorkoutUseCaseTest extends KernelTestCase
 
         $resolver = self::stubResolver($player);
         $useCase = new StartPlannedWorkoutUseCase(
-            new StartPlannedWorkoutValidator($resolver),
+            new StartPlannedWorkoutValidator($resolver, $workoutRepository),
             $resolver,
             $workoutRepository,
             $workoutPersister,
@@ -107,7 +107,7 @@ final class StartPlannedWorkoutUseCaseTest extends KernelTestCase
 
         $resolver = self::stubResolver($player);
         $useCase = new StartPlannedWorkoutUseCase(
-            new StartPlannedWorkoutValidator($resolver),
+            new StartPlannedWorkoutValidator($resolver, $workoutRepository),
             $resolver,
             $workoutRepository,
             $workoutPersister,

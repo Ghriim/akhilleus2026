@@ -100,4 +100,16 @@ final class WorkoutRepository extends ServiceEntityRepository implements Workout
 
         return $result;
     }
+
+    public function findInProgressByPlayer(PlayerDataModel $player): ?WorkoutDataModel
+    {
+        return $this->createQueryBuilder('w')
+            ->where('w.player = :player')
+            ->andWhere('w.status = :status')
+            ->setParameter('player', $player)
+            ->setParameter('status', WorkoutStatusRegistry::IN_PROGRESS)
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
 }
