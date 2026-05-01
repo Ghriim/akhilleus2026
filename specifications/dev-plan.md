@@ -2,8 +2,8 @@
 
 ## Resume pointer (last session snapshot)
 
-- **Last completed step**: Phase 6.3 (`FinishWorkoutUseCase` + `PersonalBestEvaluator` + 7 PB categories + `Exercise::$exerciseSets ↔ ExerciseSet::$exercise` bidirectional, Phase 1.3 leftover for PB shipped). `composer qa` is green (190 tests / 369 assertions). Schema in sync (mapping + DB).
-- **Next pending step**: §6.4 (Read endpoints — list workout history, list upcoming workouts, get workout details, list personal bests). Prereqs: ship `PersonalBestProviderGateway::findAllByPlayerForList` + extend `WorkoutProviderGateway` with paginated `findCompletedByPlayer` and `findPlannedOrInProgressByPlayer`, plus `findOneByIdForDetails` (eager-load exercises + sets + movement + main muscle for the live/historical view).
+- **Last completed step**: Phase 6.6 — full-lifecycle integration test (`PlayerWorkoutLifecycleTest`, 29 assertions) + cURL smoke flow over all 13 Phase-6 endpoints (auth/lifecycle/finish/read), all green. `composer qa` green (209 tests / 440 assertions). Schema in sync (mapping + DB). **Phase 6 is fully closed** — the player REST API is shippable.
+- **Next pending step**: ⏸ checkpoint, then Phase 7 (player frontend — React TS website with D&D theming, JWT-aware fetch wrapper, dashboard / live workout / history / achievements pages).
 - The "Decisions / deviations" block below + each phase's inline notes are the working contract — read them before designing anything new.
 - `specifications/initial-requirements.md` is the **frozen user spec** and must not be edited. All clarifications/decisions go into this dev-plan and `specifications/conventions.md`.
 
@@ -489,16 +489,31 @@ Tests:
 Controller:
 - [x] `WorkoutPlayerController::finish` — `POST /api/player/workouts/{id}/finish`. No body required.
 
-### [ ] 6.4 Read endpoints
-UseCases under `UseCase/Player/Read/`:
-- [ ] `ListWorkoutHistoryUseCase` — completed workouts for the logged player, paginated, ordered by `dateEnd DESC`.
-- [ ] `ListUpcomingWorkoutsUseCase` — `status=PLANNED OR IN_PROGRESS`, ordered by `plannedAt ASC NULLS LAST`.
-- [ ] `GetWorkoutDetailsUseCase` — full hydrate (movements + sets), used by both history and live workout views.
-- [ ] `ListPersonalBestsUseCase` — grouped by movement, returns one `PlayerMovementPersonalBestsDataOutput` per movement that has any PB.
+### [x] 6.4 Read endpoints
+UseCases live under `UseCase/Player/Training/{Workout,PersonalBest}/` (sub-domain folders match the on-disk layout used since 6.1, not the original `UseCase/Player/Read/`):
+- [x] `ListWorkoutHistoryUseCase` — completed workouts for the logged player, paginated (`{page, perPage}` input with `MAX_PER_PAGE = 100`), ordered by `dateEnd DESC`. Returns `WorkoutHistoryDataOutput {items, page, perPage, totalCount}`. Has a validator (`ListWorkoutHistoryValidator`) for pagination bounds; throws `LIST_WORKOUT_HISTORY_VALIDATION_FAILED`.
+- [x] `ListUpcomingWorkoutsUseCase` — returns `list<WorkoutDataOutput>` of `status IN (PLANNED, IN_PROGRESS)`. Ordered: PLANNED first by `plannedAt ASC`, then IN_PROGRESS by `dateStart DESC`. Implementation leverages MySQL string ordering of the status enum (`'PLANNED' > 'IN_PROGRESS'` alphabetically with DESC).
+- [x] `GetWorkoutDetailsUseCase` — full hydrate (workout + exercises + movement + main muscle + sets) via `WorkoutProviderGateway::findOneByIdForDetails` (replaces the previous `findOneByIdForFinishWorkout`; both finish and details share the same eager-fetch query). Returns `WorkoutDetailsDataOutput` composing `ExerciseDetailsDataOutput` (which itself reuses the existing `ExerciseMovementDataOutput` + `ExerciseSetDataOutput` from 6.2). Throws 404 if unknown id or owned by another player.
+- [x] `ListPersonalBestsUseCase` — `list<PlayerMovementPersonalBestsDataOutput>` grouped by movement. Each bucket has a `MovementSummaryDataOutput` (id, slug, label, mainMuscleSlug) and a `list<PersonalBestEntryDataOutput>` (type, value, achievedAt, workoutId, exerciseSetId). Backed by `PersonalBestProviderGateway::findAllByPlayerForList` which eager-fetches movement + main muscle and orders by `m.label ASC, p.type ASC`.
 
-### [~] 6.5 Controllers
+Foundations introduced in 6.4:
+- [x] **Gateway methods** added to `WorkoutProviderGateway`: `findOneByIdForDetails` (renamed from `findOneByIdForFinishWorkout`, joins now include `m.mainMuscle`), `findCompletedByPlayer(player, page, perPage)`, `countCompletedByPlayer(player)`, `findPlannedOrInProgressByPlayer(player)`. Added to `PersonalBestProviderGateway`: `findAllByPlayerForList(player)`.
+- [x] **Routing for `GET /api/player/workouts/{id}` constrained by ULID regex** (`[0-9A-HJKMNP-TV-Z]{26}`) so it doesn't shadow `/history` or `/upcoming` even if they were defined after it. Symfony's first-match still picks the named routes thanks to declaration order, but the constraint is defence-in-depth.
+- [x] **`PersonalBestPlayerController`** new controller, `GET /api/player/personal-bests`.
+
+Tests:
+- [x] `tests/Unit/Domain/Validator/Player/Training/Workout/ListWorkoutHistoryValidatorTest` — happy path, lower bound, upper bound, page<1 / perPage<1 / perPage>MAX, accumulation.
+- [x] 4 integration tests (one per use case) under `tests/Integration/UseCase/Player/Training/{Workout,PersonalBest}/` — covering ordering, pagination, cross-player isolation, 404 paths, grouping by movement.
+
+Controllers:
+- [x] `WorkoutPlayerController::history` — `GET /api/player/workouts/history?page=1&perPage=20`.
+- [x] `WorkoutPlayerController::upcoming` — `GET /api/player/workouts/upcoming`.
+- [x] `WorkoutPlayerController::details` — `GET /api/player/workouts/{id}` (ULID-constrained).
+- [x] `PersonalBestPlayerController::list` — `GET /api/player/personal-bests`.
+
+### [x] 6.5 Controllers
 Under `Infrastructure/Controller/Player/`. Controllers are landed **per Phase 6.x batch** (alongside the use cases they expose) rather than all in one final pass — that lets us cURL-smoke each phase end-to-end and avoids the DI-container pruning that bites integration tests when a use case has no public consumer yet.
-- [~] `Training/WorkoutPlayerController` — start-empty / plan / start-planned / cancel done in 6.1; finish done in 6.3 (`POST /api/player/workouts/{id}/finish`); list/details (6.4) pending.
+- [x] `Training/WorkoutPlayerController` — start-empty / plan (6.1), start-planned / cancel (6.1), finish (6.3), history / upcoming / details (6.4).
 - [x] `Training/ExercisePlayerController` — add (`POST /api/player/workouts/{workoutId}/exercises`), remove (`DELETE /api/player/exercises/{id}`), update rest (`PUT /api/player/exercises/{id}/rest-duration`), reorder (`POST /api/player/workouts/{workoutId}/exercises/reorder`).
 - [x] `Training/ExerciseSetPlayerController` — add (`POST /api/player/exercises/{exerciseId}/sets`), update planned (`PUT /api/player/sets/{id}/planned`), update achieved (`PUT /api/player/sets/{id}/achieved`), remove (`DELETE /api/player/sets/{id}`), mark complete (`POST /api/player/sets/{id}/complete`). Body parsing of numeric-string fields surfaces malformed values as 422 `EXERCISE_SET_BODY_INVALID` (controller-level guard before the use case is hit).
 - [ ] `Training/PersonalBestPlayerController` — list (6.4).
@@ -507,8 +522,19 @@ All routes under `/api/player/*`, `ROLE_PLAYER` required (already gated by `conf
 
 Date serialization: `WorkoutDataOutput` uses `?string` (ISO 8601 / RFC 3339 / `\DateTimeInterface::ATOM`) for date fields rather than typed `\DateTimeImmutable`. Decision: `JsonResponse` calls `json_encode` directly, which would dump `\DateTimeImmutable` as `{date, timezone_type, timezone}` — ugly for API consumers. Use cases format dates at the DTO boundary with `?->format(\DateTimeInterface::ATOM)`. Apply the same pattern to every Player DataOutput that carries date fields.
 
-### [ ] 6.6 Verification
-- [ ] Per-UseCase Integration tests covering: full happy path (StartEmptyWorkout → AddMovementToWorkout → AddExerciseSet → MarkExerciseSetCompleted → FinishWorkout → assert PBs persisted); `FinishWorkoutUseCase` throws `ValidationException` with code `WORKOUT_HAS_INCOMPLETE_SETS` when sets remain incomplete; a second workout that ties a previous best does not create a duplicate PB; a third that beats it updates the value.
+### [x] 6.6 Verification
+- [x] **Per-UseCase Integration tests** ship per phase (Workout × 4 in 6.1, Exercise × 4 + ExerciseSet × 5 in 6.2, FinishWorkout in 6.3, read × 4 in 6.4) — covered by individual integration tests plus the full-lifecycle test below.
+- [x] **`PlayerWorkoutLifecycleTest`** (`tests/Integration/UseCase/Player/Training/`) — single end-to-end test that walks Start → AddMovement → AddSet × 2 → UpdateAchieved → MarkCompleted → Finish → assert PBs persisted, then queries history + details + personal-bests to verify the read endpoints reflect the persisted state. Catches composition regressions (e.g., a use case forgetting to sync inverse collections). 29 assertions in a single test method.
+- [x] **`FinishWorkoutUseCaseTest`** covers the `WORKOUT_HAS_INCOMPLETE_SETS` path, the tie-doesn't-duplicate scenario, and the beat-updates-in-place scenario (verifies the existing PB row id stays the same after an improvement).
+- [x] **cURL smoke flow** — full HTTP path against `symfony server:start -d`, hitting each Phase 6 endpoint with the seeded `player@akhilleus.test` JWT:
+  - 6.1: `POST /api/player/workouts` → cancel, `POST /api/player/workouts/planned` → start (200/200/201/200).
+  - 6.2: `POST /api/player/workouts/{id}/exercises`, `POST /api/player/exercises/{id}/sets` × 2, `PUT /api/player/sets/{id}/achieved` × 2, `POST /api/player/sets/{id}/complete` × 2.
+  - 6.3: `POST /api/player/workouts/{id}/finish` returns `{workout, newPersonalBests: [HIGHEST_WEIGHT, HIGHEST_REPS, HIGHEST_VOLUME_ONE_SET, HIGHEST_VOLUME_WORKOUT]}`.
+  - 6.4: `GET /api/player/workouts/history` (paginated), `/upcoming`, `/{id}` (details), `/api/player/personal-bests` — all 200, JSON shape matches the DataOutput contracts.
+  - Auth paths: no JWT → 401; admin JWT on `/api/player/*` → 403.
+
+### Foundation introduced in 6.6
+- [x] **`AddExerciseSetUseCase` syncs `$exercise->exerciseSets->add($created)` after persist** (same pattern as `AddMovementToWorkoutUseCase`'s exercises sync from 6.2). Required for the lifecycle test where the same EM scope chains AddSet → MarkCompleted → Finish; without the sync, the cached exercise instance has a stale `exerciseSets` collection by the time `findOneByIdForDetails` runs the eager-fetch (Doctrine returns the cached entity from the identity map, the join data goes into the new rows but the cached collection is not rebuilt).
 
 ---
 
@@ -564,6 +590,6 @@ Date serialization: `WorkoutDataOutput` uses `?string` (ISO 8601 / RFC 3339 / `\
 | 4 | Integration test per UseCase (15 total: 5 × Equipment/Muscle/Movement); cURL CRUD smoke check for each entity | [x] (OpenAPI annotations deferred) |
 | 5 | Manual CRUD in React + AntD admin UI, logged in as the seeded admin (light + dark theme exercised) | [x] |
 | ⏸ | Admin path complete — pause | [x] |
-| 6 | Integration test per Player UseCase, plus PB-evaluator scenarios cover the full workout lifecycle | [~] (6.1 + 6.2 + 6.3 done — 14 use cases + PB evaluator; 6.4-6.6 pending) |
+| 6 | Integration test per Player UseCase, plus PB-evaluator scenarios cover the full workout lifecycle | [x] (18 use cases + PB evaluator + 4 controllers + lifecycle test + cURL smoke) |
 | 7 | Manual UI run-through of the player flows | [ ] |
 | 8 | CI green on a clean clone; coverage threshold met | [ ] |

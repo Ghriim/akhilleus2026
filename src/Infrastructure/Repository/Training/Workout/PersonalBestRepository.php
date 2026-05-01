@@ -33,4 +33,20 @@ final class PersonalBestRepository extends ServiceEntityRepository implements Pe
             ->getQuery()
             ->getOneOrNullResult();
     }
+
+    public function findAllByPlayerForList(PlayerDataModel $player): array
+    {
+        /** @var list<PersonalBestDataModel> $result */
+        $result = $this->createQueryBuilder('p')
+            ->innerJoin('p.movement', 'm')->addSelect('m')
+            ->leftJoin('m.mainMuscle', 'mm')->addSelect('mm')
+            ->where('p.player = :player')
+            ->setParameter('player', $player)
+            ->orderBy('m.label', 'ASC')
+            ->addOrderBy('p.type', 'ASC')
+            ->getQuery()
+            ->getResult();
+
+        return $result;
+    }
 }

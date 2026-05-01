@@ -6,12 +6,18 @@ namespace App\Infrastructure\Controller\Player\Training;
 
 use App\Domain\DTO\DataInput\Player\Training\Workout\CancelWorkoutDataInput;
 use App\Domain\DTO\DataInput\Player\Training\Workout\FinishWorkoutDataInput;
+use App\Domain\DTO\DataInput\Player\Training\Workout\GetWorkoutDetailsDataInput;
+use App\Domain\DTO\DataInput\Player\Training\Workout\ListUpcomingWorkoutsDataInput;
+use App\Domain\DTO\DataInput\Player\Training\Workout\ListWorkoutHistoryDataInput;
 use App\Domain\DTO\DataInput\Player\Training\Workout\PlanWorkoutDataInput;
 use App\Domain\DTO\DataInput\Player\Training\Workout\StartEmptyWorkoutDataInput;
 use App\Domain\DTO\DataInput\Player\Training\Workout\StartPlannedWorkoutDataInput;
 use App\Domain\Exception\ValidationException;
 use App\UseCase\Player\Training\Workout\CancelWorkoutUseCase;
 use App\UseCase\Player\Training\Workout\FinishWorkoutUseCase;
+use App\UseCase\Player\Training\Workout\GetWorkoutDetailsUseCase;
+use App\UseCase\Player\Training\Workout\ListUpcomingWorkoutsUseCase;
+use App\UseCase\Player\Training\Workout\ListWorkoutHistoryUseCase;
 use App\UseCase\Player\Training\Workout\PlanWorkoutUseCase;
 use App\UseCase\Player\Training\Workout\StartEmptyWorkoutUseCase;
 use App\UseCase\Player\Training\Workout\StartPlannedWorkoutUseCase;
@@ -47,6 +53,27 @@ final readonly class WorkoutPlayerController
         }
 
         return new JsonResponse($useCase->execute(new PlanWorkoutDataInput($plannedAt)), 201);
+    }
+
+    #[Route(path: '/api/player/workouts/history', name: 'player_workout_list_history', methods: ['GET'])]
+    public function history(Request $request, ListWorkoutHistoryUseCase $useCase): JsonResponse
+    {
+        $page = max(1, (int) $request->query->get('page', '1'));
+        $perPage = (int) $request->query->get('perPage', (string) ListWorkoutHistoryDataInput::DEFAULT_PER_PAGE);
+
+        return new JsonResponse($useCase->execute(new ListWorkoutHistoryDataInput($page, $perPage)));
+    }
+
+    #[Route(path: '/api/player/workouts/upcoming', name: 'player_workout_list_upcoming', methods: ['GET'])]
+    public function upcoming(ListUpcomingWorkoutsUseCase $useCase): JsonResponse
+    {
+        return new JsonResponse($useCase->execute(new ListUpcomingWorkoutsDataInput()));
+    }
+
+    #[Route(path: '/api/player/workouts/{id}', name: 'player_workout_details', methods: ['GET'], requirements: ['id' => '[0-9A-HJKMNP-TV-Z]{26}'])]
+    public function details(string $id, GetWorkoutDetailsUseCase $useCase): JsonResponse
+    {
+        return new JsonResponse($useCase->execute(new GetWorkoutDetailsDataInput($id)));
     }
 
     #[Route(path: '/api/player/workouts/{id}/start', name: 'player_workout_start_planned', methods: ['POST'])]

@@ -57,6 +57,7 @@ final class AddExerciseSetUseCase extends AbstractLoggedPlayerUseCase
         $created->plannedInclineMeters = $input->plannedInclineMeters;
 
         $this->exerciseSetPersister->create($created);
+        $exercise->exerciseSets->add($created);
 
         return self::buildOutput($created);
     }

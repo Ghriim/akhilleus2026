@@ -39,7 +39,7 @@ final class FinishWorkoutUseCase extends AbstractLoggedPlayerUseCase
     public function execute(DataInputInterface $input): FinishWorkoutDataOutput
     {
         $player = $this->loggedPlayerResolver->getLoggedPlayer();
-        $workout = $this->workoutProvider->findOneByIdForFinishWorkout($input->id, $player);
+        $workout = $this->workoutProvider->findOneByIdForDetails($input->id, $player);
         if (null === $workout) {
             throw new EntityNotFoundException(sprintf('Workout "%s" not found.', $input->id));
         }

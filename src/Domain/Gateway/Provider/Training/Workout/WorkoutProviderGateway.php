@@ -11,5 +11,17 @@ interface WorkoutProviderGateway
 {
     public function findOneByIdForPlayerAction(string $id, PlayerDataModel $player): ?WorkoutDataModel;
 
-    public function findOneByIdForFinishWorkout(string $id, PlayerDataModel $player): ?WorkoutDataModel;
+    public function findOneByIdForDetails(string $id, PlayerDataModel $player): ?WorkoutDataModel;
+
+    /**
+     * @return list<WorkoutDataModel>
+     */
+    public function findCompletedByPlayer(PlayerDataModel $player, int $page, int $perPage): array;
+
+    public function countCompletedByPlayer(PlayerDataModel $player): int;
+
+    /**
+     * @return list<WorkoutDataModel>
+     */
+    public function findPlannedOrInProgressByPlayer(PlayerDataModel $player): array;
 }

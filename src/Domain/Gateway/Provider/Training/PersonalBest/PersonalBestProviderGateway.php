@@ -11,4 +11,9 @@ use App\Domain\DTO\DataModel\User\PlayerDataModel;
 interface PersonalBestProviderGateway
 {
     public function findOneForPlayerMovementType(PlayerDataModel $player, MovementDataModel $movement, string $type): ?PersonalBestDataModel;
+
+    /**
+     * @return list<PersonalBestDataModel>
+     */
+    public function findAllByPlayerForList(PlayerDataModel $player): array;
 }
