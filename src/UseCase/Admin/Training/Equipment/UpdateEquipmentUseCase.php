@@ -20,21 +20,19 @@ final class UpdateEquipmentUseCase extends AbstractLoggedAdminUseCase
         private readonly EquipmentProviderGateway $equipmentProvider,
         private readonly EquipmentPersisterGateway $equipmentPersister,
     ) {
-        parent::__construct($updateEquipmentValidator);
     }
 
-    public function execute(UpdateEquipmentDataInput|DataInputInterface $input): EquipmentDataOutput
+    /**
+     * @param UpdateEquipmentDataInput $input
+     */
+    public function execute(DataInputInterface $input): EquipmentDataOutput
     {
-        if (false === $input instanceof UpdateEquipmentDataInput) {
-            throw new \LogicException(sprintf('Expected %s, got %s.', UpdateEquipmentDataInput::class, $input::class));
-        }
-
-        $this->updateEquipmentValidator->validate($input);
-
         $equipment = $this->equipmentProvider->findOneForAdminDetails($input->id);
         if (null === $equipment) {
             throw new EntityNotFoundException(sprintf('Equipment "%s" not found.', $input->id));
         }
+
+        $this->updateEquipmentValidator->validate($input, $equipment);
 
         $equipment->label = $input->label;
         $this->equipmentPersister->update($equipment);

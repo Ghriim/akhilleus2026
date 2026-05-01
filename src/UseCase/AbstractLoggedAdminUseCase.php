@@ -6,15 +6,9 @@ namespace App\UseCase;
 
 use App\Domain\DTO\DataInput\DataInputInterface;
 use App\Domain\DTO\DataOutput\DataOutputInterface;
-use App\Domain\Validator\AbstractLoggedAdminValidator;
 
 abstract class AbstractLoggedAdminUseCase implements UseCaseInterface
 {
-    public function __construct(
-        protected readonly AbstractLoggedAdminValidator $validator,
-    ) {
-    }
-
     /**
      * @return DataOutputInterface|list<DataOutputInterface>
      */

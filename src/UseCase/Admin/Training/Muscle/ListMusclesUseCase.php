@@ -17,18 +17,15 @@ final class ListMusclesUseCase extends AbstractPublicUseCase
         private readonly ListMusclesValidator $listMusclesValidator,
         private readonly MuscleProviderGateway $muscleProvider,
     ) {
-        parent::__construct($listMusclesValidator);
     }
 
     /**
+     * @param ListMusclesDataInput $input
+     *
      * @return list<MuscleListItemDataOutput>
      */
-    public function execute(ListMusclesDataInput|DataInputInterface $input): array
+    public function execute(DataInputInterface $input): array
     {
-        if (false === $input instanceof ListMusclesDataInput) {
-            throw new \LogicException(sprintf('Expected %s, got %s.', ListMusclesDataInput::class, $input::class));
-        }
-
         $this->listMusclesValidator->validate($input);
 
         $muscles = $this->muscleProvider->findAllForAdminList($input->sort, $input->direction);

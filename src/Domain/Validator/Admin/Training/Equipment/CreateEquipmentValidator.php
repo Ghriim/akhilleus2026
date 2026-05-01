@@ -23,12 +23,8 @@ final readonly class CreateEquipmentValidator extends AbstractLoggedAdminValidat
         parent::__construct($loggedUserResolver);
     }
 
-    public function validate(object $input): void
+    public function validate(CreateEquipmentDataInput $input): void
     {
-        if (false === $input instanceof CreateEquipmentDataInput) {
-            throw new \LogicException(sprintf('Expected %s, got %s.', CreateEquipmentDataInput::class, $input::class));
-        }
-
         $violations = [];
         if ('' === trim($input->label)) {
             $violations['label'][] = 'Label must not be empty.';

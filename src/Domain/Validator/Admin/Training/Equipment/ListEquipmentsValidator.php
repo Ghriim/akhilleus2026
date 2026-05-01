@@ -6,21 +6,16 @@ namespace App\Domain\Validator\Admin\Training\Equipment;
 
 use App\Domain\DTO\DataInput\Admin\Training\Equipment\ListEquipmentsDataInput;
 use App\Domain\Exception\ValidationException;
-use App\Domain\Validator\DomainValidatorInterface;
 
-final readonly class ListEquipmentsValidator implements DomainValidatorInterface
+final readonly class ListEquipmentsValidator
 {
     public const string ERROR_CODE = 'LIST_EQUIPMENTS_VALIDATION_FAILED';
 
     /** @var list<string> */
     private const array ALLOWED_DIRECTIONS = ['ASC', 'DESC'];
 
-    public function validate(object $input): void
+    public function validate(ListEquipmentsDataInput $input): void
     {
-        if (false === $input instanceof ListEquipmentsDataInput) {
-            throw new \LogicException(sprintf('Expected %s, got %s.', ListEquipmentsDataInput::class, $input::class));
-        }
-
         $violations = [];
 
         if (false === in_array($input->sort, ListEquipmentsDataInput::ALLOWED_SORTS, true)) {

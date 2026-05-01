@@ -4,13 +4,11 @@ declare(strict_types=1);
 
 namespace App\Domain\Validator\User;
 
-use App\Domain\DTO\DataInput\DataInputInterface;
 use App\Domain\DTO\DataInput\User\RegisterPlayerDataInput;
 use App\Domain\Exception\ValidationException;
 use App\Domain\Gateway\Provider\User\UserProviderGateway;
-use App\Domain\Validator\DomainValidatorInterface;
 
-final readonly class RegisterPlayerValidator implements DomainValidatorInterface
+final readonly class RegisterPlayerValidator
 {
     public const string ERROR_CODE = 'REGISTER_PLAYER_VALIDATION_FAILED';
 
@@ -21,12 +19,8 @@ final readonly class RegisterPlayerValidator implements DomainValidatorInterface
     ) {
     }
 
-    public function validate(RegisterPlayerDataInput|DataInputInterface $input): void
+    public function validate(RegisterPlayerDataInput $input): void
     {
-        if (false === $input instanceof RegisterPlayerDataInput) {
-            throw new \LogicException(sprintf('Expected %s, got %s.', RegisterPlayerDataInput::class, $input::class));
-        }
-
         $violations = [];
         if (false === filter_var($input->email, FILTER_VALIDATE_EMAIL)) {
             $violations['email'][] = 'Email is not a valid address.';

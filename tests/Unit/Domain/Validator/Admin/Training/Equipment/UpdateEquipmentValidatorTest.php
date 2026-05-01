@@ -6,7 +6,6 @@ namespace App\Tests\Unit\Domain\Validator\Admin\Training\Equipment;
 
 use App\Domain\DataTransformer\StringDataTransformerInterface;
 use App\Domain\DTO\DataInput\Admin\Training\Equipment\UpdateEquipmentDataInput;
-use App\Domain\DTO\DataInput\DataInputInterface;
 use App\Domain\DTO\DataModel\Training\Equipment\EquipmentDataModel;
 use App\Domain\Exception\ValidationException;
 use App\Domain\Gateway\Provider\Training\Equipment\EquipmentProviderGateway;
@@ -43,15 +42,18 @@ final class UpdateEquipmentValidatorTest extends TestCase
         $this->stringDataTransformer->method('slugify')->willReturn('barbell');
         $this->equipmentProviderGateway->method('findOneBySlugForUniqueness')->willReturn($existing);
 
-        $this->validator->validate(new UpdateEquipmentDataInput('same-id', 'Barbell'));
+        $this->validator->validate(new UpdateEquipmentDataInput('same-id', 'Barbell'), $existing);
 
         $this->expectNotToPerformAssertions();
     }
 
     public function testItRejectsEmptyLabel(): void
     {
+        $equipment = new EquipmentDataModel('Whatever');
+        $equipment->id = 'id';
+
         try {
-            $this->validator->validate(new UpdateEquipmentDataInput('id', ''));
+            $this->validator->validate(new UpdateEquipmentDataInput('id', ''), $equipment);
             self::fail('Expected ValidationException');
         } catch (ValidationException $e) {
             self::assertSame(UpdateEquipmentValidator::ERROR_CODE, $e->errorCode);
@@ -63,21 +65,16 @@ final class UpdateEquipmentValidatorTest extends TestCase
     {
         $other = new EquipmentDataModel('Barbell');
         $other->id = 'other-id';
+        $mine = new EquipmentDataModel('Whatever');
+        $mine->id = 'mine-id';
         $this->stringDataTransformer->method('slugify')->willReturn('barbell');
         $this->equipmentProviderGateway->method('findOneBySlugForUniqueness')->willReturn($other);
 
         try {
-            $this->validator->validate(new UpdateEquipmentDataInput('mine-id', 'Barbell'));
+            $this->validator->validate(new UpdateEquipmentDataInput('mine-id', 'Barbell'), $mine);
             self::fail('Expected ValidationException');
         } catch (ValidationException $e) {
             self::assertContains('Another equipment already uses this label.', $e->violations['label'] ?? []);
         }
-    }
-
-    public function testItThrowsLogicExceptionForWrongInputType(): void
-    {
-        $this->expectException(\LogicException::class);
-
-        $this->validator->validate(new class () implements DataInputInterface {});
     }
 }

@@ -6,7 +6,6 @@ namespace App\Tests\Unit\Domain\Validator\Admin\Training\Muscle;
 
 use App\Domain\DataTransformer\StringDataTransformerInterface;
 use App\Domain\DTO\DataInput\Admin\Training\Muscle\CreateMuscleDataInput;
-use App\Domain\DTO\DataInput\DataInputInterface;
 use App\Domain\DTO\DataModel\Training\Muscle\MuscleDataModel;
 use App\Domain\Exception\ValidationException;
 use App\Domain\Gateway\Provider\Training\Muscle\MuscleProviderGateway;
@@ -70,12 +69,5 @@ final class CreateMuscleValidatorTest extends TestCase
         } catch (ValidationException $e) {
             self::assertContains('Another muscle already uses this label.', $e->violations['label'] ?? []);
         }
-    }
-
-    public function testItThrowsLogicExceptionForWrongInputType(): void
-    {
-        $this->expectException(\LogicException::class);
-
-        $this->validator->validate(new class () implements DataInputInterface {});
     }
 }

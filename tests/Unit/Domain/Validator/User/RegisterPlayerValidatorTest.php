@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Domain\Validator\User;
 
-use App\Domain\DTO\DataInput\DataInputInterface;
 use App\Domain\DTO\DataInput\User\RegisterPlayerDataInput;
 use App\Domain\DTO\DataModel\User\UserDataModel;
 use App\Domain\Exception\ValidationException;
@@ -154,13 +153,6 @@ final class RegisterPlayerValidatorTest extends TestCase
             self::assertArrayHasKey('displayName', $e->violations);
             self::assertArrayHasKey('plainPassword', $e->violations);
         }
-    }
-
-    public function testItThrowsLogicExceptionForWrongInputType(): void
-    {
-        $this->expectException(\LogicException::class);
-
-        $this->validator->validate(new class () implements DataInputInterface {});
     }
 
     private function expectViolation(string $field, string $expectedMessage, string $password): void

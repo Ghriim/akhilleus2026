@@ -57,4 +57,13 @@ final class MovementRepository extends ServiceEntityRepository implements Moveme
             ->getQuery()
             ->getOneOrNullResult();
     }
+
+    public function findOneByIdForExerciseAttachment(string $id): ?MovementDataModel
+    {
+        return $this->createQueryBuilder('m')
+            ->where('m.id = :id')
+            ->setParameter('id', $id)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
 }

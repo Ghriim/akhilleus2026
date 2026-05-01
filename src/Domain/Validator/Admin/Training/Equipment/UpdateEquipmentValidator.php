@@ -6,6 +6,7 @@ namespace App\Domain\Validator\Admin\Training\Equipment;
 
 use App\Domain\DataTransformer\StringDataTransformerInterface;
 use App\Domain\DTO\DataInput\Admin\Training\Equipment\UpdateEquipmentDataInput;
+use App\Domain\DTO\DataModel\Training\Equipment\EquipmentDataModel;
 use App\Domain\Exception\ValidationException;
 use App\Domain\Gateway\Provider\Training\Equipment\EquipmentProviderGateway;
 use App\Domain\Security\LoggedUserResolverInterface;
@@ -23,19 +24,15 @@ final readonly class UpdateEquipmentValidator extends AbstractLoggedAdminValidat
         parent::__construct($loggedUserResolver);
     }
 
-    public function validate(object $input): void
+    public function validate(UpdateEquipmentDataInput $input, EquipmentDataModel $equipment): void
     {
-        if (false === $input instanceof UpdateEquipmentDataInput) {
-            throw new \LogicException(sprintf('Expected %s, got %s.', UpdateEquipmentDataInput::class, $input::class));
-        }
-
         $violations = [];
         if ('' === trim($input->label)) {
             $violations['label'][] = 'Label must not be empty.';
         } else {
             $slug = $this->stringDataTransformer->slugify($input->label);
             $existing = $this->equipmentProviderGateway->findOneBySlugForUniqueness($slug);
-            if (null !== $existing && $existing->id !== $input->id) {
+            if (null !== $existing && $existing->id !== $equipment->id) {
                 $violations['label'][] = 'Another equipment already uses this label.';
             }
         }

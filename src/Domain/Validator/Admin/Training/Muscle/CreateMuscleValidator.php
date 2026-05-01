@@ -13,7 +13,7 @@ use App\Domain\Validator\AbstractLoggedAdminValidator;
 
 final readonly class CreateMuscleValidator extends AbstractLoggedAdminValidator
 {
-    public const string ERROR_CODE = 'CREATE_EQUIPMENT_VALIDATION_FAILED';
+    public const string ERROR_CODE = 'CREATE_MUSCLE_VALIDATION_FAILED';
 
     public function __construct(
         LoggedUserResolverInterface $loggedUserResolver,
@@ -23,12 +23,8 @@ final readonly class CreateMuscleValidator extends AbstractLoggedAdminValidator
         parent::__construct($loggedUserResolver);
     }
 
-    public function validate(object $input): void
+    public function validate(CreateMuscleDataInput $input): void
     {
-        if (false === $input instanceof CreateMuscleDataInput) {
-            throw new \LogicException(sprintf('Expected %s, got %s.', CreateMuscleDataInput::class, $input::class));
-        }
-
         $violations = [];
         if ('' === trim($input->label)) {
             $violations['label'][] = 'Label must not be empty.';

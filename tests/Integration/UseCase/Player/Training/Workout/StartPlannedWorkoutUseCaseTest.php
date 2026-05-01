@@ -118,7 +118,7 @@ final class StartPlannedWorkoutUseCaseTest extends KernelTestCase
             $useCase->execute(new StartPlannedWorkoutDataInput($inProgress->id));
             self::fail('Expected ValidationException');
         } catch (ValidationException $e) {
-            self::assertSame(StartPlannedWorkoutUseCase::ERROR_CODE, $e->errorCode);
+            self::assertSame(StartPlannedWorkoutValidator::ERROR_CODE, $e->errorCode);
             self::assertArrayHasKey('status', $e->violations);
         }
     }

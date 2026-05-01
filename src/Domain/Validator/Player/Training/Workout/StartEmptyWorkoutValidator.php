@@ -9,13 +9,9 @@ use App\Domain\Validator\AbstractLoggedPlayerValidator;
 
 final readonly class StartEmptyWorkoutValidator extends AbstractLoggedPlayerValidator
 {
-    public function validate(object $input): void
+    public function validate(StartEmptyWorkoutDataInput $input): void
     {
-        if (false === $input instanceof StartEmptyWorkoutDataInput) {
-            throw new \LogicException(sprintf('Expected %s, got %s.', StartEmptyWorkoutDataInput::class, $input::class));
-        }
-
-        // No input-level rule: starting an empty workout requires only an authenticated player,
-        // which is enforced by the firewall + the use case resolving the logged player.
+        // No input-level rule: starting an empty workout requires only an authenticated
+        // player, enforced by the firewall.
     }
 }

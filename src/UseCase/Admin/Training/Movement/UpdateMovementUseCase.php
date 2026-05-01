@@ -28,21 +28,19 @@ final class UpdateMovementUseCase extends AbstractLoggedAdminUseCase
         private readonly MuscleProviderGateway $muscleProvider,
         private readonly EquipmentProviderGateway $equipmentProvider,
     ) {
-        parent::__construct($updateMovementValidator);
     }
 
-    public function execute(UpdateMovementDataInput|DataInputInterface $input): MovementDataOutput
+    /**
+     * @param UpdateMovementDataInput $input
+     */
+    public function execute(DataInputInterface $input): MovementDataOutput
     {
-        if (false === $input instanceof UpdateMovementDataInput) {
-            throw new \LogicException(sprintf('Expected %s, got %s.', UpdateMovementDataInput::class, $input::class));
-        }
-
-        $this->updateMovementValidator->validate($input);
-
         $movement = $this->movementProvider->findOneForAdminDetails($input->id);
         if (null === $movement) {
             throw new EntityNotFoundException(sprintf('Movement "%s" not found.', $input->id));
         }
+
+        $this->updateMovementValidator->validate($input, $movement);
 
         $mainMuscle = $this->muscleProvider->findOneForAdminDetails($input->mainMuscleId);
         if (null === $mainMuscle) {

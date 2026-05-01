@@ -18,15 +18,13 @@ final class CreateMuscleUseCase extends AbstractLoggedAdminUseCase
         private readonly CreateMuscleValidator $createMuscleValidator,
         private readonly MusclePersisterGateway $musclePersister,
     ) {
-        parent::__construct($createMuscleValidator);
     }
 
-    public function execute(CreateMuscleDataInput|DataInputInterface $input): MuscleDataOutput
+    /**
+     * @param CreateMuscleDataInput $input
+     */
+    public function execute(DataInputInterface $input): MuscleDataOutput
     {
-        if (false === $input instanceof CreateMuscleDataInput) {
-            throw new \LogicException(sprintf('Expected %s, got %s.', CreateMuscleDataInput::class, $input::class));
-        }
-
         $this->createMuscleValidator->validate($input);
 
         $muscle = $this->musclePersister->create(new MuscleDataModel($input->label));

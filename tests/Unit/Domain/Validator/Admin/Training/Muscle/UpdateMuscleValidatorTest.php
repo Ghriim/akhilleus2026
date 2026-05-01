@@ -6,7 +6,6 @@ namespace App\Tests\Unit\Domain\Validator\Admin\Training\Muscle;
 
 use App\Domain\DataTransformer\StringDataTransformerInterface;
 use App\Domain\DTO\DataInput\Admin\Training\Muscle\UpdateMuscleDataInput;
-use App\Domain\DTO\DataInput\DataInputInterface;
 use App\Domain\DTO\DataModel\Training\Muscle\MuscleDataModel;
 use App\Domain\Exception\ValidationException;
 use App\Domain\Gateway\Provider\Training\Muscle\MuscleProviderGateway;
@@ -43,15 +42,18 @@ final class UpdateMuscleValidatorTest extends TestCase
         $this->stringDataTransformer->method('slugify')->willReturn('barbell');
         $this->muscleProviderGateway->method('findOneBySlugForUniqueness')->willReturn($existing);
 
-        $this->validator->validate(new UpdateMuscleDataInput('same-id', 'Barbell'));
+        $this->validator->validate(new UpdateMuscleDataInput('same-id', 'Barbell'), $existing);
 
         $this->expectNotToPerformAssertions();
     }
 
     public function testItRejectsEmptyLabel(): void
     {
+        $muscle = new MuscleDataModel('Whatever');
+        $muscle->id = 'id';
+
         try {
-            $this->validator->validate(new UpdateMuscleDataInput('id', ''));
+            $this->validator->validate(new UpdateMuscleDataInput('id', ''), $muscle);
             self::fail('Expected ValidationException');
         } catch (ValidationException $e) {
             self::assertSame(UpdateMuscleValidator::ERROR_CODE, $e->errorCode);
@@ -63,21 +65,16 @@ final class UpdateMuscleValidatorTest extends TestCase
     {
         $other = new MuscleDataModel('Barbell');
         $other->id = 'other-id';
+        $mine = new MuscleDataModel('Whatever');
+        $mine->id = 'mine-id';
         $this->stringDataTransformer->method('slugify')->willReturn('barbell');
         $this->muscleProviderGateway->method('findOneBySlugForUniqueness')->willReturn($other);
 
         try {
-            $this->validator->validate(new UpdateMuscleDataInput('mine-id', 'Barbell'));
+            $this->validator->validate(new UpdateMuscleDataInput('mine-id', 'Barbell'), $mine);
             self::fail('Expected ValidationException');
         } catch (ValidationException $e) {
             self::assertContains('Another muscle already uses this label.', $e->violations['label'] ?? []);
         }
-    }
-
-    public function testItThrowsLogicExceptionForWrongInputType(): void
-    {
-        $this->expectException(\LogicException::class);
-
-        $this->validator->validate(new class () implements DataInputInterface {});
     }
 }

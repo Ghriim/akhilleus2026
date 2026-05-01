@@ -17,18 +17,15 @@ final class ListEquipmentsUseCase extends AbstractPublicUseCase
         private readonly ListEquipmentsValidator $listEquipmentsValidator,
         private readonly EquipmentProviderGateway $equipmentProvider,
     ) {
-        parent::__construct($listEquipmentsValidator);
     }
 
     /**
+     * @param ListEquipmentsDataInput $input
+     *
      * @return list<EquipmentListItemDataOutput>
      */
-    public function execute(ListEquipmentsDataInput|DataInputInterface $input): array
+    public function execute(DataInputInterface $input): array
     {
-        if (false === $input instanceof ListEquipmentsDataInput) {
-            throw new \LogicException(sprintf('Expected %s, got %s.', ListEquipmentsDataInput::class, $input::class));
-        }
-
         $this->listEquipmentsValidator->validate($input);
 
         $equipments = $this->equipmentProvider->findAllForAdminList($input->sort, $input->direction);

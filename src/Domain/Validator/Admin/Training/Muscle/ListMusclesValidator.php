@@ -6,21 +6,16 @@ namespace App\Domain\Validator\Admin\Training\Muscle;
 
 use App\Domain\DTO\DataInput\Admin\Training\Muscle\ListMusclesDataInput;
 use App\Domain\Exception\ValidationException;
-use App\Domain\Validator\DomainValidatorInterface;
 
-final readonly class ListMusclesValidator implements DomainValidatorInterface
+final readonly class ListMusclesValidator
 {
     public const string ERROR_CODE = 'LIST_MUSCLES_VALIDATION_FAILED';
 
     /** @var list<string> */
     private const array ALLOWED_DIRECTIONS = ['ASC', 'DESC'];
 
-    public function validate(object $input): void
+    public function validate(ListMusclesDataInput $input): void
     {
-        if (false === $input instanceof ListMusclesDataInput) {
-            throw new \LogicException(sprintf('Expected %s, got %s.', ListMusclesDataInput::class, $input::class));
-        }
-
         $violations = [];
 
         if (false === in_array($input->sort, ListMusclesDataInput::ALLOWED_SORTS, true)) {

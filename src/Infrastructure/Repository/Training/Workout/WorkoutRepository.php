@@ -25,8 +25,10 @@ final class WorkoutRepository extends ServiceEntityRepository implements Workout
         return $this->createQueryBuilder('w')
             ->where('w.id = :id')
             ->andWhere('w.player = :player')
+            ->leftJoin('w.exercises', 'e')->addSelect('e')
             ->setParameter('id', $id)
             ->setParameter('player', $player)
+            ->orderBy('e.position', 'ASC')
             ->getQuery()
             ->getOneOrNullResult();
     }

@@ -7,7 +7,7 @@ namespace App\Domain\Validator;
 use App\Domain\DTO\DataModel\User\UserDataModel;
 use App\Domain\Security\LoggedUserResolverInterface;
 
-abstract readonly class AbstractLoggedAdminValidator implements DomainValidatorInterface
+abstract readonly class AbstractLoggedAdminValidator
 {
     public function __construct(
         private LoggedUserResolverInterface $loggedUserResolver,

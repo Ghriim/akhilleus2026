@@ -11,26 +11,20 @@ use App\Domain\DTO\DataOutput\Admin\Training\Movement\MovementDataOutput;
 use App\Domain\DTO\DataOutput\Admin\Training\Muscle\MuscleListItemDataOutput;
 use App\Domain\Exception\EntityNotFoundException;
 use App\Domain\Gateway\Provider\Training\Movement\MovementProviderGateway;
-use App\Domain\Validator\Admin\Training\Movement\GetMovementDetailsValidator;
 use App\UseCase\AbstractPublicUseCase;
 
 final class GetMovementDetailsUseCase extends AbstractPublicUseCase
 {
     public function __construct(
-        private readonly GetMovementDetailsValidator $getMovementDetailsValidator,
         private readonly MovementProviderGateway $movementProvider,
     ) {
-        parent::__construct($getMovementDetailsValidator);
     }
 
-    public function execute(GetMovementDetailsDataInput|DataInputInterface $input): MovementDataOutput
+    /**
+     * @param GetMovementDetailsDataInput $input
+     */
+    public function execute(DataInputInterface $input): MovementDataOutput
     {
-        if (false === $input instanceof GetMovementDetailsDataInput) {
-            throw new \LogicException(sprintf('Expected %s, got %s.', GetMovementDetailsDataInput::class, $input::class));
-        }
-
-        $this->getMovementDetailsValidator->validate($input);
-
         $movement = $this->movementProvider->findOneForAdminDetails($input->id);
         if (null === $movement) {
             throw new EntityNotFoundException(sprintf('Movement "%s" not found.', $input->id));

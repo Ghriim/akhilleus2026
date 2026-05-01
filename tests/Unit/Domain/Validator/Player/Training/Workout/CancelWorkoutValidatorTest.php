@@ -4,8 +4,13 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Domain\Validator\Player\Training\Workout;
 
-use App\Domain\DTO\DataInput\DataInputInterface;
 use App\Domain\DTO\DataInput\Player\Training\Workout\CancelWorkoutDataInput;
+use App\Domain\DTO\DataModel\Training\Workout\WorkoutDataModel;
+use App\Domain\DTO\DataModel\User\PlayerDataModel;
+use App\Domain\DTO\DataModel\User\UserDataModel;
+use App\Domain\Exception\UnauthorizedException;
+use App\Domain\Exception\ValidationException;
+use App\Domain\Registry\Training\Workout\WorkoutStatusRegistry;
 use App\Domain\Security\LoggedPlayerResolverInterface;
 use App\Domain\Validator\Player\Training\Workout\CancelWorkoutValidator;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
@@ -14,21 +19,79 @@ use PHPUnit\Framework\TestCase;
 #[AllowMockObjectsWithoutExpectations]
 final class CancelWorkoutValidatorTest extends TestCase
 {
-    public function testItDoesNotThrowForAValidInput(): void
-    {
-        $validator = new CancelWorkoutValidator($this->createMock(LoggedPlayerResolverInterface::class));
+    private CancelWorkoutValidator $validator;
+    private PlayerDataModel $player;
 
-        $validator->validate(new CancelWorkoutDataInput('any-id'));
+    protected function setUp(): void
+    {
+        $this->validator = new CancelWorkoutValidator($this->createMock(LoggedPlayerResolverInterface::class));
+        $this->player = self::buildPlayer('player-1');
+    }
+
+    public function testItPassesForAPlannedWorkout(): void
+    {
+        $workout = self::buildWorkout($this->player, WorkoutStatusRegistry::PLANNED);
+
+        $this->validator->validate($this->player, new CancelWorkoutDataInput($workout->id), $workout);
 
         $this->expectNotToPerformAssertions();
     }
 
-    public function testItThrowsLogicExceptionForWrongInputType(): void
+    public function testItPassesForAnInProgressWorkout(): void
     {
-        $validator = new CancelWorkoutValidator($this->createMock(LoggedPlayerResolverInterface::class));
+        $workout = self::buildWorkout($this->player, WorkoutStatusRegistry::IN_PROGRESS);
 
-        $this->expectException(\LogicException::class);
+        $this->validator->validate($this->player, new CancelWorkoutDataInput($workout->id), $workout);
 
-        $validator->validate(new class () implements DataInputInterface {});
+        $this->expectNotToPerformAssertions();
+    }
+
+    public function testItThrowsUnauthorizedWhenWorkoutBelongsToAnotherPlayer(): void
+    {
+        $workout = self::buildWorkout(self::buildPlayer('player-2'), WorkoutStatusRegistry::PLANNED);
+
+        $this->expectException(UnauthorizedException::class);
+
+        $this->validator->validate($this->player, new CancelWorkoutDataInput($workout->id), $workout);
+    }
+
+    public function testItRejectsACompletedWorkout(): void
+    {
+        $workout = self::buildWorkout($this->player, WorkoutStatusRegistry::COMPLETED);
+
+        try {
+            $this->validator->validate($this->player, new CancelWorkoutDataInput($workout->id), $workout);
+            self::fail('Expected ValidationException');
+        } catch (ValidationException $e) {
+            self::assertSame(CancelWorkoutValidator::ERROR_CODE, $e->errorCode);
+            self::assertArrayHasKey('status', $e->violations);
+        }
+    }
+
+    public function testItRejectsACanceledWorkout(): void
+    {
+        $workout = self::buildWorkout($this->player, WorkoutStatusRegistry::CANCELED);
+
+        $this->expectException(ValidationException::class);
+
+        $this->validator->validate($this->player, new CancelWorkoutDataInput($workout->id), $workout);
+    }
+
+    private static function buildPlayer(string $id): PlayerDataModel
+    {
+        $user = new UserDataModel($id.'@test.test', 'pwd', ['ROLE_PLAYER']);
+        $user->password = 'hashed';
+        $player = new PlayerDataModel($user, 'Tester '.$id);
+        $player->id = $id;
+
+        return $player;
+    }
+
+    private static function buildWorkout(PlayerDataModel $owner, string $status): WorkoutDataModel
+    {
+        $workout = new WorkoutDataModel($owner, $status);
+        $workout->id = 'workout-'.uniqid();
+
+        return $workout;
     }
 }

@@ -23,15 +23,13 @@ final class StartEmptyWorkoutUseCase extends AbstractLoggedPlayerUseCase
         private readonly WorkoutPersisterGateway $workoutPersister,
         private readonly ClockInterface $clock,
     ) {
-        parent::__construct($startEmptyWorkoutValidator);
     }
 
-    public function execute(StartEmptyWorkoutDataInput|DataInputInterface $input): WorkoutDataOutput
+    /**
+     * @param StartEmptyWorkoutDataInput $input
+     */
+    public function execute(DataInputInterface $input): WorkoutDataOutput
     {
-        if (false === $input instanceof StartEmptyWorkoutDataInput) {
-            throw new \LogicException(sprintf('Expected %s, got %s.', StartEmptyWorkoutDataInput::class, $input::class));
-        }
-
         $this->startEmptyWorkoutValidator->validate($input);
 
         $player = $this->loggedPlayerResolver->getLoggedPlayer();

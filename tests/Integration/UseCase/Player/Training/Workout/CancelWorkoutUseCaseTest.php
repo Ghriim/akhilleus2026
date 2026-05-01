@@ -100,7 +100,7 @@ final class CancelWorkoutUseCaseTest extends KernelTestCase
             $useCase->execute(new CancelWorkoutDataInput($completed->id));
             self::fail('Expected ValidationException');
         } catch (ValidationException $e) {
-            self::assertSame(CancelWorkoutUseCase::ERROR_CODE, $e->errorCode);
+            self::assertSame(CancelWorkoutValidator::ERROR_CODE, $e->errorCode);
             self::assertArrayHasKey('status', $e->violations);
         }
     }

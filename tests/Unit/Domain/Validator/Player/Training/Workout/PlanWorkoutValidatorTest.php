@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Domain\Validator\Player\Training\Workout;
 
-use App\Domain\DTO\DataInput\DataInputInterface;
 use App\Domain\DTO\DataInput\Player\Training\Workout\PlanWorkoutDataInput;
 use App\Domain\Exception\ValidationException;
 use App\Domain\Security\LoggedPlayerResolverInterface;
@@ -61,12 +60,5 @@ final class PlanWorkoutValidatorTest extends TestCase
         } catch (ValidationException $e) {
             self::assertArrayHasKey('plannedAt', $e->violations);
         }
-    }
-
-    public function testItThrowsLogicExceptionForWrongInputType(): void
-    {
-        $this->expectException(\LogicException::class);
-
-        $this->validator->validate(new class () implements DataInputInterface {});
     }
 }

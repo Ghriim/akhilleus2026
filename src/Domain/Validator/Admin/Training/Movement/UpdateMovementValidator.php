@@ -6,6 +6,7 @@ namespace App\Domain\Validator\Admin\Training\Movement;
 
 use App\Domain\DataTransformer\StringDataTransformerInterface;
 use App\Domain\DTO\DataInput\Admin\Training\Movement\UpdateMovementDataInput;
+use App\Domain\DTO\DataModel\Training\Movement\MovementDataModel;
 use App\Domain\Exception\ValidationException;
 use App\Domain\Gateway\Provider\Training\Equipment\EquipmentProviderGateway;
 use App\Domain\Gateway\Provider\Training\Movement\MovementProviderGateway;
@@ -27,12 +28,8 @@ final readonly class UpdateMovementValidator extends AbstractLoggedAdminValidato
         parent::__construct($loggedUserResolver);
     }
 
-    public function validate(object $input): void
+    public function validate(UpdateMovementDataInput $input, MovementDataModel $movement): void
     {
-        if (false === $input instanceof UpdateMovementDataInput) {
-            throw new \LogicException(sprintf('Expected %s, got %s.', UpdateMovementDataInput::class, $input::class));
-        }
-
         $violations = [];
 
         if ('' === trim($input->label)) {
@@ -40,7 +37,7 @@ final readonly class UpdateMovementValidator extends AbstractLoggedAdminValidato
         } else {
             $slug = $this->stringDataTransformer->slugify($input->label);
             $existing = $this->movementProviderGateway->findOneBySlugForUniqueness($slug);
-            if (null !== $existing && $existing->id !== $input->id) {
+            if (null !== $existing && $existing->id !== $movement->id) {
                 $violations['label'][] = 'Another movement already uses this label.';
             }
         }

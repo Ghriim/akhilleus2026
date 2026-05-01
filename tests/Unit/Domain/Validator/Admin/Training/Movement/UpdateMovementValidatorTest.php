@@ -6,7 +6,6 @@ namespace App\Tests\Unit\Domain\Validator\Admin\Training\Movement;
 
 use App\Domain\DataTransformer\StringDataTransformerInterface;
 use App\Domain\DTO\DataInput\Admin\Training\Movement\UpdateMovementDataInput;
-use App\Domain\DTO\DataInput\DataInputInterface;
 use App\Domain\DTO\DataModel\Training\Equipment\EquipmentDataModel;
 use App\Domain\DTO\DataModel\Training\Movement\MovementDataModel;
 use App\Domain\DTO\DataModel\Training\Muscle\MuscleDataModel;
@@ -48,9 +47,9 @@ final class UpdateMovementValidatorTest extends TestCase
 
     public function testItPassesWhenSlugIsFreeOrBelongsToTheSameRow(): void
     {
-        $this->stringDataTransformer->method('slugify')->willReturn('bench-press');
         $self = new MovementDataModel('Bench press', new MuscleDataModel('Chest'));
         $self->id = 'mine';
+        $this->stringDataTransformer->method('slugify')->willReturn('bench-press');
         $this->movementProviderGateway->method('findOneBySlugForUniqueness')->willReturn($self);
         $this->muscleProviderGateway->method('findOneForAdminDetails')->willReturn(new MuscleDataModel('Chest'));
         $this->equipmentProviderGateway->method('findOneForAdminDetails')->willReturn(new EquipmentDataModel('Barbell'));
@@ -67,16 +66,18 @@ final class UpdateMovementValidatorTest extends TestCase
             false,
             false,
             false,
-        ));
+        ), $self);
 
         $this->expectNotToPerformAssertions();
     }
 
     public function testItRejectsSlugBelongingToAnotherRow(): void
     {
-        $this->stringDataTransformer->method('slugify')->willReturn('bench-press');
+        $mine = new MovementDataModel('Whatever', new MuscleDataModel('Chest'));
+        $mine->id = 'mine';
         $other = new MovementDataModel('Bench press', new MuscleDataModel('Chest'));
         $other->id = 'other';
+        $this->stringDataTransformer->method('slugify')->willReturn('bench-press');
         $this->movementProviderGateway->method('findOneBySlugForUniqueness')->willReturn($other);
         $this->muscleProviderGateway->method('findOneForAdminDetails')->willReturn(new MuscleDataModel('Chest'));
         $this->equipmentProviderGateway->method('findOneForAdminDetails')->willReturn(new EquipmentDataModel('Barbell'));
@@ -94,17 +95,10 @@ final class UpdateMovementValidatorTest extends TestCase
                 false,
                 false,
                 false,
-            ));
+            ), $mine);
             self::fail('Expected ValidationException');
         } catch (ValidationException $e) {
             self::assertContains('Another movement already uses this label.', $e->violations['label'] ?? []);
         }
-    }
-
-    public function testItThrowsLogicExceptionForWrongInputType(): void
-    {
-        $this->expectException(\LogicException::class);
-
-        $this->validator->validate(new class () implements DataInputInterface {});
     }
 }

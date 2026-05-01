@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Domain\Validator\Player\Training\Workout;
 
-use App\Domain\DTO\DataInput\DataInputInterface;
 use App\Domain\DTO\DataInput\Player\Training\Workout\StartEmptyWorkoutDataInput;
 use App\Domain\Security\LoggedPlayerResolverInterface;
 use App\Domain\Validator\Player\Training\Workout\StartEmptyWorkoutValidator;
@@ -21,14 +20,5 @@ final class StartEmptyWorkoutValidatorTest extends TestCase
         $validator->validate(new StartEmptyWorkoutDataInput());
 
         $this->expectNotToPerformAssertions();
-    }
-
-    public function testItThrowsLogicExceptionForWrongInputType(): void
-    {
-        $validator = new StartEmptyWorkoutValidator($this->createMock(LoggedPlayerResolverInterface::class));
-
-        $this->expectException(\LogicException::class);
-
-        $validator->validate(new class () implements DataInputInterface {});
     }
 }

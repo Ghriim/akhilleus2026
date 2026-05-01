@@ -18,4 +18,16 @@ interface WorkoutStatusRegistry
         self::COMPLETED,
         self::CANCELED,
     ];
+
+    /** @var list<string> */
+    public const array EDITABLE_STATUSES = [
+        self::PLANNED,
+        self::IN_PROGRESS,
+    ];
+
+    /** @var list<string> */
+    public const array CANCELLABLE_STATUSES = [
+        self::PLANNED,
+        self::IN_PROGRESS,
+    ];
 }

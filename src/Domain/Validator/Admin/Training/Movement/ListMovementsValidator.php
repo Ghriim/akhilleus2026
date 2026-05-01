@@ -6,21 +6,16 @@ namespace App\Domain\Validator\Admin\Training\Movement;
 
 use App\Domain\DTO\DataInput\Admin\Training\Movement\ListMovementsDataInput;
 use App\Domain\Exception\ValidationException;
-use App\Domain\Validator\DomainValidatorInterface;
 
-final readonly class ListMovementsValidator implements DomainValidatorInterface
+final readonly class ListMovementsValidator
 {
     public const string ERROR_CODE = 'LIST_MOVEMENTS_VALIDATION_FAILED';
 
     /** @var list<string> */
     private const array ALLOWED_DIRECTIONS = ['ASC', 'DESC'];
 
-    public function validate(object $input): void
+    public function validate(ListMovementsDataInput $input): void
     {
-        if (false === $input instanceof ListMovementsDataInput) {
-            throw new \LogicException(sprintf('Expected %s, got %s.', ListMovementsDataInput::class, $input::class));
-        }
-
         $violations = [];
 
         if (false === in_array($input->sort, ListMovementsDataInput::ALLOWED_SORTS, true)) {

@@ -25,15 +25,13 @@ final class CreateMovementUseCase extends AbstractLoggedAdminUseCase
         private readonly MuscleProviderGateway $muscleProvider,
         private readonly EquipmentProviderGateway $equipmentProvider,
     ) {
-        parent::__construct($createMovementValidator);
     }
 
-    public function execute(CreateMovementDataInput|DataInputInterface $input): MovementDataOutput
+    /**
+     * @param CreateMovementDataInput $input
+     */
+    public function execute(DataInputInterface $input): MovementDataOutput
     {
-        if (false === $input instanceof CreateMovementDataInput) {
-            throw new \LogicException(sprintf('Expected %s, got %s.', CreateMovementDataInput::class, $input::class));
-        }
-
         $this->createMovementValidator->validate($input);
 
         $mainMuscle = $this->muscleProvider->findOneForAdminDetails($input->mainMuscleId);

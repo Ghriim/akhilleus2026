@@ -27,12 +27,8 @@ final readonly class CreateMovementValidator extends AbstractLoggedAdminValidato
         parent::__construct($loggedUserResolver);
     }
 
-    public function validate(object $input): void
+    public function validate(CreateMovementDataInput $input): void
     {
-        if (false === $input instanceof CreateMovementDataInput) {
-            throw new \LogicException(sprintf('Expected %s, got %s.', CreateMovementDataInput::class, $input::class));
-        }
-
         $violations = [];
 
         if ('' === trim($input->label)) {

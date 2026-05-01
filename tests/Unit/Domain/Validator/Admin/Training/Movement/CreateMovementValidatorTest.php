@@ -6,7 +6,6 @@ namespace App\Tests\Unit\Domain\Validator\Admin\Training\Movement;
 
 use App\Domain\DataTransformer\StringDataTransformerInterface;
 use App\Domain\DTO\DataInput\Admin\Training\Movement\CreateMovementDataInput;
-use App\Domain\DTO\DataInput\DataInputInterface;
 use App\Domain\DTO\DataModel\Training\Equipment\EquipmentDataModel;
 use App\Domain\DTO\DataModel\Training\Movement\MovementDataModel;
 use App\Domain\DTO\DataModel\Training\Muscle\MuscleDataModel;
@@ -149,12 +148,5 @@ final class CreateMovementValidatorTest extends TestCase
         } catch (ValidationException $e) {
             self::assertContains('Another movement already uses this label.', $e->violations['label'] ?? []);
         }
-    }
-
-    public function testItThrowsLogicExceptionForWrongInputType(): void
-    {
-        $this->expectException(\LogicException::class);
-
-        $this->validator->validate(new class () implements DataInputInterface {});
     }
 }

@@ -16,4 +16,6 @@ interface MovementProviderGateway
     public function findAllForAdminList(string $sort = 'label', string $direction = 'ASC'): array;
 
     public function findOneBySlugForUniqueness(string $slug): ?MovementDataModel;
+
+    public function findOneByIdForExerciseAttachment(string $id): ?MovementDataModel;
 }

@@ -20,21 +20,19 @@ final class UpdateMuscleUseCase extends AbstractLoggedAdminUseCase
         private readonly MuscleProviderGateway $muscleProvider,
         private readonly MusclePersisterGateway $musclePersister,
     ) {
-        parent::__construct($updateMuscleValidator);
     }
 
-    public function execute(UpdateMuscleDataInput|DataInputInterface $input): MuscleDataOutput
+    /**
+     * @param UpdateMuscleDataInput $input
+     */
+    public function execute(DataInputInterface $input): MuscleDataOutput
     {
-        if (false === $input instanceof UpdateMuscleDataInput) {
-            throw new \LogicException(sprintf('Expected %s, got %s.', UpdateMuscleDataInput::class, $input::class));
-        }
-
-        $this->updateMuscleValidator->validate($input);
-
         $muscle = $this->muscleProvider->findOneForAdminDetails($input->id);
         if (null === $muscle) {
             throw new EntityNotFoundException(sprintf('Muscle "%s" not found.', $input->id));
         }
+
+        $this->updateMuscleValidator->validate($input, $muscle);
 
         $muscle->label = $input->label;
         $this->musclePersister->update($muscle);

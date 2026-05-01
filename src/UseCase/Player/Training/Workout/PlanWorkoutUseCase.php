@@ -21,15 +21,13 @@ final class PlanWorkoutUseCase extends AbstractLoggedPlayerUseCase
         private readonly LoggedPlayerResolverInterface $loggedPlayerResolver,
         private readonly WorkoutPersisterGateway $workoutPersister,
     ) {
-        parent::__construct($planWorkoutValidator);
     }
 
-    public function execute(PlanWorkoutDataInput|DataInputInterface $input): WorkoutDataOutput
+    /**
+     * @param PlanWorkoutDataInput $input
+     */
+    public function execute(DataInputInterface $input): WorkoutDataOutput
     {
-        if (false === $input instanceof PlanWorkoutDataInput) {
-            throw new \LogicException(sprintf('Expected %s, got %s.', PlanWorkoutDataInput::class, $input::class));
-        }
-
         $this->planWorkoutValidator->validate($input);
 
         $player = $this->loggedPlayerResolver->getLoggedPlayer();

@@ -17,18 +17,15 @@ final class ListMovementsUseCase extends AbstractPublicUseCase
         private readonly ListMovementsValidator $listMovementsValidator,
         private readonly MovementProviderGateway $movementProvider,
     ) {
-        parent::__construct($listMovementsValidator);
     }
 
     /**
+     * @param ListMovementsDataInput $input
+     *
      * @return list<MovementListItemDataOutput>
      */
-    public function execute(ListMovementsDataInput|DataInputInterface $input): array
+    public function execute(DataInputInterface $input): array
     {
-        if (false === $input instanceof ListMovementsDataInput) {
-            throw new \LogicException(sprintf('Expected %s, got %s.', ListMovementsDataInput::class, $input::class));
-        }
-
         $this->listMovementsValidator->validate($input);
 
         $movements = $this->movementProvider->findAllForAdminList($input->sort, $input->direction);

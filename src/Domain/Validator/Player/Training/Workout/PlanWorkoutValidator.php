@@ -21,12 +21,8 @@ final readonly class PlanWorkoutValidator extends AbstractLoggedPlayerValidator
         parent::__construct($loggedPlayerResolver);
     }
 
-    public function validate(object $input): void
+    public function validate(PlanWorkoutDataInput $input): void
     {
-        if (false === $input instanceof PlanWorkoutDataInput) {
-            throw new \LogicException(sprintf('Expected %s, got %s.', PlanWorkoutDataInput::class, $input::class));
-        }
-
         $violations = [];
         if ($input->plannedAt <= $this->clock->now()) {
             $violations['plannedAt'][] = 'Planned date must be in the future.';

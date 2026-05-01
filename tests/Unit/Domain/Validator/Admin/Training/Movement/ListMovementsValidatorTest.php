@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Tests\Unit\Domain\Validator\Admin\Training\Movement;
 
 use App\Domain\DTO\DataInput\Admin\Training\Movement\ListMovementsDataInput;
-use App\Domain\DTO\DataInput\DataInputInterface;
 use App\Domain\Exception\ValidationException;
 use App\Domain\Validator\Admin\Training\Movement\ListMovementsValidator;
 use PHPUnit\Framework\TestCase;
@@ -45,12 +44,5 @@ final class ListMovementsValidatorTest extends TestCase
         } catch (ValidationException $e) {
             self::assertArrayHasKey('direction', $e->violations);
         }
-    }
-
-    public function testItThrowsLogicExceptionForWrongInputType(): void
-    {
-        $this->expectException(\LogicException::class);
-
-        $this->validator->validate(new class () implements DataInputInterface {});
     }
 }
