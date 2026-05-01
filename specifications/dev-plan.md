@@ -540,18 +540,50 @@ Date serialization: `WorkoutDataOutput` uses `?string` (ISO 8601 / RFC 3339 / `\
 
 ## Phase 7 — Player frontend (React TS)
 
-- [ ] Bootstrap `frontend/website/` with Vite + React 18 + TypeScript + React Router + TanStack Query (light, no Redux) + a small fetch wrapper that handles JWT.
-- [ ] D&D / medieval-fantasy theming: define CSS variables in `src/theme/colors.css` (`--color-parchment`, `--color-ink`, `--color-gold`, `--color-banner`, `--color-iron`, `--color-blood`, plus dark/light toggle); apply via `:root`. Pick a serif/blackletter display font + a readable body font.
-- [ ] Routes:
-  - [ ] `/login`, `/register` — public.
-  - [ ] `/` — dashboard: "Start workout", "Plan workout", upcoming list (top 3), recent history (top 3).
-  - [ ] `/workouts/new` — choose start vs plan flow.
-  - [ ] `/workouts/:id` — workout editor / live view (planned vs in-progress vs completed states share a layout but different controls).
-  - [ ] `/history` — paginated past workouts.
-  - [ ] `/upcoming` — list of planned/in-progress.
-  - [ ] `/achievements` — personal bests grouped by movement.
-- [ ] Generated TS client: run `openapi-typescript` against `/api/doc.json` into `src/api/types.ts` to keep DTOs in sync.
-- [ ] Finish-workout flow: if API returns 422 with `WORKOUT_HAS_INCOMPLETE_SETS`, render the modal listing incomplete sets per the spec.
+Per the working contract for this phase, **functional first / design later**: the goal is a usable player website (auth + workout lifecycle + read endpoints) before any styling/theming work. No AntD on the player site (the admin uses it because it's an internal tool; the player site needs to stay stylable end-to-end via CSS variables for the D&D theming pass). Plain HTML elements + a tiny `index.css` global with neutral defaults are enough until 7.8 swaps in the medieval-fantasy theme.
+
+### [x] 7.1 Foundations
+- [x] `frontend/website/` bootstrapped (Vite + React 18 + TS, mirror of admin's tooling but **no AntD**). Toolchain: `tsc -b`, ESLint flat config, Prettier, npm scripts (`dev`/`build`/`typecheck`/`lint`).
+- [x] Docker compose service `frontend-website` (`docker/node/Dockerfile` shared with admin), bound to host network on Vite port `5174` (admin uses `5173`). New named volume `frontend_website_node_modules`.
+- [x] Dependencies pinned to match admin where overlapping (`react@^18.3.1`, `react-router-dom@^6.28.0`, `@tanstack/react-query@^5.59.20`).
+- [x] `src/api/httpClient.ts` — fetch wrapper, JWT injection via `token` option, parses `{message, errorCode, violations}` on non-2xx into a typed `HttpError`, calls a registered `unauthorizedHandler` on 401.
+- [x] `src/api/types.ts` — hand-rolled mirrors of the backend DataOutput / DataInput shapes (Phase 8 may swap for `openapi-typescript` generation).
+- [x] `src/auth/AuthContext.tsx` + `useAuth` — `login()` POSTs `/api/security/login`, `logout()` clears storage, JWT persisted to `localStorage` under `akhilleus.player.jwt`. The 401 handler wired in `useEffect` clears the token and triggers a re-render so `ProtectedRoute` redirects to `/login`.
+- [x] `src/auth/ProtectedRoute.tsx` — redirects to `/login` when unauthenticated, preserves the `from` location in `Navigate` state.
+- [x] `src/layout/AppLayout.tsx` — header with "Akhilleus" brand, primary nav (Dashboard / Upcoming / History / Achievements), Logout button (calls `POST /api/security/logout` best-effort then clears local token).
+- [x] Routing: `/login`, `/register` public; `ProtectedRoute > AppLayout` wraps `/`, `/upcoming`, `/history`, `/workouts/new`, `/workouts/:id`, `/achievements`. Catch-all `*` redirects to `/`. Each page is currently a placeholder string ("coming in 7.x").
+- [x] `src/index.css` — minimal CSS with neutral CSS variables (`--color-bg`, `--color-surface`, `--color-text`, `--color-primary`, etc.) and basic resets/buttons/inputs. The D&D pass (Phase 7.8) will override these variables.
+- [x] Verified: `npm run typecheck && npm run lint && npm run build` clean. Dev server returns 200 on `http://localhost:5174/`.
+
+### [ ] 7.2 Auth pages
+- [ ] `/login` form: email + password → `POST /api/security/login` → store JWT → redirect to `/`.
+- [ ] `/register` form: email + password + displayName → `POST /api/security/registration` → auto-login → redirect to `/`.
+- [ ] Surface 422 violations per field; surface generic 500/network errors at the form level.
+- [ ] Logout (header button) clears JWT and redirects to `/login`.
+
+### [ ] 7.3 Lists + dashboard
+- [ ] `/upcoming` page: GET `/api/player/workouts/upcoming`, render workout cards.
+- [ ] `/history` page: GET `/api/player/workouts/history` paginated (page + perPage controls), render list.
+- [ ] `/` dashboard: 2 CTAs ("Start workout", "Plan workout"), top 3 upcoming, top 3 history.
+
+### [ ] 7.4 Workout creation
+- [ ] `/workouts/new` page with two actions: Start Empty (POST `/api/player/workouts`) → redirect; Plan Future (date picker → POST `/api/player/workouts/planned`) → redirect.
+
+### [ ] 7.5 Workout details / live editor
+- [ ] `/workouts/:id` calls GET `/api/player/workouts/{id}`. Status-conditional rendering:
+  - PLANNED: show planned date + Start (`POST /{id}/start`) + Cancel (`POST /{id}/cancel`).
+  - IN_PROGRESS: live editor — Add movement (movement picker → `POST /workouts/{id}/exercises`), Add set (`POST /exercises/{id}/sets`), Update achieved (`PUT /sets/{id}/achieved`), Mark completed (`POST /sets/{id}/complete`), Finish (`POST /{id}/finish`).
+  - COMPLETED / CANCELED: read-only.
+
+### [ ] 7.6 Finish workout flow
+- [ ] On 422 with `errorCode === 'WORKOUT_HAS_INCOMPLETE_SETS'`, render a modal listing the set ids carried in `violations.exerciseSets` so the player can navigate back to them.
+- [ ] On success, surface the `newPersonalBests` payload (toast or panel) before redirecting / refreshing the details page.
+
+### [ ] 7.7 Achievements
+- [ ] `/achievements` page consumes GET `/api/player/personal-bests`, lists movements with their PB types and values.
+
+### [ ] 7.8 D&D theming
+- [ ] Override the CSS variables defined in `src/index.css` with the D&D / medieval-fantasy palette (`--color-parchment`, `--color-ink`, `--color-gold`, `--color-banner`, `--color-iron`, `--color-blood`). Add typographic choices (serif/blackletter headings, readable body). Optionally add a light/dark variant.
 
 ### [ ] Verification
 - [ ] Manual end-to-end through the UI: register, plan a workout, start it, log sets, finish, see new PBs appear on `/achievements`. Smoke test in Chrome + Firefox.

@@ -51,6 +51,22 @@ services:
         # again the day docker bridge networking is fixed on the host.
         network_mode: host
 
+    frontend-website:
+        build:
+            context: .
+            dockerfile: docker/node/Dockerfile
+        working_dir: /app
+        volumes:
+            - ./frontend/website:/app
+            - frontend_website_node_modules:/app/node_modules
+        environment:
+            VITE_API_BASE_URL: ${VITE_API_BASE_URL:-https://127.0.0.1:8000}
+        # Same host-network rationale as frontend-admin (Vite binds
+        # 0.0.0.0:5174 — see vite.config.ts — to avoid colliding with
+        # the admin's 5173).
+        network_mode: host
+
 volumes:
     database_data:
     frontend_admin_node_modules:
+    frontend_website_node_modules:
