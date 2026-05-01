@@ -2,8 +2,8 @@
 
 ## Resume pointer (last session snapshot)
 
-- **Last completed step**: Phase 6.2 (Workout content — 9 use cases for Exercise + ExerciseSet) + their controllers (`ExercisePlayerController`, `ExerciseSetPlayerController`) + a cross-cutting **validator/use-case norm refactor** applied to the entire codebase (Workout × 4, Admin × 15, Exercise × 4, ExerciseSet × 5, Register × 1). `composer qa` is green (171 tests / 308 assertions; integration suite: 74 tests / 194 assertions). Schema in sync (mapping + DB).
-- **Next pending step**: §6.3 (`FinishWorkoutUseCase` + `PersonalBestEvaluator`). Prereqs: ship `PersonalBest{Provider,Persister}Gateway` + their concrete repo/persister (Phase 1.3 leftover for that entity), confirm the speed formula (`distance / duration`, see open assumption below), wire the inverse side of `Workout::$exercises ↔ Exercise::$workout` if more eager-loaded paths need it (already aligned: `inversedBy: 'exercises'` is now set on Exercise).
+- **Last completed step**: Phase 6.3 (`FinishWorkoutUseCase` + `PersonalBestEvaluator` + 7 PB categories + `Exercise::$exerciseSets ↔ ExerciseSet::$exercise` bidirectional, Phase 1.3 leftover for PB shipped). `composer qa` is green (190 tests / 369 assertions). Schema in sync (mapping + DB).
+- **Next pending step**: §6.4 (Read endpoints — list workout history, list upcoming workouts, get workout details, list personal bests). Prereqs: ship `PersonalBestProviderGateway::findAllByPlayerForList` + extend `WorkoutProviderGateway` with paginated `findCompletedByPlayer` and `findPlannedOrInProgressByPlayer`, plus `findOneByIdForDetails` (eager-load exercises + sets + movement + main muscle for the live/historical view).
 - The "Decisions / deviations" block below + each phase's inline notes are the working contract — read them before designing anything new.
 - `specifications/initial-requirements.md` is the **frozen user spec** and must not be edited. All clarifications/decisions go into this dev-plan and `specifications/conventions.md`.
 
@@ -457,21 +457,37 @@ Foundations introduced in 6.2:
 - [x] One Integration test class per UseCase under `tests/Integration/UseCase/Player/Training/{Exercise,ExerciseSet}/`. Player tests instantiate the use case manually with a stubbed `LoggedPlayerResolverInterface` (canonical reference: `StartEmptyWorkoutUseCaseTest`).
 - [ ] cURL smoke flow for the 9 endpoints (deferred to Phase 6.3 batch since FinishWorkout caps the lifecycle).
 
-### [ ] 6.3 Finishing a workout & personal bests
-- [ ] `FinishWorkoutUseCase`:
-  1. Reload workout with all sets eager-fetched.
-  2. If any set is not `completed`, throw `ValidationException` with code `WORKOUT_HAS_INCOMPLETE_SETS` and a list of incomplete set ids — frontend renders the spec's modal from this payload.
-  3. Set `dateEnd=now`, `status=COMPLETED`, persist.
-  4. Delegate to `Domain/Service/PersonalBestEvaluator` (pure domain code) which receives the workout + a `PersonalBestProviderGateway` and returns a list of `PersonalBestDataModel` upserts; the use case persists them via `PersonalBestPersisterGateway`.
-- [ ] `PersonalBestEvaluator` computes the seven categories from the spec:
-  - [ ] HIGHEST_WEIGHT — `max(achievedWeight)` per movement.
-  - [ ] HIGHEST_REPS — `max(achievedReps)`.
-  - [ ] HIGHEST_VOLUME_ONE_SET — `max(achievedReps * achievedWeight)`.
-  - [ ] HIGHEST_VOLUME_WORKOUT — `sum(achievedReps * achievedWeight)` for that movement in that workout.
-  - [ ] HIGHEST_DURATION — `max(achievedDurationSeconds)`.
-  - [ ] HIGHEST_DISTANCE — `max(achievedDistanceMeters)`.
-  - [ ] HIGHEST_SPEED — `max(achievedDistanceMeters / achievedDurationSeconds)` *(confirm formula — the spec text "duration * distance" appears to be a typo)*.
-- [ ] A category only fires if the underlying movement tracks the relevant fields (e.g. HIGHEST_REPS only on movements where `tracksRepetitions=true`).
+### [x] 6.3 Finishing a workout & personal bests
+- [x] `FinishWorkoutUseCase` (under `UseCase/Player/Training/Workout/`):
+  1. [x] Reload workout with all sets eager-fetched via `WorkoutProviderGateway::findOneByIdForFinishWorkout` (joins `e.exerciseSets`, `e.movement`, ordered by `e.position` then `s.position`).
+  2. [x] Validator (`FinishWorkoutValidator`, `validate(player, input, workout)`): ownership + status === IN_PROGRESS + all `completed` flags set. Otherwise throws `ValidationException` with code `WORKOUT_HAS_INCOMPLETE_SETS` and `violations.exerciseSets` carrying the list of incomplete set ids — frontend renders the spec's modal from this payload.
+  3. [x] Use case sets `dateEnd=now`, `status=COMPLETED`, persists workout, then evaluates personal bests.
+  4. [x] Delegates to `Domain/Service/PersonalBestEvaluator` (pure domain — no clock dep, uses `$workout->dateEnd` as `achievedAt`) which receives the workout + a `PersonalBestProviderGateway` and returns `list<PersonalBestUpsert>`. The use case persists each via `PersonalBestPersisterGateway::create` or `::update` based on `$upsert->isNew`.
+- [x] `PersonalBestEvaluator` computes the seven categories from the spec, all with scale-4 numeric strings:
+  - [x] HIGHEST_WEIGHT — `max(achievedWeight)` per movement (only if `tracksWeight`).
+  - [x] HIGHEST_REPS — `max(achievedReps)` (only if `tracksRepetitions`).
+  - [x] HIGHEST_VOLUME_ONE_SET — `max(achievedReps * achievedWeight)` (only if both).
+  - [x] HIGHEST_VOLUME_WORKOUT — `sum(achievedReps * achievedWeight)` for that movement across all the workout's sets (only if both); has no `exerciseSet` provenance (workout-level).
+  - [x] HIGHEST_DURATION — `max(achievedDurationSeconds)` (only if `tracksDuration`).
+  - [x] HIGHEST_DISTANCE — `max(achievedDistanceMeters)` (only if `tracksDistance`).
+  - [x] HIGHEST_SPEED — `max(achievedDistanceMeters / achievedDurationSeconds)` (only if both, sets with `duration === 0` are skipped). **Formula confirmed `distance / duration`** (spec's `duration * distance` was a typo — that would be volume, not speed).
+- [x] A category only fires if the underlying movement tracks the relevant fields. The evaluator iterates each Exercise → ExerciseSet, groups by `movement->id`, and computes per-movement candidates so a movement appearing in multiple Exercises in the same workout aggregates correctly.
+
+Foundations introduced in 6.3:
+- [x] **Phase 1.3 leftover gateways landed**: `PersonalBestProviderGateway::findOneForPlayerMovementType(player, movement, type): ?PersonalBestDataModel` + `PersonalBestPersisterGateway` + `PersonalBestRepository` + `PersonalBestPersister`.
+- [x] **`PersonalBestDataModel` implements `OwnedByPlayerInterface`** (already had `public PlayerDataModel $player`, just added the interface).
+- [x] **`Exercise::$exerciseSets` inverse 1:M added** (Phase 1 deferral resolved). `ExerciseSet::$exercise` now has `inversedBy: 'exerciseSets'`. Both bidirectional relations on the Exercise/Workout chain are now fully wired (previous one was Workout↔Exercise in 6.2). `doctrine:schema:validate` clean (mapping + DB).
+- [x] **`PersonalBestEvaluator` uses native PHP float arithmetic** (not bcmath, which is not in the dev environment). Domain values (weight ≤ 9999.99 kg, distance ≤ 99,999,999.99 m, etc.) are all well within IEEE 754's 15–16 significant digit precision. Final values are formatted with `number_format(..., 4, '.', '')` to match the `personal_best.value` column scale of 4.
+- [x] **`PersonalBestUpsert`** small DTO under `Domain/Service/` to disambiguate create vs update without requiring the use case to inspect Doctrine state. Returned as `list<PersonalBestUpsert>` from `evaluate()`.
+- [x] **Strictly-greater-than improvement test**: ties do not produce upserts (verified by `PersonalBestEvaluatorTest::testItDoesNotProduceUpsertOnATieWithExistingPB` + integration `testATieWithExistingPBDoesNotProduceADuplicate`).
+
+Tests:
+- [x] `tests/Unit/Domain/Service/PersonalBestEvaluatorTest` — 7 tests covering: missing dateEnd → LogicException, full strength-movement happy path, full cardio-movement happy path, speed skipped when duration=0, tie does not produce upsert, beat updates the existing row in place, aggregation across exercises that share the same movement.
+- [x] `tests/Unit/Domain/Validator/Player/Training/Workout/FinishWorkoutValidatorTest` — 6 tests covering happy path, no-set workout, ownership (UnauthorizedException), wrong status (PLANNED, COMPLETED), and the WORKOUT_HAS_INCOMPLETE_SETS path with id list.
+- [x] `tests/Integration/UseCase/Player/Training/Workout/FinishWorkoutUseCaseTest` — 6 tests covering full happy path with PB persistence + reread, tie scenario across two workouts, beat scenario (verifies the existing PB row is updated in place via id comparison), incomplete-sets rejection, planned-state rejection, unknown-id 404.
+
+Controller:
+- [x] `WorkoutPlayerController::finish` — `POST /api/player/workouts/{id}/finish`. No body required.
 
 ### [ ] 6.4 Read endpoints
 UseCases under `UseCase/Player/Read/`:
@@ -482,7 +498,7 @@ UseCases under `UseCase/Player/Read/`:
 
 ### [~] 6.5 Controllers
 Under `Infrastructure/Controller/Player/`. Controllers are landed **per Phase 6.x batch** (alongside the use cases they expose) rather than all in one final pass — that lets us cURL-smoke each phase end-to-end and avoids the DI-container pruning that bites integration tests when a use case has no public consumer yet.
-- [~] `Training/WorkoutPlayerController` — start-empty / plan / start-planned / cancel done in 6.1; finish (6.3) and list/details (6.4) pending.
+- [~] `Training/WorkoutPlayerController` — start-empty / plan / start-planned / cancel done in 6.1; finish done in 6.3 (`POST /api/player/workouts/{id}/finish`); list/details (6.4) pending.
 - [x] `Training/ExercisePlayerController` — add (`POST /api/player/workouts/{workoutId}/exercises`), remove (`DELETE /api/player/exercises/{id}`), update rest (`PUT /api/player/exercises/{id}/rest-duration`), reorder (`POST /api/player/workouts/{workoutId}/exercises/reorder`).
 - [x] `Training/ExerciseSetPlayerController` — add (`POST /api/player/exercises/{exerciseId}/sets`), update planned (`PUT /api/player/sets/{id}/planned`), update achieved (`PUT /api/player/sets/{id}/achieved`), remove (`DELETE /api/player/sets/{id}`), mark complete (`POST /api/player/sets/{id}/complete`). Body parsing of numeric-string fields surfaces malformed values as 422 `EXERCISE_SET_BODY_INVALID` (controller-level guard before the use case is hit).
 - [ ] `Training/PersonalBestPlayerController` — list (6.4).
@@ -548,6 +564,6 @@ Date serialization: `WorkoutDataOutput` uses `?string` (ISO 8601 / RFC 3339 / `\
 | 4 | Integration test per UseCase (15 total: 5 × Equipment/Muscle/Movement); cURL CRUD smoke check for each entity | [x] (OpenAPI annotations deferred) |
 | 5 | Manual CRUD in React + AntD admin UI, logged in as the seeded admin (light + dark theme exercised) | [x] |
 | ⏸ | Admin path complete — pause | [x] |
-| 6 | Integration test per Player UseCase, plus PB-evaluator scenarios cover the full workout lifecycle | [~] (6.1 + 6.2 done — 13 use cases; 6.3-6.6 pending) |
+| 6 | Integration test per Player UseCase, plus PB-evaluator scenarios cover the full workout lifecycle | [~] (6.1 + 6.2 + 6.3 done — 14 use cases + PB evaluator; 6.4-6.6 pending) |
 | 7 | Manual UI run-through of the player flows | [ ] |
 | 8 | CI green on a clean clone; coverage threshold met | [ ] |

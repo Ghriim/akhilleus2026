@@ -10,4 +10,6 @@ use App\Domain\DTO\DataModel\User\PlayerDataModel;
 interface WorkoutProviderGateway
 {
     public function findOneByIdForPlayerAction(string $id, PlayerDataModel $player): ?WorkoutDataModel;
+
+    public function findOneByIdForFinishWorkout(string $id, PlayerDataModel $player): ?WorkoutDataModel;
 }

@@ -23,7 +23,7 @@ class ExerciseSetDataModel implements DataModelInterface, OwnedByPlayerInterface
     #[ORM\GeneratedValue(strategy: 'NONE')]
     public string $id;
 
-    #[ORM\ManyToOne(targetEntity: ExerciseDataModel::class)]
+    #[ORM\ManyToOne(targetEntity: ExerciseDataModel::class, inversedBy: 'exerciseSets')]
     #[ORM\JoinColumn(nullable: false)]
     public ExerciseDataModel $exercise;
 

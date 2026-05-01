@@ -32,4 +32,20 @@ final class WorkoutRepository extends ServiceEntityRepository implements Workout
             ->getQuery()
             ->getOneOrNullResult();
     }
+
+    public function findOneByIdForFinishWorkout(string $id, PlayerDataModel $player): ?WorkoutDataModel
+    {
+        return $this->createQueryBuilder('w')
+            ->leftJoin('w.exercises', 'e')->addSelect('e')
+            ->leftJoin('e.movement', 'm')->addSelect('m')
+            ->leftJoin('e.exerciseSets', 's')->addSelect('s')
+            ->where('w.id = :id')
+            ->andWhere('w.player = :player')
+            ->setParameter('id', $id)
+            ->setParameter('player', $player)
+            ->orderBy('e.position', 'ASC')
+            ->addOrderBy('s.position', 'ASC')
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
 }

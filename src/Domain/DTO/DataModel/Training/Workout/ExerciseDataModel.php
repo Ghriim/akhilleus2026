@@ -8,6 +8,8 @@ use App\Domain\DTO\DataModel\DataModelInterface;
 use App\Domain\DTO\DataModel\OwnedByPlayerInterface;
 use App\Domain\DTO\DataModel\Training\Movement\MovementDataModel;
 use App\Domain\DTO\DataModel\User\PlayerDataModel;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -44,6 +46,10 @@ class ExerciseDataModel implements DataModelInterface, OwnedByPlayerInterface
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     public \DateTimeImmutable $updatedAt;
 
+    /** @var Collection<int, ExerciseSetDataModel> */
+    #[ORM\OneToMany(targetEntity: ExerciseSetDataModel::class, mappedBy: 'exercise', orphanRemoval: true)]
+    public Collection $exerciseSets;
+
     public function __construct(
         WorkoutDataModel $workout,
         MovementDataModel $movement,
@@ -54,5 +60,6 @@ class ExerciseDataModel implements DataModelInterface, OwnedByPlayerInterface
         $this->movement = $movement;
         $this->position = $position;
         $this->restDurationSeconds = $restDurationSeconds;
+        $this->exerciseSets = new ArrayCollection();
     }
 }

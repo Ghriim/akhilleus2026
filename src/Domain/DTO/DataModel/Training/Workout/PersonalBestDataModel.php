@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\DTO\DataModel\Training\Workout;
 
 use App\Domain\DTO\DataModel\DataModelInterface;
+use App\Domain\DTO\DataModel\OwnedByPlayerInterface;
 use App\Domain\DTO\DataModel\Training\Movement\MovementDataModel;
 use App\Domain\DTO\DataModel\User\PlayerDataModel;
 use Doctrine\DBAL\Types\Types;
@@ -13,7 +14,7 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity]
 #[ORM\Table(name: 'personal_best')]
 #[ORM\UniqueConstraint(name: 'uniq_personal_best_player_movement_type', columns: ['player_id', 'movement_id', 'type'])]
-class PersonalBestDataModel implements DataModelInterface
+class PersonalBestDataModel implements DataModelInterface, OwnedByPlayerInterface
 {
     #[ORM\Id]
     #[ORM\Column(type: Types::STRING, length: 26)]

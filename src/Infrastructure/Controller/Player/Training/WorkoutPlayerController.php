@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace App\Infrastructure\Controller\Player\Training;
 
 use App\Domain\DTO\DataInput\Player\Training\Workout\CancelWorkoutDataInput;
+use App\Domain\DTO\DataInput\Player\Training\Workout\FinishWorkoutDataInput;
 use App\Domain\DTO\DataInput\Player\Training\Workout\PlanWorkoutDataInput;
 use App\Domain\DTO\DataInput\Player\Training\Workout\StartEmptyWorkoutDataInput;
 use App\Domain\DTO\DataInput\Player\Training\Workout\StartPlannedWorkoutDataInput;
 use App\Domain\Exception\ValidationException;
 use App\UseCase\Player\Training\Workout\CancelWorkoutUseCase;
+use App\UseCase\Player\Training\Workout\FinishWorkoutUseCase;
 use App\UseCase\Player\Training\Workout\PlanWorkoutUseCase;
 use App\UseCase\Player\Training\Workout\StartEmptyWorkoutUseCase;
 use App\UseCase\Player\Training\Workout\StartPlannedWorkoutUseCase;
@@ -57,5 +59,11 @@ final readonly class WorkoutPlayerController
     public function cancel(string $id, CancelWorkoutUseCase $useCase): JsonResponse
     {
         return new JsonResponse($useCase->execute(new CancelWorkoutDataInput($id)));
+    }
+
+    #[Route(path: '/api/player/workouts/{id}/finish', name: 'player_workout_finish', methods: ['POST'])]
+    public function finish(string $id, FinishWorkoutUseCase $useCase): JsonResponse
+    {
+        return new JsonResponse($useCase->execute(new FinishWorkoutDataInput($id)));
     }
 }
