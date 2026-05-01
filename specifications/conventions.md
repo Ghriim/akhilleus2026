@@ -72,14 +72,27 @@ in the repository using the context as name (for example findOneForWorkoutDetail
 ## Conventions for UseCases
 - UseCase are final
 - UseCase have only one public method: `execute`
-- UseCase only receive DataInputInterface as a parameter
+- UseCase signature is `public function execute(DataInputInterface $input): DataOutputInterface|array` (the runtime parameter type is the wide `DataInputInterface`; narrow it in PHPDoc with `@param XDataInput $input` so PHPStan resolves field accesses). Do **not** add a runtime `instanceof` guard with `LogicException` — the typed validator signature catches misuse downstream and the controller is the only caller.
 - UseCase only return DataOutputInterface or an array of DataOutputInterface
 - UseCase implement the `UseCaseInterface`
-- UseCase extends one of the following classes:
-  - `AbstractPublicUseCase` : constructor will inject `DomainValidatorInterface` (no auth resolution; use this for Get / List / Register endpoints).
-  - `AbstractLoggedAdminUseCase` : constructor will inject `AbstractLoggedAdminValidator`. Use for `UseCase/Admin/...`. Validators that extend `AbstractLoggedAdminValidator` get `final protected getLoggedAdmin(): UserDataModel` from the parent.
-  - `AbstractLoggedPlayerUseCase` : constructor will inject `AbstractLoggedPlayerValidator`. Use for `UseCase/Player/...`. Validators that extend `AbstractLoggedPlayerValidator` get `final protected getLoggedPlayer(): PlayerDataModel` from the parent (resolves the `PlayerDataModel` linked to the authenticated `UserDataModel` via `LoggedPlayerResolverInterface` → `PlayerProviderGateway`; throws `UnauthorizedException` if no profile is linked).
+- UseCase extends one of the following marker bases (no constructor on the base — each UseCase declares its own constructor with the deps it needs):
+  - `AbstractPublicUseCase` : no auth resolution; use for self-registration and any `List` / `GetDetails` endpoint.
+  - `AbstractLoggedAdminUseCase` : use for `UseCase/Admin/...`.
+  - `AbstractLoggedPlayerUseCase` : use for `UseCase/Player/...`. Inject `LoggedPlayerResolverInterface` (resolves the `PlayerDataModel` linked to the authenticated `UserDataModel`; throws `UnauthorizedException` if no profile is linked).
 - The previous `AbstractLoggedUserUseCase` / `AbstractLoggedUserValidator` pair has been **removed** in favor of the Admin/Player split above. Do not re-introduce it. If a future role (Coach…) lands, mirror the same pattern (`AbstractLoggedCoachUseCase` + `AbstractLoggedCoachValidator` with a `LoggedCoachResolverInterface`).
+- **Edit-style flow** (Update/Delete/state transitions/etc. — anything that mutates an existing entity): the use case loads the entity through its `*ProviderGateway`, throws `EntityNotFoundException` if `null`, then calls `$validator->validate(...)` with the loaded entity. The validator centralises ownership + state + input rules; the use case stays thin.
+- **Create-style flow** (Start/Plan/Register/etc.): the use case calls `$validator->validate(input)` first, then builds and persists the entity via the matching `*PersisterGateway`.
+
+## Conventions for Validators
+- Validators are `final readonly` classes; their `validate(...)` method has a typed signature (no shared interface) and returns `void`. Concrete signatures (pick the one that matches the use case shape):
+  - **Create / List / Register**: `validate(XDataInput $input): void` — input rules only (uniqueness, format, sort/direction, etc.).
+  - **Edit on a player-owned entity**: `validate(PlayerDataModel $player, XDataInput $input, EntityDataModel $entity): void` — calls `$this->assertPlayerOwns($player, $entity)` first, then state checks (allowed status…), then input violations accumulated into a `ValidationException`. The entity is non-nullable (use case has already done the 404).
+  - **Edit on an admin-managed entity**: `validate(XDataInput $input, EntityDataModel $entity): void` — same shape as player-edit but no ownership check (admin is global). Use the entity for self-match on uniqueness etc.
+- Player-edit validators **must** extend `AbstractLoggedPlayerValidator` (provides `assertPlayerOwns(PlayerDataModel, OwnedByPlayerInterface)`); their target DataModels must implement `OwnedByPlayerInterface` (use a virtual property hook when the player is reachable transitively, e.g. `public PlayerDataModel $player { get => $this->workout->player; }` on `ExerciseDataModel`).
+- Admin Create / Update validators extend `AbstractLoggedAdminValidator`. Standalone validators (List / Register / GetDetails) don't extend any abstract.
+- Error code constants live on the validator (`public const string ERROR_CODE = '...';`); for validators that throw multiple distinct error codes, use named constants (e.g. `ILLEGAL_STATUS_CODE`, `FAILED_ERROR_CODE`, `TRACKING_MISMATCH_ERROR_CODE`).
+- Empty validators (no rules at all, would have an empty body) are not created — drop the validator dependency from the use case instead. The 6 admin Delete/GetDetails use cases follow this rule (no validator).
+- Type narrowing is provided by the typed signature itself; **do not** add a runtime `if (false === $input instanceof X)` guard — PHP throws a `TypeError` if the wrong type is passed, which is the correct dev-time signal. The legacy `DomainValidatorInterface` has been removed.
 
 ## Conventions for DataOutput JSON serialization
 - `JsonResponse` calls `json_encode` directly. `\DateTimeImmutable` would be dumped as `{date, timezone_type, timezone}` — unusable by API consumers. Therefore:
@@ -101,7 +114,10 @@ in the repository using the context as name (for example findOneForWorkoutDetail
 - Every concrete `App\Domain\Validator\...Validator` class **must** be paired with a unit test.
 - Test path mirrors the source path: `tests/Unit/Domain/Validator/<same-relative-subpath>/<ValidatorName>Test.php`.
 - The test extends `PHPUnit\Framework\TestCase`. Gateway dependencies (`*ProviderGateway`) are mocked with `$this->createMock(...)` and configured via `->method(...)->willReturn(...)`.
-- One test method for the happy path (no exception). One method per rule (each violation message has its own test). One method that verifies the validator **accumulates** every violation in a single `ValidationException` rather than failing fast. One method that verifies the runtime guard against the wrong input type (`\LogicException`).
+- One test method for the happy path (no exception). One method per rule (each violation message has its own test). One method that verifies the validator **accumulates** every violation in a single `ValidationException` rather than failing fast.
+- For player-edit validators (`validate(PlayerDataModel, XDataInput, EntityDataModel)`): include one test that builds the entity owned by a *different* player and asserts `UnauthorizedException` (covers `assertPlayerOwns`).
+- Do **not** test the runtime guard against the wrong input type — the typed signature is enforced by PHP itself (any wrong type throws `TypeError`); a unit test for it would just exercise the language.
 - When the validator only stubs (no call-count expectations), annotate the class with `#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]` to silence PHPUnit 13's `MockObject` notice. When call counts matter, drop the attribute and use `expects(self::once())` etc.
+- DataInputs are `final readonly`, so reflection-based mutation tests (e.g. injecting an out-of-range value to exercise a defensive regex check) must use `(new \ReflectionClass(XDataInput::class))->newInstanceWithoutConstructor()` and set every property via reflection — `setValue` after a constructed readonly is rejected by PHP 8.4.
 
 

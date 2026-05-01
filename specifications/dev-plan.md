@@ -2,8 +2,8 @@
 
 ## Resume pointer (last session snapshot)
 
-- **Last completed step**: Phase 6.1 (Workout creation & lifecycle, minus `FinishWorkoutUseCase`) + its `WorkoutPlayerController` endpoints + cURL smoke flow. `composer qa` was green (120 tests / 209 assertions).
-- **Next pending step**: §6.2 (Workout content). First concrete prereqs: ship the `Exercise{Provider,Persister}Gateway` + `ExerciseSet{Provider,Persister}Gateway` interfaces and their concrete repos/persisters (Phase 1.3 leftover items, lazily added with first consumer per the working contract). The 9 use cases in 6.2 operate on existing workouts only — they all need `findOneByIdForPlayerAction` ownership scoping at the gateway, and most transition through ExerciseSet states (planned → achieved → completed).
+- **Last completed step**: Phase 6.2 (Workout content — 9 use cases for Exercise + ExerciseSet) + their controllers (`ExercisePlayerController`, `ExerciseSetPlayerController`) + a cross-cutting **validator/use-case norm refactor** applied to the entire codebase (Workout × 4, Admin × 15, Exercise × 4, ExerciseSet × 5, Register × 1). `composer qa` is green (171 tests / 308 assertions; integration suite: 74 tests / 194 assertions). Schema in sync (mapping + DB).
+- **Next pending step**: §6.3 (`FinishWorkoutUseCase` + `PersonalBestEvaluator`). Prereqs: ship `PersonalBest{Provider,Persister}Gateway` + their concrete repo/persister (Phase 1.3 leftover for that entity), confirm the speed formula (`distance / duration`, see open assumption below), wire the inverse side of `Workout::$exercises ↔ Exercise::$workout` if more eager-loaded paths need it (already aligned: `inversedBy: 'exercises'` is now set on Exercise).
 - The "Decisions / deviations" block below + each phase's inline notes are the working contract — read them before designing anything new.
 - `specifications/initial-requirements.md` is the **frozen user spec** and must not be edited. All clarifications/decisions go into this dev-plan and `specifications/conventions.md`.
 
@@ -71,6 +71,23 @@ Every item below was decided during implementation and is **not** explicitly cov
 - **`final_class` PHP-CS-Fixer rule is intentionally NOT enabled** — it would auto-finalize DataModels, which `conventions.md` explicitly excludes. Concrete classes are made `final` manually.
 - **`nelmio/api-doc-bundle` is installed but not registered in `config/bundles.php`.** Its Flex recipe was IGNORED because `composer.json` has `extra.symfony.allow-contrib: false`. We'll register it manually when Phase 4/5 actually exposes the OpenAPI route.
 - **Doctrine fixtures bundle is in `require-dev`** (not `require` as the original plan had it) — fixtures are not a runtime concern.
+
+### Validator / UseCase norm refactor (Phase 6.2)
+A cross-cutting refactor was applied during 6.2 to set the **new norm** for validators and use cases across the entire project. Existing phases were migrated in-place. The norm is now formalised in `specifications/conventions.md` (sections "Conventions for UseCases" and "Conventions for Validators"); the changes below summarise what moved and why.
+
+- **`DomainValidatorInterface` removed.** Validator signatures are now heterogeneous (typed parameters per use case shape), so a shared `validate(DataInputInterface $input): void` contract is meaningless. Validators are standalone classes; the use case calls its concrete validator directly via a typed property.
+- **Abstract use-case bases lost their constructor-injected validator slot.** `AbstractPublicUseCase`, `AbstractLoggedAdminUseCase`, `AbstractLoggedPlayerUseCase` are now empty marker classes (`abstract class implements UseCaseInterface`). Each concrete UseCase declares its own constructor with the deps it needs (validator + gateways + clock + resolver as applicable). No `parent::__construct(...)` call.
+- **Use cases dropped the runtime `instanceof + LogicException` guard.** They now declare `public function execute(DataInputInterface $input): YDataOutput` (parent-compatible) plus `/** @param XDataInput $input */` PHPDoc for PHPStan narrowing. Wrong type at runtime → PHP `TypeError` from the validator's typed signature on the very next call (good dev signal, not worth a redundant guard).
+- **Validator typed signatures (three shapes).** Create / List / Register: `validate(XDataInput $input)`. Player edit: `validate(PlayerDataModel $player, XDataInput $input, EntityDataModel $entity)`. Admin edit: `validate(XDataInput $input, EntityDataModel $entity)` (no ownership, but entity available for self-match on uniqueness).
+- **Player edit flow centralises ownership + state + input rules in the validator.** The use case loads via `findOneByIdForPlayerAction`, checks for null (404), then calls `validate(player, input, entity)`. The validator calls `$this->assertPlayerOwns($player, $entity)` first as defence-in-depth (the gateway already filtered, but the helper guards against future gateway methods that don't), then state checks, then accumulated input violations. **The 404 stays in the use case** (data layer concern) so the validator takes a non-null entity — this avoids a `@phpstan-assert !null` annotation that would trigger PHPStan's `method.alreadyNarrowedType` at every test call site.
+- **`Domain/DTO/DataModel/OwnedByPlayerInterface`** introduced. `WorkoutDataModel` and `PersonalBestDataModel` (when added) implement it directly via their `public PlayerDataModel $player` property. `ExerciseDataModel` and `ExerciseSetDataModel` implement it via PHP 8.4 virtual property hooks (`public PlayerDataModel $player { get => $this->workout->player; }` and `=> $this->exercise->workout->player`). Doctrine ignores virtual hooks (no `#[ORM\Column]` attribute).
+- **`AbstractLoggedPlayerValidator::assertPlayerOwns(PlayerDataModel, OwnedByPlayerInterface)`** — replaces the original `validateEdit($player, DataModelInterface $modelToEdit, $input)`. Renamed for clarity (the helper is purely an ownership assertion, not a "validate edit"); the unused `$input` parameter was dropped; the `DataModelInterface` type was tightened to `OwnedByPlayerInterface` so `$model->player` is statically known and the original `isset(...)` check became unnecessary (it also concealed a typo `$modeToEdit` that silently disabled the check entirely).
+- **Empty validators were dropped.** Admin Delete and GetDetails no longer have a validator (no rules to enforce; the use case is a thin load → 404 → act). 6 validator classes + their tests removed.
+- **Status constants moved to the registry.** `WorkoutStatusRegistry::EDITABLE_STATUSES = [PLANNED, IN_PROGRESS]` and `WorkoutStatusRegistry::CANCELLABLE_STATUSES` (same values today) — used by every workout-edit use case (Cancel, Add/Remove/Reorder Movement, ExerciseSet add/update/remove). Per-use-case private const arrays were eliminated.
+- **Error code constants moved from use cases to validators.** Idiom is now `XValidator::ERROR_CODE` (single rule), or named (`ILLEGAL_STATUS_CODE`, `FAILED_ERROR_CODE`, `TRACKING_MISMATCH_ERROR_CODE`) when one validator throws several distinct codes. Integration tests reference the validator constant; controllers don't reference any of these constants.
+- **Validator unit tests dropped the `testItThrowsLogicExceptionForWrongInputType` method** (typed signature replaces it). Player-edit validator tests gain a `testItThrowsUnauthorizedWhenWorkoutBelongsToAnotherPlayer` covering `assertPlayerOwns`.
+- **PHP 8.4 readonly + reflection.** Validator unit tests that need to inject an out-of-range `numeric-string|null` value to exercise the validator's defensive regex (e.g. `'fifty'` for `plannedWeight`) must use `(new \ReflectionClass(...))->newInstanceWithoutConstructor()` and set every property by reflection — `setValue` after a constructed readonly is rejected by PHP 8.4. The 2 tests in `AddExerciseSetValidatorTest` and `UpdateExerciseSetAchievedValidatorTest` use this pattern.
+- **`MovementProviderGateway::findOneByIdForExerciseAttachment(string $id): ?MovementDataModel`** — context-named lookup added for `AddMovementToWorkoutUseCase`. No eager fetch needed (just the movement + its tracking flags).
 
 ### Tracking
 - The dev-plan uses `[x]` / `[ ]` checkboxes on every subsection header and every leaf bullet. Tick items off as soon as a step finishes; this is the source of truth for "what's done."
@@ -416,17 +433,29 @@ Foundations introduced in 6.1 (apply to all subsequent player phases):
 - [x] **Controller**: `Infrastructure/Controller/Player/Training/WorkoutPlayerController` — 4 endpoints under `/api/player/workouts*`, all `POST`. Routes: `POST /api/player/workouts` (start empty, 201), `POST /api/player/workouts/planned` (plan, 201, body `{plannedAt}`), `POST /api/player/workouts/{id}/start` (start a planned), `POST /api/player/workouts/{id}/cancel`. Body parsing of `plannedAt` to `\DateTimeImmutable` is done in the controller; failures throw `ValidationException` with `errorCode: PLAN_WORKOUT_BODY_INVALID` (so the same DomainExceptionListener surfaces a 422 with structured violations).
 - [x] **cURL smoke flow**: login player → start empty (201) → plan future (201) → plan past date (422 `PLAN_WORKOUT_VALIDATION_FAILED`) → plan empty body (422 `PLAN_WORKOUT_BODY_INVALID`) → start unknown id (404) → start a planned (200) → cancel (200) → cancel a CANCELED (422 `CANCEL_WORKOUT_ILLEGAL_STATE`) → no token (401) → admin token (403). All green.
 
-### [ ] 6.2 Workout content
-UseCases under `UseCase/Player/Exercise/` and `UseCase/Player/ExerciseSet/`:
-- [ ] `AddMovementToWorkoutUseCase`
-- [ ] `RemoveMovementFromWorkoutUseCase`
-- [ ] `UpdateMovementRestDurationUseCase`
-- [ ] `ReorderMovementsUseCase`
-- [ ] `AddExerciseSetUseCase` (planned values)
-- [ ] `UpdateExerciseSetPlannedUseCase`
-- [ ] `UpdateExerciseSetAchievedUseCase`
-- [ ] `RemoveExerciseSetUseCase`
-- [ ] `MarkExerciseSetCompletedUseCase`
+### [x] 6.2 Workout content
+UseCases under `UseCase/Player/Training/Exercise/` and `UseCase/Player/Training/ExerciseSet/` (sub-domain folder used to mirror the DataModel layout, same as 6.1):
+- [x] `AddMovementToWorkoutUseCase` — auto-assigns next position; uses `MovementProviderGateway::findOneByIdForExerciseAttachment` (added in this batch).
+- [x] `RemoveMovementFromWorkoutUseCase`
+- [x] `UpdateMovementRestDurationUseCase`
+- [x] `ReorderMovementsUseCase` — keeps the input-vs-existing id-set mismatch check inside the use case (it needs `ExerciseProviderGateway::findAllByWorkoutIdForPlayerAction` results); the validator handles ownership + state + format.
+- [x] `AddExerciseSetUseCase` (planned values) — auto-assigns next position; validator rejects planned values for fields the movement does not track (`TRACKING_MISMATCH_ERROR_CODE`).
+- [x] `UpdateExerciseSetPlannedUseCase`
+- [x] `UpdateExerciseSetAchievedUseCase` — only allowed on `IN_PROGRESS` workouts (vs Update*Planned which is allowed on `PLANNED|IN_PROGRESS`).
+- [x] `RemoveExerciseSetUseCase`
+- [x] `MarkExerciseSetCompletedUseCase`
+
+Foundations introduced in 6.2:
+- [x] **Phase 1.3 leftover gateways landed**: `ExerciseProviderGateway` + `ExercisePersisterGateway` + `ExerciseSetProviderGateway` + `ExerciseSetPersisterGateway` (interfaces) and their concrete `ExerciseRepository` / `ExercisePersister` / `ExerciseSetRepository` / `ExerciseSetPersister`. Each provider exposes `findOneByIdForPlayerAction` (player-scoped 404) + `findAllBy{Workout,Exercise}IdForPlayerAction`.
+- [x] **`OwnedByPlayerInterface`** (`Domain/DTO/DataModel/OwnedByPlayerInterface.php`) — implemented by `WorkoutDataModel` (direct property) and by `ExerciseDataModel` / `ExerciseSetDataModel` via virtual property hooks (`public PlayerDataModel $player { get => $this->workout->player; }` etc.). Enables `assertPlayerOwns()` defensively in player-edit validators.
+- [x] **`AddMovementToWorkoutUseCase` syncs `$workout->exercises->add($created)` after persist** because Doctrine's identity map returns the cached workout on subsequent `findOneByIdForPlayerAction` calls without refreshing the inverse collection. Without that sync, three consecutive adds in a transaction collide on position 0.
+- [x] **`Workout::$exercises ↔ Exercise::$workout` is now a fully bidirectional relation**: `inversedBy: 'exercises'` added on the owning side. `doctrine:schema:validate` is fully green (mapping + DB).
+- [x] **Cross-cutting validator/use-case norm refactor** (also touches all earlier phases — see "Validator/UseCase norm refactor (Phase 6.2)" entry in the Decisions / deviations block below). Every existing use case in the project was migrated.
+
+### [~] Cross-cutting Verification (Phase 6.2)
+- [x] One Unit test class per Validator (28 total now: Workout × 4, Admin × 9, Exercise × 4, ExerciseSet × 5, Register × 1, plus the 5 simpler ones for Add/List that don't need entity stubs).
+- [x] One Integration test class per UseCase under `tests/Integration/UseCase/Player/Training/{Exercise,ExerciseSet}/`. Player tests instantiate the use case manually with a stubbed `LoggedPlayerResolverInterface` (canonical reference: `StartEmptyWorkoutUseCaseTest`).
+- [ ] cURL smoke flow for the 9 endpoints (deferred to Phase 6.3 batch since FinishWorkout caps the lifecycle).
 
 ### [ ] 6.3 Finishing a workout & personal bests
 - [ ] `FinishWorkoutUseCase`:
@@ -454,8 +483,8 @@ UseCases under `UseCase/Player/Read/`:
 ### [~] 6.5 Controllers
 Under `Infrastructure/Controller/Player/`. Controllers are landed **per Phase 6.x batch** (alongside the use cases they expose) rather than all in one final pass — that lets us cURL-smoke each phase end-to-end and avoids the DI-container pruning that bites integration tests when a use case has no public consumer yet.
 - [~] `Training/WorkoutPlayerController` — start-empty / plan / start-planned / cancel done in 6.1; finish (6.3) and list/details (6.4) pending.
-- [ ] `Training/ExercisePlayerController` — add/remove/reorder/update rest (6.2).
-- [ ] `Training/ExerciseSetPlayerController` — add/update planned/update achieved/remove/mark-complete (6.2).
+- [x] `Training/ExercisePlayerController` — add (`POST /api/player/workouts/{workoutId}/exercises`), remove (`DELETE /api/player/exercises/{id}`), update rest (`PUT /api/player/exercises/{id}/rest-duration`), reorder (`POST /api/player/workouts/{workoutId}/exercises/reorder`).
+- [x] `Training/ExerciseSetPlayerController` — add (`POST /api/player/exercises/{exerciseId}/sets`), update planned (`PUT /api/player/sets/{id}/planned`), update achieved (`PUT /api/player/sets/{id}/achieved`), remove (`DELETE /api/player/sets/{id}`), mark complete (`POST /api/player/sets/{id}/complete`). Body parsing of numeric-string fields surfaces malformed values as 422 `EXERCISE_SET_BODY_INVALID` (controller-level guard before the use case is hit).
 - [ ] `Training/PersonalBestPlayerController` — list (6.4).
 
 All routes under `/api/player/*`, `ROLE_PLAYER` required (already gated by `config/packages/security.yaml`). Player use cases extend `AbstractLoggedPlayerUseCase` and resolve the current `PlayerDataModel` via `LoggedPlayerResolverInterface`.
@@ -519,6 +548,6 @@ Date serialization: `WorkoutDataOutput` uses `?string` (ISO 8601 / RFC 3339 / `\
 | 4 | Integration test per UseCase (15 total: 5 × Equipment/Muscle/Movement); cURL CRUD smoke check for each entity | [x] (OpenAPI annotations deferred) |
 | 5 | Manual CRUD in React + AntD admin UI, logged in as the seeded admin (light + dark theme exercised) | [x] |
 | ⏸ | Admin path complete — pause | [x] |
-| 6 | Integration test per Player UseCase, plus PB-evaluator scenarios cover the full workout lifecycle | [~] (6.1 done; 6.2-6.6 pending) |
+| 6 | Integration test per Player UseCase, plus PB-evaluator scenarios cover the full workout lifecycle | [~] (6.1 + 6.2 done — 13 use cases; 6.3-6.6 pending) |
 | 7 | Manual UI run-through of the player flows | [ ] |
 | 8 | CI green on a clean clone; coverage threshold met | [ ] |
