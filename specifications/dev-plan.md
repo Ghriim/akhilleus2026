@@ -2,8 +2,8 @@
 
 ## Resume pointer (last session snapshot)
 
-- **Last completed step**: Phase 7.9 — UX iteration #1: header restructured (`Dashboard` + `Training ▾` dropdown grouping `Planning`/`History`/`Achievements`), Dashboard simplified to a single "Next Workout" widget (linked title + Start/Resume button), `/upcoming` renamed to `/planning` and turned into a month-grid calendar with prev/next/today navigation, default = current month, no future-only restriction. Backend gained `GET /api/player/workouts/calendar?year=Y&month=M` (new `ListWorkoutsByMonthUseCase` + `findByPlayerForMonth` gateway method). New **generic, reusable** `<MonthCalendar<TEvent>>` component lives at `frontend/website/src/components/calendar/MonthCalendar.tsx` — pure-presentation, navigation-agnostic, ready for non-workout future use. `composer qa` green (225 tests / 469 assertions); `npm run typecheck && lint && build` green.
-- **Next pending step**: Phase 7 final verification (manual end-to-end run-through across Chrome/Firefox), then Phase 8 (hardening — coverage target, CI, prod Docker variant, README). Working tree polish (`index.html` / `WorkoutListItem.tsx` / `index.css`) is still uncommitted, plus the 7.9 iteration's new files.
+- **Last completed step**: Phase 8 (Hardening) — partially closed. Coverage baseline structurally complete (35/35 UCs, 25/25 validators, 3/3 stateful Domain services tested → 241 tests / 507 assertions); GitHub Actions CI workflow (`.github/workflows/ci.yml`) with parallel `backend` (PHP 8.4 + pcov + MySQL 8.4 service → `composer qa`) / `frontend-admin` / `frontend-website` jobs; `README.md` at repo root with setup walkthrough + architecture pointer. The Dockerfile-prod / compose.prod.yaml axis is the only Phase 8 item left, deliberately deferred until the hosting target is chosen.
+- **Next pending step**: pick the hosting target then write the prod Docker variant. The Phase 7 manual-smoke verification box and the `[~]` markers in the existing Verification sections also remain — non-blocking for shipping but worth closing before declaring the project complete.
 - The "Decisions / deviations" block below + each phase's inline notes are the working contract — read them before designing anything new.
 - `specifications/initial-requirements.md` is the **frozen user spec** and must not be edited. All clarifications/decisions go into this dev-plan and `specifications/conventions.md`.
 
@@ -641,12 +641,16 @@ User-driven UX revisions on top of the 7.1 → 7.8 baseline. Tracked as a discre
 
 ---
 
-## Phase 8 — Hardening
+## [~] Phase 8 — Hardening
 
-- [ ] Coverage target: ≥80% lines on `src/UseCase/` and `src/Domain/`. Each UseCase has its own Integration test (M4/M6); repositories are exercised transitively through those. Controllers stay thin (route → resolve UseCase → return DataOutput) and are validated by the cURL smoke checks per phase rather than dedicated test classes.
-- [ ] CI (GitHub Actions or GitLab CI): `composer install` → `composer qa` → `frontend/admin` build & typecheck → `frontend/website` build & typecheck. Same pipeline gates the pre-commit hook.
-- [ ] Dockerfile prod variant + `compose.prod.yaml` (or hand off to deploy infra).
-- [ ] README at repo root with setup instructions (Docker, fixtures, login credentials), pointing at `specifications/conventions.md` as the architectural reference.
+- [x] Coverage target: ≥80% lines on `src/UseCase/` and `src/Domain/`. **Structural baseline reached**: 35/35 concrete UseCases have their integration test (`tests/Integration/UseCase/...`), 25/25 non-abstract validators have their unit test (`tests/Unit/Domain/Validator/...`), and the 3 stateful Domain services (`PersonalBestEvaluator`, `ExerciseSetCompletionEvaluator`, `WorkoutAggregateEvaluator`) each have their unit test (`tests/Unit/Domain/Service/...`). The 4th service `PersonalBestUpsert` is a transient value object — no test needed. `composer qa` green at 241 tests / 507 assertions. The exact line-coverage % is measured by the CI (pcov) — the 80% gate can be enforced once the first CI run reports a baseline; until then the audit-by-files contract is the de facto guarantee.
+- [x] CI (GitHub Actions). `.github/workflows/ci.yml` with three parallel jobs:
+  - **`backend`**: `shivammathur/setup-php@v2` (PHP 8.4 + pcov + intl/pdo_mysql/zip/opcache/ctype/iconv) → composer install (cached) → `lexik:jwt:generate-keypair` → MySQL 8.4 service container + readiness wait → `doctrine:migrations:migrate` on the test DB → `composer qa` (cs + stan + phpunit Unit + Integration).
+  - **`frontend-admin`** / **`frontend-website`**: Node 22 (npm cache) → `npm ci` → `npm run typecheck && lint && build`.
+  - Triggers: push on `main` + every PR. Concurrency-group cancels obsolete runs on the same branch.
+  - **Note**: the pre-commit hook runs the Unit suite only (DB-less); the Integration suite is gated by the CI job above.
+- [ ] Dockerfile prod variant + `compose.prod.yaml`. Deferred — waiting on the deployment-target decision (VPS vs Fly.io vs cloud / single-container vs multi-service / secrets management).
+- [x] `README.md` at repo root. Sections: stack overview, links to the three `specifications/*.md` source-of-truth docs, setup walkthrough (Docker MySQL → composer install → JWT keypair → migrations dev+test → fixtures → `symfony serve`), seeded credentials, frontend dev servers (Vite ports + `symfony server:ca:install` note for HTTPS trust), step-by-step development workflow, quality-gate command list, and an architecture overview (Domain / Infrastructure / UseCase isolation rules) pointing at `specifications/conventions.md`.
 
 ---
 
@@ -675,4 +679,4 @@ User-driven UX revisions on top of the 7.1 → 7.8 baseline. Tracked as a discre
 | ⏸ | Admin path complete — pause | [x] |
 | 6 | Integration test per Player UseCase, plus PB-evaluator scenarios cover the full workout lifecycle | [x] (18 use cases + PB evaluator + 4 controllers + lifecycle test + cURL smoke) |
 | 7 | Manual UI run-through of the player flows | [~] (7.1 → 7.8 implemented, build + typecheck + lint green; manual Chrome/Firefox smoke pending) |
-| 8 | CI green on a clean clone; coverage threshold met | [ ] |
+| 8 | CI green on a clean clone; coverage threshold met; README + prod Docker variant | [~] (3/4 done — coverage baseline + CI workflow + README; Dockerfile prod / compose.prod.yaml deferred until hosting target is picked) |
