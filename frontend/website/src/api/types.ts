@@ -32,10 +32,16 @@ export interface RegisterPlayerResponse {
 
 export interface WorkoutDataOutput {
   id: string;
+  name: string;
   status: WorkoutStatus;
   plannedAt: string | null;
   dateStart: string | null;
   dateEnd: string | null;
+  /** Workout-level aggregates persisted at finish time. Null until the workout is completed. */
+  duration: number | null;
+  volume: string | null;
+  distance: string | null;
+  inclineMeters: string | null;
 }
 
 export interface WorkoutHistoryDataOutput {
@@ -86,6 +92,7 @@ export interface ExerciseDetailsDataOutput {
 
 export interface WorkoutDetailsDataOutput {
   id: string;
+  name: string;
   status: WorkoutStatus;
   plannedAt: string | null;
   dateStart: string | null;

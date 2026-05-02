@@ -14,6 +14,7 @@ final readonly class WorkoutDetailsDataOutput implements DataOutputInterface
      */
     public function __construct(
         public string $id,
+        public string $name,
         public string $status,
         public ?string $plannedAt,
         public ?string $dateStart,

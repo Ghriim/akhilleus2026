@@ -36,10 +36,15 @@ final class ListWorkoutHistoryUseCase extends AbstractLoggedPlayerUseCase
         $items = array_map(
             static fn ($workout) => new WorkoutDataOutput(
                 $workout->id,
+                $workout->name,
                 $workout->status,
                 $workout->plannedAt?->format(\DateTimeInterface::ATOM),
                 $workout->dateStart?->format(\DateTimeInterface::ATOM),
                 $workout->dateEnd?->format(\DateTimeInterface::ATOM),
+                $workout->duration,
+                $workout->volume,
+                $workout->distance,
+                $workout->inclineMeters,
             ),
             $workouts,
         );

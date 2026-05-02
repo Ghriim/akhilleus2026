@@ -37,7 +37,9 @@ export function HistoryPage() {
       {data && data.totalCount === 0 && (
         <p className="muted">No completed workouts yet.</p>
       )}
-      {data?.items.map((workout) => <WorkoutListItem key={workout.id} workout={workout} />)}
+      {data?.items.map((workout) => (
+        <WorkoutListItem key={workout.id} workout={workout} variant="history" />
+      ))}
       {data && data.totalCount > 0 && (
         <div
           style={{

@@ -32,6 +32,7 @@ final class ListUpcomingWorkoutsUseCase extends AbstractLoggedPlayerUseCase
         return array_map(
             static fn ($workout) => new WorkoutDataOutput(
                 $workout->id,
+                $workout->name,
                 $workout->status,
                 $workout->plannedAt?->format(\DateTimeInterface::ATOM),
                 $workout->dateStart?->format(\DateTimeInterface::ATOM),

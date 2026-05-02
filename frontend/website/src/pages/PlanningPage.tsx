@@ -21,12 +21,12 @@ const MONTH_LABELS = [
   'December',
 ] as const;
 
-const STATUS_SHORT_LABEL: Record<WorkoutStatus, string> = {
-  PLANNED: 'Planned',
-  IN_PROGRESS: 'Live',
-  COMPLETED: 'Done',
-  CANCELED: 'Canceled',
-};
+const STATUS_LEGEND: { status: WorkoutStatus; label: string }[] = [
+  { status: 'PLANNED', label: 'Planned' },
+  { status: 'IN_PROGRESS', label: 'In progress' },
+  { status: 'COMPLETED', label: 'Completed' },
+  { status: 'CANCELED', label: 'Canceled' },
+];
 
 function workoutReferenceDate(workout: WorkoutDataOutput): Date {
   const iso = workout.dateEnd ?? workout.dateStart ?? workout.plannedAt;
@@ -126,11 +126,24 @@ export function PlanningPage() {
           <Link
             to={`/workouts/${workout.id}`}
             className={`calendar-pill calendar-pill--${workout.status.toLowerCase()}`}
+            title={workout.name}
           >
-            {STATUS_SHORT_LABEL[workout.status]}
+            {workout.name}
           </Link>
         )}
       />
+
+      <ul className="calendar-legend" aria-label="Workout status legend">
+        {STATUS_LEGEND.map(({ status, label }) => (
+          <li key={status}>
+            <span
+              className={`calendar-legend__swatch calendar-pill--${status.toLowerCase()}`}
+              aria-hidden="true"
+            />
+            {label}
+          </li>
+        ))}
+      </ul>
     </>
   );
 }

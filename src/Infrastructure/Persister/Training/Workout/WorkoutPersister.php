@@ -15,6 +15,9 @@ final readonly class WorkoutPersister extends AbstractBaseMysqlPersister impleme
 {
     public function create(WorkoutDataModel $model): WorkoutDataModel
     {
+        if ('' === $model->name) {
+            $model->name = self::deriveName($model);
+        }
         $this->doCreate($model);
 
         return $model;
@@ -30,5 +33,19 @@ final readonly class WorkoutPersister extends AbstractBaseMysqlPersister impleme
     public function delete(WorkoutDataModel $model): void
     {
         $this->doDelete($model);
+    }
+
+    /**
+     * Builds the default workout label "Day Morning|Afternoon" (e.g. "Monday Morning") from the
+     * most representative date the model carries: plannedAt for a planned workout, dateStart
+     * otherwise, and clock->now() as a last-resort fallback (rare — IN_PROGRESS workouts must
+     * always carry a dateStart by construction).
+     */
+    private function deriveName(WorkoutDataModel $model): string
+    {
+        $reference = $model->plannedAt ?? $model->dateStart ?? $this->clock->now();
+        $period = 12 > (int) $reference->format('G') ? 'Morning' : 'Afternoon';
+
+        return sprintf('%s %s', $reference->format('l'), $period);
     }
 }
