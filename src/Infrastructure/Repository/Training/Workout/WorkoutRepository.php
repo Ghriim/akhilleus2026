@@ -112,4 +112,29 @@ final class WorkoutRepository extends ServiceEntityRepository implements Workout
             ->getQuery()
             ->getOneOrNullResult();
     }
+
+    public function findByPlayerForMonth(
+        PlayerDataModel $player,
+        \DateTimeImmutable $monthStart,
+        \DateTimeImmutable $monthEnd,
+    ): array {
+        // Doctrine DQL does not accept COALESCE in WHERE/ORDER BY in this position, so we mimic
+        // it with three OR branches matching the priority `dateEnd → dateStart → plannedAt`.
+        // Caller-side ordering is the use case's responsibility.
+        /** @var list<WorkoutDataModel> $result */
+        $result = $this->createQueryBuilder('w')
+            ->where('w.player = :player')
+            ->andWhere(
+                '(w.dateEnd >= :monthStart AND w.dateEnd < :monthEnd)'
+                .' OR (w.dateEnd IS NULL AND w.dateStart >= :monthStart AND w.dateStart < :monthEnd)'
+                .' OR (w.dateEnd IS NULL AND w.dateStart IS NULL AND w.plannedAt >= :monthStart AND w.plannedAt < :monthEnd)',
+            )
+            ->setParameter('player', $player)
+            ->setParameter('monthStart', $monthStart)
+            ->setParameter('monthEnd', $monthEnd)
+            ->getQuery()
+            ->getResult();
+
+        return $result;
+    }
 }

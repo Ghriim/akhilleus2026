@@ -4,7 +4,7 @@ import { AppLayout } from './layout/AppLayout';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { DashboardPage } from './pages/DashboardPage';
-import { UpcomingPage } from './pages/UpcomingPage';
+import { PlanningPage } from './pages/PlanningPage';
 import { HistoryPage } from './pages/HistoryPage';
 import { WorkoutNewPage } from './pages/WorkoutNewPage';
 import { WorkoutDetailsPage } from './pages/WorkoutDetailsPage';
@@ -18,7 +18,7 @@ export function App() {
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
           <Route path="/" element={<DashboardPage />} />
-          <Route path="/upcoming" element={<UpcomingPage />} />
+          <Route path="/planning" element={<PlanningPage />} />
           <Route path="/history" element={<HistoryPage />} />
           <Route path="/workouts/new" element={<WorkoutNewPage />} />
           <Route path="/workouts/:id" element={<WorkoutDetailsPage />} />

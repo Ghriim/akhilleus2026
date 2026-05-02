@@ -10,7 +10,7 @@ const STATUS_LABEL: Record<WorkoutStatus, string> = {
 };
 
 const STATUS_COLOR: Record<WorkoutStatus, string> = {
-  PLANNED: '#5d6d80',
+  PLANNED: 'var(--color-iron)',
   IN_PROGRESS: 'var(--color-primary)',
   COMPLETED: 'var(--color-success)',
   CANCELED: 'var(--color-danger)',

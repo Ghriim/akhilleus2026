@@ -9,6 +9,7 @@ use App\Domain\DTO\DataInput\Player\Training\Workout\FinishWorkoutDataInput;
 use App\Domain\DTO\DataInput\Player\Training\Workout\GetWorkoutDetailsDataInput;
 use App\Domain\DTO\DataInput\Player\Training\Workout\ListUpcomingWorkoutsDataInput;
 use App\Domain\DTO\DataInput\Player\Training\Workout\ListWorkoutHistoryDataInput;
+use App\Domain\DTO\DataInput\Player\Training\Workout\ListWorkoutsByMonthDataInput;
 use App\Domain\DTO\DataInput\Player\Training\Workout\PlanWorkoutDataInput;
 use App\Domain\DTO\DataInput\Player\Training\Workout\StartEmptyWorkoutDataInput;
 use App\Domain\DTO\DataInput\Player\Training\Workout\StartPlannedWorkoutDataInput;
@@ -18,6 +19,7 @@ use App\UseCase\Player\Training\Workout\FinishWorkoutUseCase;
 use App\UseCase\Player\Training\Workout\GetWorkoutDetailsUseCase;
 use App\UseCase\Player\Training\Workout\ListUpcomingWorkoutsUseCase;
 use App\UseCase\Player\Training\Workout\ListWorkoutHistoryUseCase;
+use App\UseCase\Player\Training\Workout\ListWorkoutsByMonthUseCase;
 use App\UseCase\Player\Training\Workout\PlanWorkoutUseCase;
 use App\UseCase\Player\Training\Workout\StartEmptyWorkoutUseCase;
 use App\UseCase\Player\Training\Workout\StartPlannedWorkoutUseCase;
@@ -68,6 +70,15 @@ final readonly class WorkoutPlayerController
     public function upcoming(ListUpcomingWorkoutsUseCase $useCase): JsonResponse
     {
         return new JsonResponse($useCase->execute(new ListUpcomingWorkoutsDataInput()));
+    }
+
+    #[Route(path: '/api/player/workouts/calendar', name: 'player_workout_list_by_month', methods: ['GET'])]
+    public function calendar(Request $request, ListWorkoutsByMonthUseCase $useCase): JsonResponse
+    {
+        $year = (int) $request->query->get('year', '0');
+        $month = (int) $request->query->get('month', '0');
+
+        return new JsonResponse($useCase->execute(new ListWorkoutsByMonthDataInput($year, $month)));
     }
 
     #[Route(path: '/api/player/workouts/{id}', name: 'player_workout_details', methods: ['GET'], requirements: ['id' => '[0-9A-HJKMNP-TV-Z]{26}'])]

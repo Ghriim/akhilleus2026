@@ -26,4 +26,17 @@ interface WorkoutProviderGateway
     public function findPlannedOrInProgressByPlayer(PlayerDataModel $player): array;
 
     public function findInProgressByPlayer(PlayerDataModel $player): ?WorkoutDataModel;
+
+    /**
+     * Returns every workout owned by the player whose representative date (the most advanced of
+     * `dateEnd`, `dateStart`, `plannedAt`) falls inside the half-open interval
+     * `[$monthStart, $monthEnd)`.
+     *
+     * @return list<WorkoutDataModel>
+     */
+    public function findByPlayerForMonth(
+        PlayerDataModel $player,
+        \DateTimeImmutable $monthStart,
+        \DateTimeImmutable $monthEnd,
+    ): array;
 }

@@ -2,8 +2,8 @@
 
 ## Resume pointer (last session snapshot)
 
-- **Last completed step**: Phase 6.6 — full-lifecycle integration test (`PlayerWorkoutLifecycleTest`, 29 assertions) + cURL smoke flow over all 13 Phase-6 endpoints (auth/lifecycle/finish/read), all green. `composer qa` green (209 tests / 440 assertions). Schema in sync (mapping + DB). **Phase 6 is fully closed** — the player REST API is shippable.
-- **Next pending step**: ⏸ checkpoint, then Phase 7 (player frontend — React TS website with D&D theming, JWT-aware fetch wrapper, dashboard / live workout / history / achievements pages).
+- **Last completed step**: Phase 7.9 — UX iteration #1: header restructured (`Dashboard` + `Training ▾` dropdown grouping `Planning`/`History`/`Achievements`), Dashboard simplified to a single "Next Workout" widget (linked title + Start/Resume button), `/upcoming` renamed to `/planning` and turned into a month-grid calendar with prev/next/today navigation, default = current month, no future-only restriction. Backend gained `GET /api/player/workouts/calendar?year=Y&month=M` (new `ListWorkoutsByMonthUseCase` + `findByPlayerForMonth` gateway method). New **generic, reusable** `<MonthCalendar<TEvent>>` component lives at `frontend/website/src/components/calendar/MonthCalendar.tsx` — pure-presentation, navigation-agnostic, ready for non-workout future use. `composer qa` green (225 tests / 469 assertions); `npm run typecheck && lint && build` green.
+- **Next pending step**: Phase 7 final verification (manual end-to-end run-through across Chrome/Firefox), then Phase 8 (hardening — coverage target, CI, prod Docker variant, README). Working tree polish (`index.html` / `WorkoutListItem.tsx` / `index.css`) is still uncommitted, plus the 7.9 iteration's new files.
 - The "Decisions / deviations" block below + each phase's inline notes are the working contract — read them before designing anything new.
 - `specifications/initial-requirements.md` is the **frozen user spec** and must not be edited. All clarifications/decisions go into this dev-plan and `specifications/conventions.md`.
 
@@ -88,6 +88,11 @@ A cross-cutting refactor was applied during 6.2 to set the **new norm** for vali
 - **Validator unit tests dropped the `testItThrowsLogicExceptionForWrongInputType` method** (typed signature replaces it). Player-edit validator tests gain a `testItThrowsUnauthorizedWhenWorkoutBelongsToAnotherPlayer` covering `assertPlayerOwns`.
 - **PHP 8.4 readonly + reflection.** Validator unit tests that need to inject an out-of-range `numeric-string|null` value to exercise the validator's defensive regex (e.g. `'fifty'` for `plannedWeight`) must use `(new \ReflectionClass(...))->newInstanceWithoutConstructor()` and set every property by reflection — `setValue` after a constructed readonly is rejected by PHP 8.4. The 2 tests in `AddExerciseSetValidatorTest` and `UpdateExerciseSetAchievedValidatorTest` use this pattern.
 - **`MovementProviderGateway::findOneByIdForExerciseAttachment(string $id): ?MovementDataModel`** — context-named lookup added for `AddMovementToWorkoutUseCase`. No eager fetch needed (just the movement + its tracking flags).
+
+### Phase 7-era backend additions (landed alongside the player frontend)
+- **Registration endpoint moved.** `POST /api/security/registration` was retired; the player registration handler lives in a new `App\Infrastructure\Controller\User\PlayerController` exposing `POST /api/player/registration`. Rationale: registration is a player-domain concern (it creates a `PlayerDataModel`), not a security/auth concern; `SecurityController` keeps only `login` and `logout`. The frontend's `RegisterPage` uses the new path. **Update CLAUDE.md / any tooling that hard-codes `/api/security/registration`.**
+- **"At most one workout in progress per player" rule.** `WorkoutProviderGateway::findInProgressByPlayer(PlayerDataModel): ?WorkoutDataModel` (eager-fetches the workout + its exercises by status=IN_PROGRESS for the logged player). `StartEmptyWorkoutValidator` and `StartPlannedWorkoutValidator` now call it first and throw `ValidationException` with `errorCode: WORKOUT_ALREADY_IN_PROGRESS` (constant `ALREADY_IN_PROGRESS_CODE`) when one exists. The frontend's `<StartWorkoutButton>` mirrors the rule client-side (morphs to "Resume" when an in-progress workout is found in the upcoming list) so the happy path doesn't depend on a 422 round-trip; the validator is the source of truth. Tests: validator unit tests cover the new rule; integration tests for `StartEmptyWorkoutUseCase` / `StartPlannedWorkoutUseCase` exercise both branches (no-existing-IP → success, existing-IP → 422).
+- **Month-filtered listing for the calendar view.** `WorkoutProviderGateway::findByPlayerForMonth(player, monthStart, monthEnd)` + `ListWorkoutsByMonthUseCase` + `ListWorkoutsByMonthValidator` (year ∈ [2000, 2100], month ∈ [1, 12], error code `LIST_WORKOUTS_BY_MONTH_VALIDATION_FAILED`). Endpoint: `GET /api/player/workouts/calendar?year=Y&month=M`. Returns every workout (regardless of status) whose representative date — `dateEnd → dateStart → plannedAt`, in that precedence — falls in `[monthStart, monthEnd)` UTC. **DQL deviation**: Doctrine 3 refuses `COALESCE` in WHERE/ORDER BY in this position, so the gateway uses a 3-branch OR matching the precedence; the use case sorts in PHP with `usort` (≤ ~31 rows per month, perf cost negligible). The 7.1-era endpoint `/api/player/workouts/upcoming` is **kept** in parallel — it powers the Dashboard's "Next Workout" widget + `<StartWorkoutButton>`'s in-progress detection — and is logically distinct from the calendar feed. Tests in `tests/Unit/Domain/Validator/.../ListWorkoutsByMonthValidatorTest` (8 cases) and `tests/Integration/UseCase/.../ListWorkoutsByMonthUseCaseTest` (5 cases).
 
 ### Tracking
 - The dev-plan uses `[x]` / `[ ]` checkboxes on every subsection header and every leaf bullet. Tick items off as soon as a step finishes; this is the source of truth for "what's done."
@@ -555,38 +560,84 @@ Per the working contract for this phase, **functional first / design later**: th
 - [x] `src/index.css` — minimal CSS with neutral CSS variables (`--color-bg`, `--color-surface`, `--color-text`, `--color-primary`, etc.) and basic resets/buttons/inputs. The D&D pass (Phase 7.8) will override these variables.
 - [x] Verified: `npm run typecheck && npm run lint && npm run build` clean. Dev server returns 200 on `http://localhost:5174/`.
 
-### [ ] 7.2 Auth pages
-- [ ] `/login` form: email + password → `POST /api/security/login` → store JWT → redirect to `/`.
-- [ ] `/register` form: email + password + displayName → `POST /api/security/registration` → auto-login → redirect to `/`.
-- [ ] Surface 422 violations per field; surface generic 500/network errors at the form level.
-- [ ] Logout (header button) clears JWT and redirects to `/login`.
+### [x] 7.2 Auth pages
+- [x] `/login` form: email + password → `POST /api/security/login` → store JWT → redirect to the `from` location (or `/`). 401 surfaced as "Invalid email or password.", other errors as the form-level globalError.
+- [x] `/register` form: email + password + displayName → `POST /api/player/registration` → auto-login → redirect to `/`. **Backend deviation**: the registration endpoint moved from `SecurityController` (`/api/security/registration`) into a dedicated `App\Infrastructure\Controller\User\PlayerController` (`/api/player/registration`). The frontend matches that route. Login + logout stayed under `/api/security/*`.
+- [x] Surface 422 `violations` per field (`email`, `displayName`, `plainPassword`); surface generic 500/network errors at the form level.
+- [x] Logout (header button) calls `POST /api/security/logout` best-effort then clears the JWT and redirects to `/login`.
 
-### [ ] 7.3 Lists + dashboard
-- [ ] `/upcoming` page: GET `/api/player/workouts/upcoming`, render workout cards.
-- [ ] `/history` page: GET `/api/player/workouts/history` paginated (page + perPage controls), render list.
-- [ ] `/` dashboard: 2 CTAs ("Start workout", "Plan workout"), top 3 upcoming, top 3 history.
+### [x] 7.3 Lists + dashboard
+- [x] `/upcoming` page: GET `/api/player/workouts/upcoming`, renders `<WorkoutListItem>` cards. Empty state + error state.
+- [x] `/history` page: GET `/api/player/workouts/history` paginated (page + perPage = 10), Prev / Next controls, totalCount displayed.
+- [x] `/` dashboard: 2 CTAs (`<StartWorkoutButton>` + Plan workout link), top 3 upcoming, top 3 history with "View all" links.
 
-### [ ] 7.4 Workout creation
-- [ ] `/workouts/new` page with two actions: Start Empty (POST `/api/player/workouts`) → redirect; Plan Future (date picker → POST `/api/player/workouts/planned`) → redirect.
+### [x] 7.4 Workout creation
+- [x] `/workouts/new` page with two actions: Start Empty (delegated to `<StartWorkoutButton>` → POST `/api/player/workouts`) → redirect to the new workout's details page; Plan Future (`datetime-local` picker → POST `/api/player/workouts/planned`) → redirect to the planned workout's details page. 422 `violations.plannedAt` surfaced inline.
+- [x] **Bonus over the original spec**: `<StartWorkoutButton>` first checks `/api/player/workouts/upcoming` for an existing IN_PROGRESS workout — if one exists, the button morphs into "Resume workout" and navigates to it instead of POSTing. This mirrors the new backend rule (see §6.1 deviations) so a user double-clicking "Start" gets a graceful UX rather than a 422.
 
-### [ ] 7.5 Workout details / live editor
-- [ ] `/workouts/:id` calls GET `/api/player/workouts/{id}`. Status-conditional rendering:
-  - PLANNED: show planned date + Start (`POST /{id}/start`) + Cancel (`POST /{id}/cancel`).
-  - IN_PROGRESS: live editor — Add movement (movement picker → `POST /workouts/{id}/exercises`), Add set (`POST /exercises/{id}/sets`), Update achieved (`PUT /sets/{id}/achieved`), Mark completed (`POST /sets/{id}/complete`), Finish (`POST /{id}/finish`).
-  - COMPLETED / CANCELED: read-only.
+### [x] 7.5 Workout details / live editor
+- [x] `/workouts/:id` calls GET `/api/player/workouts/{id}` and switches on `status`:
+  - PLANNED: `<PlannedWorkoutView>` — shows planned date + Start (`POST /{id}/start`) + Cancel (`POST /{id}/cancel`). The Start mutation surfaces `WORKOUT_ALREADY_IN_PROGRESS` as "Another workout is already in progress. Finish or cancel it first." (no automatic resume here — the user explicitly chose this planned workout, so we don't silently redirect).
+  - IN_PROGRESS: `<LiveWorkoutEditor>` — composes `<AddMovementForm>`, `<ExerciseEditor>` (one per movement, holding `<AddSetForm>` + `<ExerciseSetRow>` × n with `<AchievedForm>` + Mark complete), Finish (`POST /{id}/finish`), Cancel (with `window.confirm`).
+  - COMPLETED / CANCELED: `<ReadOnlyWorkoutView>`.
+- [x] 404 on the GET surfaced as "Workout not found." rather than the generic error pane.
 
-### [ ] 7.6 Finish workout flow
-- [ ] On 422 with `errorCode === 'WORKOUT_HAS_INCOMPLETE_SETS'`, render a modal listing the set ids carried in `violations.exerciseSets` so the player can navigate back to them.
-- [ ] On success, surface the `newPersonalBests` payload (toast or panel) before redirecting / refreshing the details page.
+### [x] 7.6 Finish workout flow
+- [x] On 422 with `errorCode === 'WORKOUT_HAS_INCOMPLETE_SETS'`, `<FinishWorkoutModal>` renders the set ids carried in `violations.exerciseSets` so the player can navigate back to them and complete or remove them.
+- [x] On success, `<FinishWorkoutModal>` surfaces the `newPersonalBests` payload (count + per-PB line with `movementLabel` + type label + value); closing the modal navigates to `/history`.
+- [x] On any other error, the modal renders a single error line.
 
-### [ ] 7.7 Achievements
-- [ ] `/achievements` page consumes GET `/api/player/personal-bests`, lists movements with their PB types and values.
+### [x] 7.7 Achievements
+- [x] `/achievements` page consumes GET `/api/player/personal-bests` and renders one `.card` per movement bucket (movement label + main muscle slug + ul of `<strong>{type label}</strong>: {value}{unit} · {achievedAt}`). Per-type units (`kg`, `reps`, `kg·reps`, `s`, `m`, `m/s`) are baked into the page; trailing zeros on the value are trimmed before display so `120.0000` renders as `120`.
 
-### [ ] 7.8 D&D theming
-- [ ] Override the CSS variables defined in `src/index.css` with the D&D / medieval-fantasy palette (`--color-parchment`, `--color-ink`, `--color-gold`, `--color-banner`, `--color-iron`, `--color-blood`). Add typographic choices (serif/blackletter headings, readable body). Optionally add a light/dark variant.
+### [x] 7.8 D&D theming
+- [x] `src/index.css` repalettes the variables defined in 7.1 with a parchment + ink + gold scheme (`--color-bg`, `--color-bg-deep`, `--color-surface`, `--color-surface-raised`, `--color-text`, `--color-text-muted`, `--color-primary` = banner-red, `--color-gold`, `--color-gold-bright`, `--color-danger`, `--color-iron`, `--color-border`, `--color-border-strong`).
+- [x] Typography: Cinzel (Roman-inscription serif) for headings, Lora (humanist serif) for body, both loaded via Google Fonts in `frontend/website/index.html`. Headings uppercase with a gold underline on `<h1>`.
+- [x] Buttons: linear-gradient backgrounds, gold focus ring, `.primary` = banner-red, `.danger` = darker blood-red. Cards have an inner gold rule (`::before`) for the illuminated-manuscript feel. Header has a parchment-on-dark contrast band with a gold double-line border.
+- [x] All component code stays theme-agnostic — components reference CSS variables only, so swapping the palette (or adding a light-mode variant) is a CSS-only operation. Note: a light/dark *variant* was deemed out of scope; the player site is parchment-only by design.
 
-### [ ] Verification
-- [ ] Manual end-to-end through the UI: register, plan a workout, start it, log sets, finish, see new PBs appear on `/achievements`. Smoke test in Chrome + Firefox.
+### [~] Verification
+- [x] `npm run typecheck && npm run lint && npm run build` clean on `frontend/website`.
+- [ ] Manual end-to-end through the UI on `dev` server: register, plan a workout, start it, log sets, finish, see new PBs appear on `/achievements`. Smoke-test in Chrome + Firefox. (Pending — verify before declaring Phase 7 closed.)
+- [ ] Resolve the working-tree polish currently sitting uncommitted on `frontend/website/{index.html, src/components/WorkoutListItem.tsx, src/index.css}`.
+
+### [x] 7.9 UX iteration #1 — header restructure + Dashboard simplification + Planning calendar
+
+User-driven UX revisions on top of the 7.1 → 7.8 baseline. Tracked as a discrete sub-step because it touches multiple files across both ends and introduces a generic reusable component.
+
+**Header**
+- [x] Nav simplified to two top entries: `Dashboard` (NavLink) and `Training ▾` (dropdown). The dropdown groups `Planning` / `History` / `Achievements`. Trigger uses `aria-haspopup="menu"` + `aria-expanded`; closes on outside click, on Escape, and on every route change. The trigger turns gold (`active`) when the current pathname starts with one of `TRAINING_PATHS = ['/planning', '/history', '/achievements']`.
+- [x] `frontend/website/src/layout/AppLayout.tsx` rewritten to host the dropdown state. CSS lives in `index.css` under `.nav-dropdown*`.
+
+**Dashboard simplified**
+- [x] Replaced the previous three-section dashboard (CTAs + top-3 upcoming + top-3 history) by a single "Next Workout" widget: clickable `<h2>` title (link to `/planning`) + `<StartWorkoutButton>` to the right + below, the `<WorkoutListItem>` of the next `PLANNED` workout (or "No planned workout." when empty).
+- [x] Reuses `<StartWorkoutButton>` so the "single in-progress" UX (Start vs. Resume) carries over for free.
+
+**Route rename `/upcoming` → `/planning`**
+- [x] Frontend route + every `<NavLink>` / `<Link>` migrated. Page file renamed via `git mv UpcomingPage.tsx PlanningPage.tsx`; component renamed `UpcomingPage` → `PlanningPage`.
+- [x] Backend route `GET /api/player/workouts/upcoming` is **kept as-is** (still consumed by the Dashboard widget + `<StartWorkoutButton>` for the next-planned + in-progress detection). The new calendar consumes a separate endpoint, see below.
+
+**Backend: month-filtered listing**
+- [x] `App\Domain\DTO\DataInput\Player\Training\Workout\ListWorkoutsByMonthDataInput` — `(int $year, int $month)` with `MIN_YEAR = 2000` / `MAX_YEAR = 2100` constants.
+- [x] `App\Domain\Validator\Player\Training\Workout\ListWorkoutsByMonthValidator` — year + month bounds, accumulates violations, error code `LIST_WORKOUTS_BY_MONTH_VALIDATION_FAILED`.
+- [x] `WorkoutProviderGateway::findByPlayerForMonth(player, monthStart, monthEnd)` — half-open interval `[start, end)`. Returns every status falling in the month, regardless of `PLANNED` / `IN_PROGRESS` / `COMPLETED` / `CANCELED` (the user explicitly wants to "remonter dans le temps" — viewing past months is allowed).
+- [x] `WorkoutRepository::findByPlayerForMonth` impl — **deviation note**: Doctrine 3 DQL refuses `COALESCE` in WHERE/ORDER BY in this position (parser error "Expected known function, got 'COALESCE'"). Mimicked with a 3-branch OR matching the precedence `dateEnd → dateStart → plannedAt`: a workout falls in the month when its `dateEnd` does, **or** `dateEnd IS NULL` and its `dateStart` does, **or** both are NULL and its `plannedAt` does. Ordering is delegated to the use case (PHP `usort` over the same precedence) — workouts per month are at most ~31, so the perf cost is negligible.
+- [x] `App\UseCase\Player\Training\Workout\ListWorkoutsByMonthUseCase` — builds `monthStart` + `monthEnd` in **UTC** (`new \DateTimeImmutable("$year-$month-01T00:00:00", new \DateTimeZone('UTC'))`), calls the gateway, sorts in PHP, maps to `WorkoutDataOutput`. **TZ deviation note**: input/output dates in this app are all UTC ISO 8601; client-side bucketing in the calendar is local-timezone (`Date.getDate()` / `getMonth()`), so a workout near the UTC day boundary may render under a different day in the cell than the UTC date suggests. Acceptable for a single-player app; revisit if multi-tz becomes a concern.
+- [x] Controller route `GET /api/player/workouts/calendar?year=Y&month=M` on the existing `WorkoutPlayerController`. Year/month parsed as ints (`(int) $request->query->get(...)`); the validator surfaces malformed values as 422 with structured violations.
+- [x] Tests:
+  - `tests/Unit/Domain/Validator/Player/Training/Workout/ListWorkoutsByMonthValidatorTest` (8 tests: happy, year/month bounds, accumulation).
+  - `tests/Integration/UseCase/Player/Training/Workout/ListWorkoutsByMonthUseCaseTest` (5 tests: mixed-status month coverage, dateEnd-takes-precedence ordering, empty month, cross-player isolation, invalid month).
+
+**Frontend: `<MonthCalendar>` generic component**
+- [x] `frontend/website/src/components/calendar/MonthCalendar.tsx` — **pure-presentation, generic, reusable**. Props: `year`, `month` (1-based), `events: readonly TEvent[]`, `getDate: (e) => Date`, `getEventKey: (e) => string`, `renderEvent: (e) => ReactNode`, `weekStartsOn?: 0 | 1` (default 1 = Monday), `weekdayLabels?: readonly string[]`. No prev/next/today controls — navigation is the caller's job, which keeps the component reusable across non-workout calendars later.
+- [x] Builds a 7×N grid (always full weeks), bucket events by `YYYY-MM-DD` local key, marks today (`.month-calendar__day--today`) and out-of-month days (`.month-calendar__day--out-of-month`). CSS lives in `index.css` under `.month-calendar*` and `.calendar-pill*`.
+- [x] **Reusability contract**: future features needing a month grid (e.g. PB timeline, training streaks, planned competitions, body-metrics calendar) must consume this component as-is — no fork. Add new event renderers + their pill CSS classes (`.calendar-pill--<kind>`) rather than duplicating the grid logic.
+
+**Frontend: `PlanningPage`**
+- [x] Hosts the `(year, month)` state (default = current local month), the prev/next/today toolbar (`.planning-toolbar`), the `useQuery` keyed by `['workouts', 'calendar', year, month]`, and the `<MonthCalendar<WorkoutDataOutput>>` instance.
+- [x] Each workout renders as a `<Link>` styled `.calendar-pill--{status}` (planned/iron, in_progress/banner-red, completed/green, canceled/blood-red). Click → `/workouts/:id`.
+- [x] "New workout" CTA kept top-right.
+- [x] Reference date for placement uses the same `dateEnd → dateStart → plannedAt` precedence as the backend ordering — ensures front and back agree on which day a workout lands in.
 
 ---
 
@@ -623,5 +674,5 @@ Per the working contract for this phase, **functional first / design later**: th
 | 5 | Manual CRUD in React + AntD admin UI, logged in as the seeded admin (light + dark theme exercised) | [x] |
 | ⏸ | Admin path complete — pause | [x] |
 | 6 | Integration test per Player UseCase, plus PB-evaluator scenarios cover the full workout lifecycle | [x] (18 use cases + PB evaluator + 4 controllers + lifecycle test + cURL smoke) |
-| 7 | Manual UI run-through of the player flows | [ ] |
+| 7 | Manual UI run-through of the player flows | [~] (7.1 → 7.8 implemented, build + typecheck + lint green; manual Chrome/Firefox smoke pending) |
 | 8 | CI green on a clean clone; coverage threshold met | [ ] |
