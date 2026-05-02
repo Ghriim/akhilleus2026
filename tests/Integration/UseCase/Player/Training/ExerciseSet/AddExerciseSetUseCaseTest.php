@@ -21,12 +21,12 @@ final class AddExerciseSetUseCaseTest extends KernelTestCase
 {
     use ExerciseSetTestSetupTrait;
 
-    public function testItAddsASetWithPlannedValues(): void
+    public function testItAddsASetWithPlannedValuesOnAPlannedWorkout(): void
     {
         self::bootKernel();
         $container = self::getContainer();
-        $player = self::createTestPlayer($container, 'add-set-happy');
-        [$exercise] = self::createTestExerciseWithSet($container, $player);
+        $player = self::createTestPlayer($container, 'add-set-planned-happy');
+        [$exercise] = self::createTestExerciseWithSet($container, $player, WorkoutStatusRegistry::PLANNED);
 
         $useCase = self::buildUseCase($container, $player);
         $output = $useCase->execute(new AddExerciseSetDataInput($exercise->id, plannedReps: 8, plannedWeight: '50.00'));
@@ -35,7 +35,63 @@ final class AddExerciseSetUseCaseTest extends KernelTestCase
         self::assertSame(1, $output->position);
         self::assertSame(8, $output->plannedReps);
         self::assertSame('50.00', $output->plannedWeight);
-        self::assertFalse($output->completed);
+        self::assertNull($output->achievedReps);
+        self::assertFalse($output->isComplete);
+    }
+
+    public function testItAddsASetWithAchievedValuesOnAnInProgressWorkout(): void
+    {
+        self::bootKernel();
+        $container = self::getContainer();
+        $player = self::createTestPlayer($container, 'add-set-achieved-happy');
+        [$exercise] = self::createTestExerciseWithSet($container, $player, WorkoutStatusRegistry::IN_PROGRESS);
+
+        $useCase = self::buildUseCase($container, $player);
+        $output = $useCase->execute(new AddExerciseSetDataInput($exercise->id, achievedReps: 8, achievedWeight: '52.00'));
+
+        self::assertSame($exercise->id, $output->exerciseId);
+        self::assertSame(1, $output->position);
+        self::assertSame(8, $output->achievedReps);
+        self::assertSame('52.00', $output->achievedWeight);
+        self::assertNull($output->plannedReps);
+        // movement tracks reps + weight, both achieved values are filled → isComplete is auto-derived to true.
+        self::assertTrue($output->isComplete);
+    }
+
+    public function testItRejectsAchievedValuesOnAPlannedWorkout(): void
+    {
+        self::bootKernel();
+        $container = self::getContainer();
+        $player = self::createTestPlayer($container, 'add-set-status-mismatch-planned');
+        [$exercise] = self::createTestExerciseWithSet($container, $player, WorkoutStatusRegistry::PLANNED);
+
+        $useCase = self::buildUseCase($container, $player);
+
+        try {
+            $useCase->execute(new AddExerciseSetDataInput($exercise->id, achievedReps: 5));
+            self::fail('Expected ValidationException');
+        } catch (ValidationException $e) {
+            self::assertSame(AddExerciseSetValidator::STATUS_FIELD_MISMATCH_ERROR_CODE, $e->errorCode);
+            self::assertArrayHasKey('achievedReps', $e->violations);
+        }
+    }
+
+    public function testItRejectsPlannedValuesOnAnInProgressWorkout(): void
+    {
+        self::bootKernel();
+        $container = self::getContainer();
+        $player = self::createTestPlayer($container, 'add-set-status-mismatch-in-progress');
+        [$exercise] = self::createTestExerciseWithSet($container, $player, WorkoutStatusRegistry::IN_PROGRESS);
+
+        $useCase = self::buildUseCase($container, $player);
+
+        try {
+            $useCase->execute(new AddExerciseSetDataInput($exercise->id, plannedReps: 5));
+            self::fail('Expected ValidationException');
+        } catch (ValidationException $e) {
+            self::assertSame(AddExerciseSetValidator::STATUS_FIELD_MISMATCH_ERROR_CODE, $e->errorCode);
+            self::assertArrayHasKey('plannedReps', $e->violations);
+        }
     }
 
     public function testItRejectsAPlannedFieldNotTrackedByMovement(): void
@@ -43,7 +99,7 @@ final class AddExerciseSetUseCaseTest extends KernelTestCase
         self::bootKernel();
         $container = self::getContainer();
         $player = self::createTestPlayer($container, 'add-set-tracking-mismatch');
-        [$exercise] = self::createTestExerciseWithSet($container, $player, tracking: ['tracksRepetitions' => true]);
+        [$exercise] = self::createTestExerciseWithSet($container, $player, WorkoutStatusRegistry::PLANNED, ['tracksRepetitions' => true]);
 
         $useCase = self::buildUseCase($container, $player);
 

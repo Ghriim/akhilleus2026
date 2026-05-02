@@ -2,15 +2,23 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '../../api/httpClient';
 import { useAuth } from '../../auth/AuthContext';
 import type { ExerciseDetailsDataOutput, RemoveExerciseDataOutput } from '../../api/types';
+import { TrashIcon } from '../icons';
 import { ExerciseSetRow } from './ExerciseSetRow';
 import { AddSetForm } from './AddSetForm';
 
 interface Props {
   exercise: ExerciseDetailsDataOutput;
   workoutId: string;
+  /** Which value group to write when the user adds a set. */
+  mode: 'planned' | 'achieved';
+  /**
+   * In achieved mode, the workout-wide id of the first non-complete set. The matching row
+   * auto-opens its achieved-values editor; ignored in planned mode.
+   */
+  currentSetId?: string | null;
 }
 
-export function ExerciseEditor({ exercise, workoutId }: Props) {
+export function ExerciseEditor({ exercise, workoutId, mode, currentSetId = null }: Props) {
   const { token } = useAuth();
   const queryClient = useQueryClient();
 
@@ -36,28 +44,43 @@ export function ExerciseEditor({ exercise, workoutId }: Props) {
         }}
       >
         <div>
-          <strong>{exercise.movement.label}</strong>
+          <strong style={{ fontSize: '1.1em' }}>{exercise.movement.label}</strong>
           <div className="muted" style={{ fontSize: '0.85em' }}>
-            Rest: {exercise.restDurationSeconds}s · {exercise.sets.length} set{exercise.sets.length === 1 ? '' : 's'}
+            Rest: {exercise.restDurationSeconds}s
           </div>
         </div>
         <button
           type="button"
-          className="danger"
+          className="icon-button icon-button--danger"
           disabled={remove.isPending}
+          aria-label={`Remove ${exercise.movement.label} from the workout`}
+          title="Remove movement"
           onClick={() => {
             if (window.confirm(`Remove ${exercise.movement.label} from the workout?`)) {
               remove.mutate();
             }
           }}
         >
-          Remove
+          <TrashIcon />
         </button>
       </div>
       {exercise.sets.map((set) => (
-        <ExerciseSetRow key={set.id} set={set} movement={exercise.movement} workoutId={workoutId} />
+        <ExerciseSetRow
+          key={set.id}
+          set={set}
+          movement={exercise.movement}
+          workoutId={workoutId}
+          mode={mode}
+          isCurrent={currentSetId === set.id}
+        />
       ))}
-      <AddSetForm exerciseId={exercise.id} movement={exercise.movement} workoutId={workoutId} />
+      <AddSetForm
+        exerciseId={exercise.id}
+        movement={exercise.movement}
+        workoutId={workoutId}
+        mode={mode}
+        defaultOpen={exercise.sets.length === 0}
+      />
     </div>
   );
 }

@@ -68,7 +68,7 @@ final class UpdateExerciseSetPlannedUseCase extends AbstractLoggedPlayerUseCase
             $set->achievedInclinePercent,
             $set->plannedInclineMeters,
             $set->achievedInclineMeters,
-            $set->completed,
+            $set->isComplete,
         );
     }
 }

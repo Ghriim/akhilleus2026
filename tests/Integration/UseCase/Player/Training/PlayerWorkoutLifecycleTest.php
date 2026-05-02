@@ -6,7 +6,6 @@ namespace App\Tests\Integration\UseCase\Player\Training;
 
 use App\Domain\DTO\DataInput\Player\Training\Exercise\AddMovementToWorkoutDataInput;
 use App\Domain\DTO\DataInput\Player\Training\ExerciseSet\AddExerciseSetDataInput;
-use App\Domain\DTO\DataInput\Player\Training\ExerciseSet\MarkExerciseSetCompletedDataInput;
 use App\Domain\DTO\DataInput\Player\Training\ExerciseSet\UpdateExerciseSetAchievedDataInput;
 use App\Domain\DTO\DataInput\Player\Training\PersonalBest\ListPersonalBestsDataInput;
 use App\Domain\DTO\DataInput\Player\Training\Workout\FinishWorkoutDataInput;
@@ -26,7 +25,6 @@ use App\Domain\Security\LoggedPlayerResolverInterface;
 use App\Domain\Service\PersonalBestEvaluator;
 use App\Domain\Validator\Player\Training\Exercise\AddMovementToWorkoutValidator;
 use App\Domain\Validator\Player\Training\ExerciseSet\AddExerciseSetValidator;
-use App\Domain\Validator\Player\Training\ExerciseSet\MarkExerciseSetCompletedValidator;
 use App\Domain\Validator\Player\Training\ExerciseSet\UpdateExerciseSetAchievedValidator;
 use App\Domain\Validator\Player\Training\Workout\FinishWorkoutValidator;
 use App\Domain\Validator\Player\Training\Workout\ListWorkoutHistoryValidator;
@@ -42,7 +40,6 @@ use App\Infrastructure\Repository\Training\Workout\PersonalBestRepository;
 use App\Infrastructure\Repository\Training\Workout\WorkoutRepository;
 use App\UseCase\Player\Training\Exercise\AddMovementToWorkoutUseCase;
 use App\UseCase\Player\Training\ExerciseSet\AddExerciseSetUseCase;
-use App\UseCase\Player\Training\ExerciseSet\MarkExerciseSetCompletedUseCase;
 use App\UseCase\Player\Training\ExerciseSet\UpdateExerciseSetAchievedUseCase;
 use App\UseCase\Player\Training\PersonalBest\ListPersonalBestsUseCase;
 use App\UseCase\Player\Training\Workout\FinishWorkoutUseCase;
@@ -82,19 +79,19 @@ final class PlayerWorkoutLifecycleTest extends KernelTestCase
         self::assertSame(0, $exerciseOutput->position);
         $exerciseId = $exerciseOutput->id;
 
-        // 3. Add two planned sets.
-        $set1Output = $useCases->addSet->execute(new AddExerciseSetDataInput($exerciseId, plannedReps: 10, plannedWeight: '50.00'));
-        $set2Output = $useCases->addSet->execute(new AddExerciseSetDataInput($exerciseId, plannedReps: 8, plannedWeight: '60.00'));
+        // 3. Add two sets directly with achieved values — the workout is IN_PROGRESS so the
+        //    AddExerciseSet use case writes to `achieved*` (planned* is forbidden in this state).
+        $set1Output = $useCases->addSet->execute(new AddExerciseSetDataInput($exerciseId, achievedReps: 10, achievedWeight: '50.00'));
+        $set2Output = $useCases->addSet->execute(new AddExerciseSetDataInput($exerciseId, achievedReps: 8, achievedWeight: '62.50'));
         self::assertSame(0, $set1Output->position);
         self::assertSame(1, $set2Output->position);
 
-        // 4. Record achieved values (set 2 beats the planned weight by 2.5 kg).
+        // 4. Re-record achieved on set1 to exercise the UpdateAchieved use case (idempotent).
+        //    isComplete is recomputed by the use case from the achieved* values + tracking flags.
         $useCases->updateAchieved->execute(new UpdateExerciseSetAchievedDataInput($set1Output->id, achievedReps: 10, achievedWeight: '50.00'));
-        $useCases->updateAchieved->execute(new UpdateExerciseSetAchievedDataInput($set2Output->id, achievedReps: 8, achievedWeight: '62.50'));
 
-        // 5. Mark each set completed.
-        $useCases->markCompleted->execute(new MarkExerciseSetCompletedDataInput($set1Output->id));
-        $useCases->markCompleted->execute(new MarkExerciseSetCompletedDataInput($set2Output->id));
+        // 5. Both sets were created with all required achieved* values, so they are already
+        //    auto-marked isComplete=true by the AddExerciseSet use case — no manual step needed.
 
         // 6. Finish the workout — PBs are computed and persisted.
         $finishOutput = $useCases->finish->execute(new FinishWorkoutDataInput($workoutId));
@@ -130,7 +127,7 @@ final class PlayerWorkoutLifecycleTest extends KernelTestCase
         self::assertSame($movement->id, $details->exercises[0]->movement->id);
         self::assertCount(2, $details->exercises[0]->sets);
         foreach ($details->exercises[0]->sets as $set) {
-            self::assertTrue($set->completed);
+            self::assertTrue($set->isComplete);
             self::assertNotNull($set->achievedReps);
             self::assertNotNull($set->achievedWeight);
         }
@@ -215,12 +212,6 @@ final class PlayerWorkoutLifecycleTest extends KernelTestCase
                 $exerciseSetRepo,
                 $exerciseSetPersister,
             ),
-            markCompleted: new MarkExerciseSetCompletedUseCase(
-                new MarkExerciseSetCompletedValidator($resolver),
-                $resolver,
-                $exerciseSetRepo,
-                $exerciseSetPersister,
-            ),
             finish: new FinishWorkoutUseCase(
                 new FinishWorkoutValidator($resolver),
                 $resolver,
@@ -252,7 +243,6 @@ final readonly class LifecycleUseCases
         public AddMovementToWorkoutUseCase $addMovement,
         public AddExerciseSetUseCase $addSet,
         public UpdateExerciseSetAchievedUseCase $updateAchieved,
-        public MarkExerciseSetCompletedUseCase $markCompleted,
         public FinishWorkoutUseCase $finish,
         public ListWorkoutHistoryUseCase $listHistory,
         public GetWorkoutDetailsUseCase $getDetails,

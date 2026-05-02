@@ -12,6 +12,7 @@
   - `Repository` for Repository
   - `UseCase` for UseCase
   - `Validator` for Validator
+- Boolean property and parameter names must start with `is` (state, e.g. `isComplete`, `isActive`) or `has` (possession, e.g. `hasPersonalBest`). Idiomatic third-person-singular verbs (e.g. `tracksWeight`) are acceptable when they read more naturally than an `is*`/`has*` rephrasing — but `is`/`has` is the default and any new boolean should justify deviating.
 
 ## Mock data
 - Fixtures are generated using the FixtureBundle of Symfony.

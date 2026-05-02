@@ -684,3 +684,23 @@ button.icon-button:active:not(:disabled) {
 .icon-button > svg {
   display: block;
 }
+
+/*
+ * Color variants for icon-only actions. The base .icon-button is neutral (inherits parent
+ * color); these modifiers tint the glyph and the hover wash to match the action semantics.
+ */
+button.icon-button--danger {
+  color: var(--color-danger);
+}
+
+button.icon-button--danger:hover:not(:disabled) {
+  background: rgba(90, 10, 10, 0.15);
+}
+
+button.icon-button--success {
+  color: var(--color-success);
+}
+
+button.icon-button--success:hover:not(:disabled) {
+  background: rgba(74, 111, 48, 0.18);
+}

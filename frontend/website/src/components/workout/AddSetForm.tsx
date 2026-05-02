@@ -4,17 +4,25 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '../../api/httpClient';
 import { useAuth } from '../../auth/AuthContext';
 import type { ExerciseMovementDataOutput, ExerciseSetDataOutput } from '../../api/types';
+import { CheckIcon, SaveIcon, XMarkIcon } from '../icons';
 
 interface Props {
   exerciseId: string;
   movement: ExerciseMovementDataOutput;
   workoutId: string;
+  /**
+   * Which value group to write. PLANNED workouts → 'planned', IN_PROGRESS → 'achieved'.
+   * The backend rejects the wrong group via STATUS_FIELD_MISMATCH.
+   */
+  mode: 'planned' | 'achieved';
+  /** When true, the form is rendered open on first mount (e.g. for a freshly-added movement). */
+  defaultOpen?: boolean;
 }
 
-export function AddSetForm({ exerciseId, movement, workoutId }: Props) {
+export function AddSetForm({ exerciseId, movement, workoutId, mode, defaultOpen = false }: Props) {
   const { token } = useAuth();
   const queryClient = useQueryClient();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   const [reps, setReps] = useState('');
   const [weight, setWeight] = useState('');
   const [duration, setDuration] = useState('');
@@ -44,10 +52,12 @@ export function AddSetForm({ exerciseId, movement, workoutId }: Props) {
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const body: Record<string, unknown> = {};
-    if (movement.tracksRepetitions && reps !== '') body.plannedReps = parseInt(reps, 10);
-    if (movement.tracksWeight && weight !== '') body.plannedWeight = weight;
-    if (movement.tracksDuration && duration !== '') body.plannedDurationSeconds = parseInt(duration, 10);
-    if (movement.tracksDistance && distance !== '') body.plannedDistanceMeters = distance;
+    const fieldName = (suffix: string) =>
+      mode === 'planned' ? `planned${suffix}` : `achieved${suffix}`;
+    if (movement.tracksRepetitions && reps !== '') body[fieldName('Reps')] = parseInt(reps, 10);
+    if (movement.tracksWeight && weight !== '') body[fieldName('Weight')] = weight;
+    if (movement.tracksDuration && duration !== '') body[fieldName('DurationSeconds')] = parseInt(duration, 10);
+    if (movement.tracksDistance && distance !== '') body[fieldName('DistanceMeters')] = distance;
     mutation.mutate(body);
   };
 
@@ -60,6 +70,8 @@ export function AddSetForm({ exerciseId, movement, workoutId }: Props) {
       </div>
     );
   }
+
+  const repsLabel = mode === 'planned' ? 'Reps (planned)' : 'Reps';
 
   return (
     <form
@@ -74,7 +86,7 @@ export function AddSetForm({ exerciseId, movement, workoutId }: Props) {
     >
       {movement.tracksRepetitions && (
         <label style={{ flex: '1 1 100px' }}>
-          Reps (planned)
+          {repsLabel}
           <input type="number" min="0" value={reps} onChange={(e) => setReps(e.target.value)} style={{ width: '100%' }} />
         </label>
       )}
@@ -97,11 +109,18 @@ export function AddSetForm({ exerciseId, movement, workoutId }: Props) {
         </label>
       )}
       <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'flex-end' }}>
-        <button type="submit" className="primary" disabled={mutation.isPending}>
-          {mutation.isPending ? 'Adding…' : 'Add'}
+        {/* Same rule as SetValuesForm: achieved-mode save validates the set (green check); planned-mode save is a regular save (floppy). */}
+        <button
+          type="submit"
+          className={mode === 'achieved' ? 'icon-button icon-button--success' : 'icon-button'}
+          disabled={mutation.isPending}
+          aria-label={mode === 'achieved' ? 'Validate set' : 'Save planned set'}
+          title={mode === 'achieved' ? 'Validate set' : 'Save'}
+        >
+          {mode === 'achieved' ? <CheckIcon /> : <SaveIcon />}
         </button>
-        <button type="button" onClick={reset}>
-          Cancel
+        <button type="button" className="icon-button" onClick={reset} aria-label="Cancel" title="Cancel">
+          <XMarkIcon />
         </button>
       </div>
       {mutation.isError && (

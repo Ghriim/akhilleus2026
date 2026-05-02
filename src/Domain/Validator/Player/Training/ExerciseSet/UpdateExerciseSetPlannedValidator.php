@@ -21,8 +21,8 @@ final readonly class UpdateExerciseSetPlannedValidator extends AbstractLoggedPla
     {
         $this->assertPlayerOwns($player, $set);
 
-        if (false === in_array($set->exercise->workout->status, WorkoutStatusRegistry::EDITABLE_STATUSES, true)) {
-            throw new ValidationException('Planned values can only be edited on a planned or in-progress workout.', ['status' => [sprintf('Workout is in status "%s", expected one of: %s.', $set->exercise->workout->status, implode(', ', WorkoutStatusRegistry::EDITABLE_STATUSES))]], self::ILLEGAL_STATUS_CODE);
+        if (WorkoutStatusRegistry::PLANNED !== $set->exercise->workout->status) {
+            throw new ValidationException('Planned values can only be edited on a planned workout.', ['status' => [sprintf('Workout is in status "%s", expected "%s".', $set->exercise->workout->status, WorkoutStatusRegistry::PLANNED)]], self::ILLEGAL_STATUS_CODE);
         }
 
         $movement = $set->exercise->movement;

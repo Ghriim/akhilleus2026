@@ -24,7 +24,7 @@ final readonly class ExerciseSetDataOutput implements DataOutputInterface
         public ?string $achievedInclinePercent,
         public ?string $plannedInclineMeters,
         public ?string $achievedInclineMeters,
-        public bool $completed,
+        public bool $isComplete,
     ) {
     }
 }

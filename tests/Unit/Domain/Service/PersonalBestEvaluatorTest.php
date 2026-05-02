@@ -261,7 +261,7 @@ final class PersonalBestEvaluatorTest extends TestCase
         $set->achievedWeight = $achievedWeight;
         $set->achievedDurationSeconds = $achievedDurationSeconds;
         $set->achievedDistanceMeters = $achievedDistanceMeters;
-        $set->completed = true;
+        $set->isComplete = true;
         $exercise->exerciseSets->add($set);
 
         return $set;

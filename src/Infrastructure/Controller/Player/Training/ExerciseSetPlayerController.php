@@ -5,13 +5,11 @@ declare(strict_types=1);
 namespace App\Infrastructure\Controller\Player\Training;
 
 use App\Domain\DTO\DataInput\Player\Training\ExerciseSet\AddExerciseSetDataInput;
-use App\Domain\DTO\DataInput\Player\Training\ExerciseSet\MarkExerciseSetCompletedDataInput;
 use App\Domain\DTO\DataInput\Player\Training\ExerciseSet\RemoveExerciseSetDataInput;
 use App\Domain\DTO\DataInput\Player\Training\ExerciseSet\UpdateExerciseSetAchievedDataInput;
 use App\Domain\DTO\DataInput\Player\Training\ExerciseSet\UpdateExerciseSetPlannedDataInput;
 use App\Domain\Exception\ValidationException;
 use App\UseCase\Player\Training\ExerciseSet\AddExerciseSetUseCase;
-use App\UseCase\Player\Training\ExerciseSet\MarkExerciseSetCompletedUseCase;
 use App\UseCase\Player\Training\ExerciseSet\RemoveExerciseSetUseCase;
 use App\UseCase\Player\Training\ExerciseSet\UpdateExerciseSetAchievedUseCase;
 use App\UseCase\Player\Training\ExerciseSet\UpdateExerciseSetPlannedUseCase;
@@ -27,7 +25,10 @@ final readonly class ExerciseSetPlayerController
     public function add(string $exerciseId, Request $request, AddExerciseSetUseCase $useCase): JsonResponse
     {
         $p = self::decodePlannedPayload($request);
+        $a = self::decodeAchievedPayload($request);
 
+        // Both planned* and achieved* are forwarded; the validator decides which group is allowed
+        // based on the workout status (PLANNED → planned*, IN_PROGRESS → achieved*).
         $output = $useCase->execute(new AddExerciseSetDataInput(
             $exerciseId,
             $p['plannedReps'],
@@ -36,6 +37,12 @@ final readonly class ExerciseSetPlayerController
             $p['plannedDistanceMeters'],
             $p['plannedInclinePercent'],
             $p['plannedInclineMeters'],
+            $a['achievedReps'],
+            $a['achievedWeight'],
+            $a['achievedDurationSeconds'],
+            $a['achievedDistanceMeters'],
+            $a['achievedInclinePercent'],
+            $a['achievedInclineMeters'],
         ));
 
         return new JsonResponse($output, 201);
@@ -77,12 +84,6 @@ final readonly class ExerciseSetPlayerController
     public function remove(string $id, RemoveExerciseSetUseCase $useCase): JsonResponse
     {
         return new JsonResponse($useCase->execute(new RemoveExerciseSetDataInput($id)));
-    }
-
-    #[Route(path: '/api/player/sets/{id}/complete', name: 'player_exercise_set_mark_completed', methods: ['POST'])]
-    public function markCompleted(string $id, MarkExerciseSetCompletedUseCase $useCase): JsonResponse
-    {
-        return new JsonResponse($useCase->execute(new MarkExerciseSetCompletedDataInput($id)));
     }
 
     /**

@@ -123,7 +123,7 @@ final class FinishWorkoutValidatorTest extends TestCase
         foreach ($completedFlags as $position => $completed) {
             $set = new ExerciseSetDataModel($exercise, $position);
             $set->id = 'set-'.uniqid().'-'.$position;
-            $set->completed = $completed;
+            $set->isComplete = $completed;
             $exercise->exerciseSets->add($set);
         }
 

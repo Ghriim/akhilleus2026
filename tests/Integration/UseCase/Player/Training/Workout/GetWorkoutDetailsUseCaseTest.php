@@ -55,7 +55,7 @@ final class GetWorkoutDetailsUseCaseTest extends KernelTestCase
         $set1->plannedWeight = '50.00';
         $set1->achievedReps = 10;
         $set1->achievedWeight = '50.00';
-        $set1->completed = true;
+        $set1->isComplete = true;
         $exerciseSetPersister->create($set1);
         $exercise->exerciseSets->add($set1);
 
@@ -73,8 +73,8 @@ final class GetWorkoutDetailsUseCaseTest extends KernelTestCase
         self::assertSame($movement->id, $output->exercises[0]->movement->id);
         self::assertCount(2, $output->exercises[0]->sets);
         self::assertSame(10, $output->exercises[0]->sets[0]->plannedReps);
-        self::assertTrue($output->exercises[0]->sets[0]->completed);
-        self::assertFalse($output->exercises[0]->sets[1]->completed);
+        self::assertTrue($output->exercises[0]->sets[0]->isComplete);
+        self::assertFalse($output->exercises[0]->sets[1]->isComplete);
     }
 
     public function testItThrowsNotFoundForAnUnknownId(): void

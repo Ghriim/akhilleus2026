@@ -31,9 +31,9 @@ final class AddExerciseSetValidatorTest extends TestCase
         $this->player = self::buildPlayer('player-1');
     }
 
-    public function testItPassesForValidPlannedValuesMatchingTrackingFlags(): void
+    public function testItPassesForValidPlannedValuesOnAPlannedWorkout(): void
     {
-        $exercise = self::buildExercise(self::buildWorkout($this->player, WorkoutStatusRegistry::IN_PROGRESS), ['tracksRepetitions' => true, 'tracksWeight' => true]);
+        $exercise = self::buildExercise(self::buildWorkout($this->player, WorkoutStatusRegistry::PLANNED), ['tracksRepetitions' => true, 'tracksWeight' => true]);
 
         $this->validator->validate($this->player, new AddExerciseSetDataInput(
             $exercise->id,
@@ -44,7 +44,20 @@ final class AddExerciseSetValidatorTest extends TestCase
         $this->expectNotToPerformAssertions();
     }
 
-    public function testItPassesWhenAllPlannedValuesAreNull(): void
+    public function testItPassesForValidAchievedValuesOnAnInProgressWorkout(): void
+    {
+        $exercise = self::buildExercise(self::buildWorkout($this->player, WorkoutStatusRegistry::IN_PROGRESS), ['tracksRepetitions' => true, 'tracksWeight' => true]);
+
+        $this->validator->validate($this->player, new AddExerciseSetDataInput(
+            $exercise->id,
+            achievedReps: 10,
+            achievedWeight: '50.00',
+        ), $exercise);
+
+        $this->expectNotToPerformAssertions();
+    }
+
+    public function testItPassesWhenAllValuesAreNull(): void
     {
         $exercise = self::buildExercise(self::buildWorkout($this->player, WorkoutStatusRegistry::IN_PROGRESS), ['tracksRepetitions' => true]);
 
@@ -75,9 +88,35 @@ final class AddExerciseSetValidatorTest extends TestCase
         }
     }
 
-    public function testItRejectsTrackingFieldsThatTheMovementDoesNotTrack(): void
+    public function testItRejectsAchievedValuesOnAPlannedWorkout(): void
+    {
+        $exercise = self::buildExercise(self::buildWorkout($this->player, WorkoutStatusRegistry::PLANNED), ['tracksRepetitions' => true]);
+
+        try {
+            $this->validator->validate($this->player, new AddExerciseSetDataInput($exercise->id, achievedReps: 5), $exercise);
+            self::fail('Expected ValidationException');
+        } catch (ValidationException $e) {
+            self::assertSame(AddExerciseSetValidator::STATUS_FIELD_MISMATCH_ERROR_CODE, $e->errorCode);
+            self::assertArrayHasKey('achievedReps', $e->violations);
+        }
+    }
+
+    public function testItRejectsPlannedValuesOnAnInProgressWorkout(): void
     {
         $exercise = self::buildExercise(self::buildWorkout($this->player, WorkoutStatusRegistry::IN_PROGRESS), ['tracksRepetitions' => true]);
+
+        try {
+            $this->validator->validate($this->player, new AddExerciseSetDataInput($exercise->id, plannedReps: 5), $exercise);
+            self::fail('Expected ValidationException');
+        } catch (ValidationException $e) {
+            self::assertSame(AddExerciseSetValidator::STATUS_FIELD_MISMATCH_ERROR_CODE, $e->errorCode);
+            self::assertArrayHasKey('plannedReps', $e->violations);
+        }
+    }
+
+    public function testItRejectsTrackingFieldsThatTheMovementDoesNotTrack(): void
+    {
+        $exercise = self::buildExercise(self::buildWorkout($this->player, WorkoutStatusRegistry::PLANNED), ['tracksRepetitions' => true]);
 
         try {
             $this->validator->validate($this->player, new AddExerciseSetDataInput(
@@ -92,9 +131,26 @@ final class AddExerciseSetValidatorTest extends TestCase
         }
     }
 
-    public function testItRejectsNegativeNumericValues(): void
+    public function testItRejectsAchievedTrackingMismatchOnInProgressWorkout(): void
     {
-        $exercise = self::buildExercise(self::buildWorkout($this->player, WorkoutStatusRegistry::IN_PROGRESS), ['tracksRepetitions' => true, 'tracksDuration' => true]);
+        $exercise = self::buildExercise(self::buildWorkout($this->player, WorkoutStatusRegistry::IN_PROGRESS), ['tracksRepetitions' => true]);
+
+        try {
+            $this->validator->validate($this->player, new AddExerciseSetDataInput(
+                $exercise->id,
+                achievedReps: 5,
+                achievedWeight: '50.00',
+            ), $exercise);
+            self::fail('Expected ValidationException');
+        } catch (ValidationException $e) {
+            self::assertSame(AddExerciseSetValidator::TRACKING_MISMATCH_ERROR_CODE, $e->errorCode);
+            self::assertArrayHasKey('achievedWeight', $e->violations);
+        }
+    }
+
+    public function testItRejectsNegativePlannedValues(): void
+    {
+        $exercise = self::buildExercise(self::buildWorkout($this->player, WorkoutStatusRegistry::PLANNED), ['tracksRepetitions' => true, 'tracksDuration' => true]);
 
         try {
             $this->validator->validate($this->player, new AddExerciseSetDataInput(
@@ -110,9 +166,27 @@ final class AddExerciseSetValidatorTest extends TestCase
         }
     }
 
+    public function testItRejectsNegativeAchievedValues(): void
+    {
+        $exercise = self::buildExercise(self::buildWorkout($this->player, WorkoutStatusRegistry::IN_PROGRESS), ['tracksRepetitions' => true, 'tracksDuration' => true]);
+
+        try {
+            $this->validator->validate($this->player, new AddExerciseSetDataInput(
+                $exercise->id,
+                achievedReps: -1,
+                achievedDurationSeconds: -5,
+            ), $exercise);
+            self::fail('Expected ValidationException');
+        } catch (ValidationException $e) {
+            self::assertSame(AddExerciseSetValidator::FAILED_ERROR_CODE, $e->errorCode);
+            self::assertArrayHasKey('achievedReps', $e->violations);
+            self::assertArrayHasKey('achievedDurationSeconds', $e->violations);
+        }
+    }
+
     public function testItRejectsNonNumericDecimalStrings(): void
     {
-        $exercise = self::buildExercise(self::buildWorkout($this->player, WorkoutStatusRegistry::IN_PROGRESS), ['tracksWeight' => true]);
+        $exercise = self::buildExercise(self::buildWorkout($this->player, WorkoutStatusRegistry::PLANNED), ['tracksWeight' => true]);
 
         $class = new \ReflectionClass(AddExerciseSetDataInput::class);
         $input = $class->newInstanceWithoutConstructor();
@@ -123,6 +197,12 @@ final class AddExerciseSetValidatorTest extends TestCase
         $class->getProperty('plannedDistanceMeters')->setValue($input, null);
         $class->getProperty('plannedInclinePercent')->setValue($input, null);
         $class->getProperty('plannedInclineMeters')->setValue($input, null);
+        $class->getProperty('achievedReps')->setValue($input, null);
+        $class->getProperty('achievedWeight')->setValue($input, null);
+        $class->getProperty('achievedDurationSeconds')->setValue($input, null);
+        $class->getProperty('achievedDistanceMeters')->setValue($input, null);
+        $class->getProperty('achievedInclinePercent')->setValue($input, null);
+        $class->getProperty('achievedInclineMeters')->setValue($input, null);
 
         try {
             $this->validator->validate($this->player, $input, $exercise);

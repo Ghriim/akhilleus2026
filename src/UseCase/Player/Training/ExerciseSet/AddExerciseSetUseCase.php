@@ -13,6 +13,7 @@ use App\Domain\Gateway\Persister\Training\Workout\ExerciseSetPersisterGateway;
 use App\Domain\Gateway\Provider\Training\Workout\ExerciseProviderGateway;
 use App\Domain\Gateway\Provider\Training\Workout\ExerciseSetProviderGateway;
 use App\Domain\Security\LoggedPlayerResolverInterface;
+use App\Domain\Service\ExerciseSetCompletionEvaluator;
 use App\Domain\Validator\Player\Training\ExerciseSet\AddExerciseSetValidator;
 use App\UseCase\AbstractLoggedPlayerUseCase;
 
@@ -55,6 +56,13 @@ final class AddExerciseSetUseCase extends AbstractLoggedPlayerUseCase
         $created->plannedDistanceMeters = $input->plannedDistanceMeters;
         $created->plannedInclinePercent = $input->plannedInclinePercent;
         $created->plannedInclineMeters = $input->plannedInclineMeters;
+        $created->achievedReps = $input->achievedReps;
+        $created->achievedWeight = $input->achievedWeight;
+        $created->achievedDurationSeconds = $input->achievedDurationSeconds;
+        $created->achievedDistanceMeters = $input->achievedDistanceMeters;
+        $created->achievedInclinePercent = $input->achievedInclinePercent;
+        $created->achievedInclineMeters = $input->achievedInclineMeters;
+        $created->isComplete = ExerciseSetCompletionEvaluator::isComplete($created, $exercise->movement);
 
         $this->exerciseSetPersister->create($created);
         $exercise->exerciseSets->add($created);
@@ -80,7 +88,7 @@ final class AddExerciseSetUseCase extends AbstractLoggedPlayerUseCase
             $set->achievedInclinePercent,
             $set->plannedInclineMeters,
             $set->achievedInclineMeters,
-            $set->completed,
+            $set->isComplete,
         );
     }
 }

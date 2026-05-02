@@ -13,6 +13,10 @@ final readonly class AddExerciseSetDataInput implements DataInputInterface
      * @param numeric-string|null $plannedDistanceMeters
      * @param numeric-string|null $plannedInclinePercent
      * @param numeric-string|null $plannedInclineMeters
+     * @param numeric-string|null $achievedWeight
+     * @param numeric-string|null $achievedDistanceMeters
+     * @param numeric-string|null $achievedInclinePercent
+     * @param numeric-string|null $achievedInclineMeters
      */
     public function __construct(
         public string $exerciseId,
@@ -22,6 +26,12 @@ final readonly class AddExerciseSetDataInput implements DataInputInterface
         public ?string $plannedDistanceMeters = null,
         public ?string $plannedInclinePercent = null,
         public ?string $plannedInclineMeters = null,
+        public ?int $achievedReps = null,
+        public ?string $achievedWeight = null,
+        public ?int $achievedDurationSeconds = null,
+        public ?string $achievedDistanceMeters = null,
+        public ?string $achievedInclinePercent = null,
+        public ?string $achievedInclineMeters = null,
     ) {
     }
 }

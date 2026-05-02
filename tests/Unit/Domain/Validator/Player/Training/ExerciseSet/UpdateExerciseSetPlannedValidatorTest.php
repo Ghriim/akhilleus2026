@@ -34,7 +34,7 @@ final class UpdateExerciseSetPlannedValidatorTest extends TestCase
 
     public function testItPassesForValidPlannedValues(): void
     {
-        $set = self::buildSet(self::buildWorkout($this->player, WorkoutStatusRegistry::IN_PROGRESS), ['tracksRepetitions' => true, 'tracksWeight' => true]);
+        $set = self::buildSet(self::buildWorkout($this->player, WorkoutStatusRegistry::PLANNED), ['tracksRepetitions' => true, 'tracksWeight' => true]);
 
         $this->validator->validate($this->player, new UpdateExerciseSetPlannedDataInput($set->id, plannedReps: 8, plannedWeight: '42.50'), $set);
 
@@ -43,11 +43,23 @@ final class UpdateExerciseSetPlannedValidatorTest extends TestCase
 
     public function testItThrowsUnauthorizedWhenWorkoutBelongsToAnotherPlayer(): void
     {
-        $set = self::buildSet(self::buildWorkout(self::buildPlayer('player-2'), WorkoutStatusRegistry::IN_PROGRESS), ['tracksRepetitions' => true]);
+        $set = self::buildSet(self::buildWorkout(self::buildPlayer('player-2'), WorkoutStatusRegistry::PLANNED), ['tracksRepetitions' => true]);
 
         $this->expectException(UnauthorizedException::class);
 
         $this->validator->validate($this->player, new UpdateExerciseSetPlannedDataInput($set->id), $set);
+    }
+
+    public function testItRejectsAnInProgressWorkout(): void
+    {
+        $set = self::buildSet(self::buildWorkout($this->player, WorkoutStatusRegistry::IN_PROGRESS), ['tracksRepetitions' => true]);
+
+        try {
+            $this->validator->validate($this->player, new UpdateExerciseSetPlannedDataInput($set->id), $set);
+            self::fail('Expected ValidationException');
+        } catch (ValidationException $e) {
+            self::assertSame(UpdateExerciseSetPlannedValidator::ILLEGAL_STATUS_CODE, $e->errorCode);
+        }
     }
 
     public function testItRejectsACompletedWorkout(): void
@@ -64,7 +76,7 @@ final class UpdateExerciseSetPlannedValidatorTest extends TestCase
 
     public function testItRejectsTrackingFieldsThatTheMovementDoesNotTrack(): void
     {
-        $set = self::buildSet(self::buildWorkout($this->player, WorkoutStatusRegistry::IN_PROGRESS), ['tracksRepetitions' => true]);
+        $set = self::buildSet(self::buildWorkout($this->player, WorkoutStatusRegistry::PLANNED), ['tracksRepetitions' => true]);
 
         try {
             $this->validator->validate($this->player, new UpdateExerciseSetPlannedDataInput($set->id, plannedReps: 5, plannedWeight: '50.00'), $set);
@@ -77,7 +89,7 @@ final class UpdateExerciseSetPlannedValidatorTest extends TestCase
 
     public function testItRejectsNegativeNumericValues(): void
     {
-        $set = self::buildSet(self::buildWorkout($this->player, WorkoutStatusRegistry::IN_PROGRESS), ['tracksRepetitions' => true, 'tracksDuration' => true]);
+        $set = self::buildSet(self::buildWorkout($this->player, WorkoutStatusRegistry::PLANNED), ['tracksRepetitions' => true, 'tracksDuration' => true]);
 
         try {
             $this->validator->validate($this->player, new UpdateExerciseSetPlannedDataInput($set->id, plannedReps: -1, plannedDurationSeconds: -10), $set);

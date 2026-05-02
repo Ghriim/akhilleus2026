@@ -133,7 +133,7 @@ final class FinishWorkoutUseCaseTest extends KernelTestCase
             $container,
             $player,
             $movement,
-            [['reps' => 5, 'weight' => '50.00', 'completed' => true], ['reps' => 5, 'weight' => '50.00', 'completed' => false]],
+            [['reps' => 5, 'weight' => '50.00', 'isComplete' => true], ['reps' => 5, 'weight' => '50.00', 'isComplete' => false]],
         );
 
         try {
@@ -203,7 +203,7 @@ final class FinishWorkoutUseCaseTest extends KernelTestCase
     }
 
     /**
-     * @param list<array{reps?: int|null, weight?: numeric-string|null, completed?: bool}> $setSpecs
+     * @param list<array{reps?: int|null, weight?: numeric-string|null, isComplete?: bool}> $setSpecs
      */
     private static function seedInProgressWorkoutWithSets(
         ContainerInterface $container,
@@ -228,7 +228,7 @@ final class FinishWorkoutUseCaseTest extends KernelTestCase
             $set = new ExerciseSetDataModel($exercise, $i);
             $set->achievedReps = $spec['reps'] ?? null;
             $set->achievedWeight = $spec['weight'] ?? null;
-            $set->completed = $spec['completed'] ?? true;
+            $set->isComplete = $spec['isComplete'] ?? true;
             $exerciseSetPersister->create($set);
             $exercise->exerciseSets->add($set);
         }

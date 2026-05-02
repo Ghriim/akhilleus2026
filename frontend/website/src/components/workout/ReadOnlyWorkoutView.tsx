@@ -52,7 +52,7 @@ export function ReadOnlyWorkoutView({ workout }: Props) {
               }}
             >
               <span style={{ fontWeight: 600 }}>Set {set.position + 1}</span>
-              {set.completed && (
+              {set.isComplete && (
                 <span style={{ marginLeft: 'var(--space-2)', color: 'var(--color-success)' }}>
                   ✓
                 </span>

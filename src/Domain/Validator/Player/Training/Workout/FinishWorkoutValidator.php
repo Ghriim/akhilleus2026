@@ -27,7 +27,7 @@ final readonly class FinishWorkoutValidator extends AbstractLoggedPlayerValidato
         $incompleteSetIds = [];
         foreach ($workout->exercises as $exercise) {
             foreach ($exercise->exerciseSets as $set) {
-                if (false === $set->completed) {
+                if (false === $set->isComplete) {
                     $incompleteSetIds[] = $set->id;
                 }
             }

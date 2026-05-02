@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { apiRequest, HttpError } from '../../api/httpClient';
@@ -26,6 +26,18 @@ export function LiveWorkoutEditor({ workout }: Props) {
   const [incompleteSetIds, setIncompleteSetIds] = useState<string[] | null>(null);
   const [finishError, setFinishError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+
+  // The "current" set is the first non-complete set in document order across all exercises.
+  // Its row auto-opens its achieved-values editor; once isComplete is true (auto-derived from
+  // the achieved* values matching the movement's tracking flags), the next one picks up.
+  const currentSetId = useMemo(() => {
+    for (const exercise of workout.exercises) {
+      for (const set of exercise.sets) {
+        if (!set.isComplete) return set.id;
+      }
+    }
+    return null;
+  }, [workout.exercises]);
 
   const finish = useMutation({
     mutationFn: () =>
@@ -82,15 +94,29 @@ export function LiveWorkoutEditor({ workout }: Props) {
         <span className="muted">Started {formatRelative(workout.dateStart)}</span>
       </div>
 
-      <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-4)' }}>
-        <button
-          type="button"
-          className="primary"
-          disabled={finish.isPending}
-          onClick={() => finish.mutate()}
-        >
-          {finish.isPending ? 'Finishing…' : 'Finish workout'}
-        </button>
+      {workout.exercises.length === 0 && (
+        <p className="muted">No movements yet. Add one to start logging sets.</p>
+      )}
+      {workout.exercises.map((exercise) => (
+        <ExerciseEditor
+          key={exercise.id}
+          exercise={exercise}
+          workoutId={workout.id}
+          mode="achieved"
+          currentSetId={currentSetId}
+        />
+      ))}
+
+      <AddMovementForm workoutId={workout.id} />
+
+      <div
+        style={{
+          display: 'flex',
+          gap: 'var(--space-2)',
+          marginTop: 'var(--space-4)',
+          justifyContent: 'flex-end',
+        }}
+      >
         <button
           type="button"
           className="danger"
@@ -103,16 +129,15 @@ export function LiveWorkoutEditor({ workout }: Props) {
         >
           {cancel.isPending ? 'Canceling…' : 'Cancel'}
         </button>
+        <button
+          type="button"
+          className="primary"
+          disabled={finish.isPending}
+          onClick={() => finish.mutate()}
+        >
+          {finish.isPending ? 'Finishing…' : 'Finish workout'}
+        </button>
       </div>
-
-      <AddMovementForm workoutId={workout.id} />
-
-      {workout.exercises.length === 0 && (
-        <p className="muted">No movements yet. Add one to start logging sets.</p>
-      )}
-      {workout.exercises.map((exercise) => (
-        <ExerciseEditor key={exercise.id} exercise={exercise} workoutId={workout.id} />
-      ))}
 
       <FinishWorkoutModal
         open={modalOpen}

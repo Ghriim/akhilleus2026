@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '../../api/httpClient';
 import { useAuth } from '../../auth/AuthContext';
@@ -7,31 +7,42 @@ import type {
   ExerciseSetDataOutput,
   RemoveExerciseSetDataOutput,
 } from '../../api/types';
-import { AchievedForm } from './AchievedForm';
+import { PencilIcon, TrashIcon } from '../icons';
+import { SetValuesForm } from './SetValuesForm';
 
 interface Props {
   set: ExerciseSetDataOutput;
   movement: ExerciseMovementDataOutput;
   workoutId: string;
+  /** PLANNED workouts edit planned*; IN_PROGRESS workouts edit achieved*. */
+  mode: 'planned' | 'achieved';
+  /**
+   * In achieved mode, marks the row as the workout's "current" set (= the first
+   * non-complete set in document order). Auto-opens the achieved-values form on this row,
+   * and auto-closes it once isComplete becomes true (the next current row picks up).
+   */
+  isCurrent?: boolean;
 }
 
-export function ExerciseSetRow({ set, movement, workoutId }: Props) {
+export function ExerciseSetRow({ set, movement, workoutId, mode, isCurrent = false }: Props) {
   const { token } = useAuth();
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
 
+  useEffect(() => {
+    if (mode !== 'achieved') return;
+    if (set.isComplete) {
+      setEditing(false);
+      return;
+    }
+    if (isCurrent) {
+      setEditing(true);
+    }
+  }, [mode, isCurrent, set.isComplete]);
+
   const invalidate = () => {
     void queryClient.invalidateQueries({ queryKey: ['workout', workoutId] });
   };
-
-  const markCompleted = useMutation({
-    mutationFn: () =>
-      apiRequest<ExerciseSetDataOutput>(`/api/player/sets/${set.id}/complete`, {
-        method: 'POST',
-        token,
-      }),
-    onSuccess: invalidate,
-  });
 
   const remove = useMutation({
     mutationFn: () =>
@@ -42,6 +53,8 @@ export function ExerciseSetRow({ set, movement, workoutId }: Props) {
     onSuccess: invalidate,
   });
 
+  const editLabel = mode === 'planned' ? 'Update planned values' : 'Update achieved values';
+
   return (
     <div
       style={{
@@ -50,76 +63,66 @@ export function ExerciseSetRow({ set, movement, workoutId }: Props) {
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-2)' }}>
-        <div>
-          <span style={{ fontWeight: 600 }}>Set {set.position + 1}</span>
-          {set.completed && (
-            <span style={{ marginLeft: 'var(--space-2)', color: 'var(--color-success)', fontSize: '0.85em' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+          <span style={{ fontWeight: 600 }}>{summary(set, movement)}</span>
+          {set.isComplete && (
+            <span style={{ color: 'var(--color-success)', fontSize: '0.85em' }}>
               ✓ completed
             </span>
           )}
-          <div className="muted" style={{ fontSize: '0.85em', marginTop: 2 }}>
-            {summary(set, movement)}
-          </div>
         </div>
         <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
           {!editing && (
-            <button type="button" onClick={() => setEditing(true)}>
-              Update achieved
-            </button>
-          )}
-          {!set.completed && (
             <button
               type="button"
-              className="primary"
-              disabled={markCompleted.isPending}
-              onClick={() => markCompleted.mutate()}
+              className="icon-button"
+              onClick={() => setEditing(true)}
+              aria-label={editLabel}
+              title={editLabel}
             >
-              {markCompleted.isPending ? '…' : 'Mark complete'}
+              <PencilIcon />
             </button>
           )}
           <button
             type="button"
-            className="danger"
+            className="icon-button icon-button--danger"
             disabled={remove.isPending}
+            aria-label="Delete this set"
+            title="Delete set"
             onClick={() => {
               if (window.confirm('Delete this set?')) remove.mutate();
             }}
           >
-            ×
+            <TrashIcon />
           </button>
         </div>
       </div>
       {editing && (
         <div style={{ marginTop: 'var(--space-2)' }}>
-          <AchievedForm set={set} movement={movement} onDone={() => setEditing(false)} />
+          <SetValuesForm set={set} movement={movement} workoutId={workoutId} mode={mode} onDone={() => setEditing(false)} />
         </div>
       )}
     </div>
   );
 }
 
+/**
+ * One-line summary of the set's current values: shows the achieved* values once the set is
+ * complete, otherwise the planned* targets. Trackings flags drive which dimensions are listed.
+ */
 function summary(set: ExerciseSetDataOutput, movement: ExerciseMovementDataOutput): string {
+  const useAchieved = set.isComplete;
   const parts: string[] = [];
-  const fmt = (planned: string | number | null, achieved: string | number | null, unit: string) => {
-    if (planned === null && achieved === null) return null;
-    if (achieved !== null) return `${achieved}${unit}` + (planned !== null && planned !== achieved ? ` (planned ${planned}${unit})` : '');
-    return `planned ${planned}${unit}`;
+  const push = (planned: string | number | null, achieved: string | number | null, unit: string) => {
+    const value = useAchieved ? achieved : planned;
+    if (value === null) return;
+    parts.push(`${value}${unit}`);
   };
-  if (movement.tracksRepetitions) {
-    const v = fmt(set.plannedReps, set.achievedReps, ' reps');
-    if (v) parts.push(v);
-  }
-  if (movement.tracksWeight) {
-    const v = fmt(set.plannedWeight, set.achievedWeight, ' kg');
-    if (v) parts.push(v);
-  }
-  if (movement.tracksDuration) {
-    const v = fmt(set.plannedDurationSeconds, set.achievedDurationSeconds, ' s');
-    if (v) parts.push(v);
-  }
-  if (movement.tracksDistance) {
-    const v = fmt(set.plannedDistanceMeters, set.achievedDistanceMeters, ' m');
-    if (v) parts.push(v);
-  }
+  if (movement.tracksRepetitions) push(set.plannedReps, set.achievedReps, ' reps');
+  if (movement.tracksWeight) push(set.plannedWeight, set.achievedWeight, ' kg');
+  if (movement.tracksDuration) push(set.plannedDurationSeconds, set.achievedDurationSeconds, ' s');
+  if (movement.tracksDistance) push(set.plannedDistanceMeters, set.achievedDistanceMeters, ' m');
+  if (movement.tracksInclinePercent) push(set.plannedInclinePercent, set.achievedInclinePercent, ' %');
+  if (movement.tracksInclineMeters) push(set.plannedInclineMeters, set.achievedInclineMeters, ' m+');
   return parts.length > 0 ? parts.join(' · ') : 'no values yet';
 }

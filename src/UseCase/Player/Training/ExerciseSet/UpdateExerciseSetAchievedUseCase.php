@@ -12,6 +12,7 @@ use App\Domain\Exception\EntityNotFoundException;
 use App\Domain\Gateway\Persister\Training\Workout\ExerciseSetPersisterGateway;
 use App\Domain\Gateway\Provider\Training\Workout\ExerciseSetProviderGateway;
 use App\Domain\Security\LoggedPlayerResolverInterface;
+use App\Domain\Service\ExerciseSetCompletionEvaluator;
 use App\Domain\Validator\Player\Training\ExerciseSet\UpdateExerciseSetAchievedValidator;
 use App\UseCase\AbstractLoggedPlayerUseCase;
 
@@ -44,6 +45,7 @@ final class UpdateExerciseSetAchievedUseCase extends AbstractLoggedPlayerUseCase
         $set->achievedDistanceMeters = $input->achievedDistanceMeters;
         $set->achievedInclinePercent = $input->achievedInclinePercent;
         $set->achievedInclineMeters = $input->achievedInclineMeters;
+        $set->isComplete = ExerciseSetCompletionEvaluator::isComplete($set, $set->exercise->movement);
 
         $this->exerciseSetPersister->update($set);
 
@@ -68,7 +70,7 @@ final class UpdateExerciseSetAchievedUseCase extends AbstractLoggedPlayerUseCase
             $set->achievedInclinePercent,
             $set->plannedInclineMeters,
             $set->achievedInclineMeters,
-            $set->completed,
+            $set->isComplete,
         );
     }
 }

@@ -73,7 +73,7 @@ export interface ExerciseSetDataOutput {
   achievedInclinePercent: string | null;
   plannedInclineMeters: string | null;
   achievedInclineMeters: string | null;
-  completed: boolean;
+  isComplete: boolean;
 }
 
 export interface ExerciseDetailsDataOutput {

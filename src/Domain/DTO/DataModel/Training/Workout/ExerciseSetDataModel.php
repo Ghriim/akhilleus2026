@@ -75,7 +75,7 @@ class ExerciseSetDataModel implements DataModelInterface, OwnedByPlayerInterface
     public ?string $achievedInclineMeters = null;
 
     #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
-    public bool $completed = false;
+    public bool $isComplete = false;
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     public \DateTimeImmutable $createdAt;
