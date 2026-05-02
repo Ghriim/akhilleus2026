@@ -291,33 +291,41 @@ label {
 
 .layout-header nav {
   display: flex;
+  align-items: center;
   gap: var(--space-2);
   flex-wrap: wrap;
 }
 
+
+/*
+ * The main-nav links + the Training dropdown trigger are plain text — no button chrome.
+ * Active state = underline (gold). Hover state = color shift only.
+ *
+ * Typography is normalized between <a> and <button> (font-weight + line-height) so Dashboard
+ * and Training render at exactly the same metrics.
+ */
 .layout-header nav a {
   color: var(--color-surface);
   text-decoration: none;
-  padding: var(--space-1) var(--space-3);
-  border-radius: var(--radius);
   font-family: var(--font-heading);
   font-size: 0.85rem;
+  font-weight: 500;
+  line-height: 1.2;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  border: 1px solid transparent;
-  transition: background 120ms, border-color 120ms;
+  text-underline-offset: 6px;
+  text-decoration-thickness: 2px;
+  text-decoration-color: var(--color-gold);
+  transition: color 120ms;
 }
 
 .layout-header nav a:hover {
-  background: rgba(212, 166, 72, 0.18);
   color: var(--color-gold-bright);
 }
 
 .layout-header nav a.active {
-  background: var(--color-gold);
-  color: #1a1409;
-  border-color: var(--color-gold-bright);
-  text-shadow: none;
+  color: var(--color-gold-bright);
+  text-decoration: underline;
 }
 
 .layout-header button {
@@ -388,41 +396,64 @@ a.card:hover {
 
 /* === Header nav dropdown === */
 
+/*
+ * `position: relative` anchors the absolute-positioned popover (.nav-dropdown-menu).
+ * `display: flex; align-items: center` aligns the inner button's baseline with the sibling
+ * Dashboard <a> in the parent flex nav — without it, an inline-flex button next to a plain
+ * <a> can drift a couple of pixels depending on the chevron's rendered height.
+ */
 .nav-dropdown {
   position: relative;
-  display: inline-block;
+  display: flex;
+  align-items: center;
 }
 
+/*
+ * Same plain-text affordance as .layout-header nav a — no button chrome.
+ * Typography is aligned with the <a> nav links (font-weight, line-height) so the
+ * Dashboard / Training labels share identical metrics.
+ *
+ * The active underline is applied to the inner label span only (not the chevron),
+ * so the ▾ marker stays unmarked even when the dropdown is open or its routes are active.
+ */
 .nav-dropdown-trigger {
-  /* Match the .layout-header nav a look so Dashboard + Training share the same affordance. */
   background: transparent;
-  border: 1px solid transparent;
+  border: none;
   box-shadow: none;
+  padding: 0;
   color: var(--color-surface);
-  padding: var(--space-1) var(--space-3);
-  border-radius: var(--radius);
   font-family: var(--font-heading);
   font-size: 0.85rem;
+  font-weight: 500;
+  line-height: 1.2;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
+  transition: color 120ms;
 }
 
 .nav-dropdown-trigger:hover:not(:disabled) {
-  background: rgba(212, 166, 72, 0.18);
-  border-color: transparent;
   color: var(--color-gold-bright);
+  background: transparent;
 }
 
 .nav-dropdown-trigger.active,
 .nav-dropdown-trigger[aria-expanded='true'] {
-  background: var(--color-gold);
-  color: #1a1409;
-  border-color: var(--color-gold-bright);
-  text-shadow: none;
+  color: var(--color-gold-bright);
+}
+
+.nav-dropdown-trigger__label {
+  text-underline-offset: 6px;
+  text-decoration-thickness: 2px;
+  text-decoration-color: var(--color-gold);
+}
+
+.nav-dropdown-trigger.active .nav-dropdown-trigger__label,
+.nav-dropdown-trigger[aria-expanded='true'] .nav-dropdown-trigger__label {
+  text-decoration: underline;
 }
 
 .nav-dropdown-menu {
@@ -459,11 +490,10 @@ a.card:hover {
   color: var(--color-gold-bright);
 }
 
-.nav-dropdown-menu a.active {
-  background: var(--color-gold);
-  color: #1a1409;
-  border-color: var(--color-gold-bright);
-}
+/*
+ * Active styling is intentionally not applied to dropdown items — the parent trigger
+ * already carries the active hint at the first nav level.
+ */
 
 /* === Month calendar (generic, reusable) === */
 
@@ -606,4 +636,51 @@ a.card:hover {
 .calendar-pill:hover {
   border-color: var(--color-gold-bright);
   color: var(--color-primary-text);
+}
+
+/* === Header icon-button cluster === */
+
+.layout-header__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/*
+ * Generic ghost icon-button: square, borderless, transparent until hovered. Works in any
+ * context — header, toolbars, list rows, etc. New icon-only actions across the app should
+ * use this class rather than re-inventing the styling.
+ *
+ * `button.icon-button` carries enough specificity (0,2,0) to win over both the base `button`
+ * rule (0,0,1) and the header-scoped `.layout-header button` rule (0,1,1).
+ */
+button.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  border-radius: var(--radius);
+  color: inherit;
+  cursor: pointer;
+  transition: background 120ms;
+}
+
+button.icon-button:hover:not(:disabled) {
+  background: rgba(212, 166, 72, 0.18);
+  border-color: transparent;
+}
+
+button.icon-button:active:not(:disabled) {
+  /* The base .button shifts down 1px on press — too jumpy for a tiny icon. */
+  transform: none;
+  box-shadow: none;
+}
+
+.icon-button > svg {
+  display: block;
 }

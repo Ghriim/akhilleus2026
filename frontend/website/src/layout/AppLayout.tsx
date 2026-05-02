@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { apiRequest } from '../api/httpClient';
+import { BellIcon, GearIcon, LogoutIcon } from '../components/icons';
 
 const TRAINING_PATHS = ['/planning', '/history', '/achievements'];
 
@@ -62,7 +63,8 @@ export function AppLayout() {
               aria-expanded={trainingOpen}
               onClick={() => setTrainingOpen((v) => !v)}
             >
-              Training <span aria-hidden="true">▾</span>
+              <span className="nav-dropdown-trigger__label">Training</span>
+              <span aria-hidden="true">▾</span>
             </button>
             {trainingOpen && (
               <div className="nav-dropdown-menu" role="menu">
@@ -79,9 +81,35 @@ export function AppLayout() {
             )}
           </div>
         </nav>
-        <button type="button" onClick={handleLogout}>
-          Logout
-        </button>
+        <div className="layout-header__actions">
+          <button
+            type="button"
+            className="icon-button"
+            aria-label="Notifications"
+            title="Notifications"
+            disabled
+          >
+            <BellIcon />
+          </button>
+          <button
+            type="button"
+            className="icon-button"
+            aria-label="Settings"
+            title="Settings"
+            disabled
+          >
+            <GearIcon />
+          </button>
+          <button
+            type="button"
+            className="icon-button"
+            aria-label="Logout"
+            title="Logout"
+            onClick={handleLogout}
+          >
+            <LogoutIcon />
+          </button>
+        </div>
       </header>
       <main className="layout-main">
         <Outlet />
