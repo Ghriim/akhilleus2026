@@ -35,14 +35,7 @@ export function ExerciseEditor({ exercise, workoutId, mode, currentSetId = null 
 
   return (
     <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-      <div
-        style={{
-          padding: 'var(--space-3)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}
-      >
+      <div className="exercise-header">
         <div>
           <strong style={{ fontSize: '1.1em' }}>{exercise.movement.label}</strong>
           <div className="muted" style={{ fontSize: '0.85em' }}>

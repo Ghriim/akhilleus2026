@@ -63,7 +63,14 @@ export function AddSetForm({ exerciseId, movement, workoutId, mode, defaultOpen 
 
   if (!open) {
     return (
-      <div style={{ padding: 'var(--space-2) var(--space-3)', borderTop: '1px solid var(--color-border)' }}>
+      <div
+        style={{
+          padding: 'var(--space-2) var(--space-3)',
+          borderTop: '1px solid var(--color-border)',
+          display: 'flex',
+          justifyContent: 'center',
+        }}
+      >
         <button type="button" onClick={() => setOpen(true)}>
           + Add set
         </button>

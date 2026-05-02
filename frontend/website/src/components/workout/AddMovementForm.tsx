@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '../../api/httpClient';
 import { useAuth } from '../../auth/AuthContext';
 import type { ExerciseDataOutput, PlayerMovementListItemDataOutput } from '../../api/types';
+import { CheckIcon, XMarkIcon } from '../icons';
 
 interface Props {
   workoutId: string;
@@ -12,14 +13,21 @@ interface Props {
 export function AddMovementForm({ workoutId }: Props) {
   const { token } = useAuth();
   const queryClient = useQueryClient();
+  const [open, setOpen] = useState(false);
   const [movementId, setMovementId] = useState('');
   const [restDuration, setRestDuration] = useState('60');
+
+  const reset = () => {
+    setMovementId('');
+    setRestDuration('60');
+    setOpen(false);
+  };
 
   const movements = useQuery({
     queryKey: ['movements'],
     queryFn: () =>
       apiRequest<PlayerMovementListItemDataOutput[]>('/api/player/movements', { token }),
-    enabled: token !== null,
+    enabled: token !== null && open,
     staleTime: 5 * 60 * 1000,
   });
 
@@ -32,8 +40,7 @@ export function AddMovementForm({ workoutId }: Props) {
       }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['workout', workoutId] });
-      setMovementId('');
-      setRestDuration('60');
+      reset();
     },
   });
 
@@ -46,6 +53,16 @@ export function AddMovementForm({ workoutId }: Props) {
     });
   };
 
+  if (!open) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', margin: 'var(--space-3) 0' }}>
+        <button type="button" onClick={() => setOpen(true)}>
+          + Add exercise
+        </button>
+      </div>
+    );
+  }
+
   return (
     <form
       onSubmit={handleSubmit}
@@ -53,7 +70,7 @@ export function AddMovementForm({ workoutId }: Props) {
       style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', alignItems: 'flex-end' }}
     >
       <label style={{ flex: '2 1 200px' }}>
-        Add movement
+        Movement
         <select
           value={movementId}
           onChange={(e) => setMovementId(e.target.value)}
@@ -78,9 +95,20 @@ export function AddMovementForm({ workoutId }: Props) {
           style={{ width: '100%' }}
         />
       </label>
-      <button type="submit" className="primary" disabled={mutation.isPending || !movementId}>
-        {mutation.isPending ? 'Adding…' : 'Add'}
-      </button>
+      <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'flex-end' }}>
+        <button
+          type="submit"
+          className="icon-button icon-button--success"
+          disabled={mutation.isPending || !movementId}
+          aria-label="Add exercise"
+          title="Add exercise"
+        >
+          <CheckIcon />
+        </button>
+        <button type="button" className="icon-button" onClick={reset} aria-label="Cancel" title="Cancel">
+          <XMarkIcon />
+        </button>
+      </div>
       {mutation.isError && (
         <p className="error" style={{ flex: '1 1 100%', color: 'var(--color-danger)' }}>
           {mutation.error instanceof Error ? mutation.error.message : 'Unable to add movement.'}

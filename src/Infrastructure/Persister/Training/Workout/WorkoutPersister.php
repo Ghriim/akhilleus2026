@@ -6,6 +6,8 @@ namespace App\Infrastructure\Persister\Training\Workout;
 
 use App\Domain\DTO\DataModel\Training\Workout\WorkoutDataModel;
 use App\Domain\Gateway\Persister\Training\Workout\WorkoutPersisterGateway;
+use App\Domain\Registry\Training\Workout\WorkoutStatusRegistry;
+use App\Domain\Service\WorkoutAggregateEvaluator;
 use App\Infrastructure\Persister\AbstractBaseMysqlPersister;
 
 /**
@@ -25,6 +27,9 @@ final readonly class WorkoutPersister extends AbstractBaseMysqlPersister impleme
 
     public function update(WorkoutDataModel $model): WorkoutDataModel
     {
+        if (WorkoutStatusRegistry::COMPLETED === $model->status) {
+            WorkoutAggregateEvaluator::evaluate($model);
+        }
         $this->doUpdate($model);
 
         return $model;

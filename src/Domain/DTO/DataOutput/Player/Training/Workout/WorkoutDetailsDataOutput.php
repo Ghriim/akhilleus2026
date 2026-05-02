@@ -11,6 +11,9 @@ final readonly class WorkoutDetailsDataOutput implements DataOutputInterface
 {
     /**
      * @param list<ExerciseDetailsDataOutput> $exercises
+     * @param numeric-string|null             $volume
+     * @param numeric-string|null             $distance
+     * @param numeric-string|null             $inclineMeters
      */
     public function __construct(
         public string $id,
@@ -20,6 +23,10 @@ final readonly class WorkoutDetailsDataOutput implements DataOutputInterface
         public ?string $dateStart,
         public ?string $dateEnd,
         public array $exercises,
+        public ?int $duration = null,
+        public ?string $volume = null,
+        public ?string $distance = null,
+        public ?string $inclineMeters = null,
     ) {
     }
 }

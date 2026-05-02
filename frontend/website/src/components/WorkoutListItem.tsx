@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import type { WorkoutDataOutput, WorkoutStatus } from '../api/types';
+import type { WorkoutDataOutput } from '../api/types';
 import {
   formatDate,
   formatDateTime,
@@ -8,20 +8,7 @@ import {
   formatNumeric,
   formatRelative,
 } from '../lib/format';
-
-const STATUS_LABEL: Record<WorkoutStatus, string> = {
-  PLANNED: 'Planned',
-  IN_PROGRESS: 'In progress',
-  COMPLETED: 'Completed',
-  CANCELED: 'Canceled',
-};
-
-const STATUS_COLOR: Record<WorkoutStatus, string> = {
-  PLANNED: 'var(--color-iron)',
-  IN_PROGRESS: 'var(--color-primary)',
-  COMPLETED: 'var(--color-success)',
-  CANCELED: 'var(--color-danger)',
-};
+import { WorkoutStatusBadge } from './WorkoutStatusBadge';
 
 interface Props {
   workout: WorkoutDataOutput;
@@ -56,18 +43,7 @@ export function WorkoutListItem({ workout, variant = 'default' }: Props) {
           </div>
         )}
       </div>
-      <span
-        style={{
-          padding: '2px 10px',
-          borderRadius: 999,
-          background: STATUS_COLOR[workout.status],
-          color: 'var(--color-primary-text)',
-          fontSize: '0.8em',
-          letterSpacing: '0.02em',
-        }}
-      >
-        {STATUS_LABEL[workout.status]}
-      </span>
+      <WorkoutStatusBadge status={workout.status} />
     </Link>
   );
 }

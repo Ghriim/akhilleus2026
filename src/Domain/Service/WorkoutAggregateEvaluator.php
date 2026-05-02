@@ -9,25 +9,23 @@ use App\Domain\DTO\DataModel\Training\Workout\WorkoutDataModel;
 
 /**
  * Computes workout-level aggregates (duration / volume / distance / inclineMeters) from a
- * fully-loaded workout (exercises + sets eager-fetched). Stateless and pure — the caller is
- * responsible for assigning the result onto the workout and persisting.
+ * fully-loaded workout (exercises + sets eager-fetched), assigns them onto the workout, and
+ * returns the same instance. Mutating in-place keeps the call site terse — `update($workout)`
+ * in `WorkoutPersister` invokes this whenever the workout reaches the COMPLETED state.
  *
  * Each numeric aggregate stays `null` when no set in the workout carries a non-null value for
  * the underlying achieved* field, so "no data" is preserved instead of being collapsed to zero.
  */
 final readonly class WorkoutAggregateEvaluator
 {
-    /**
-     * @return array{duration: int|null, volume: numeric-string|null, distance: numeric-string|null, inclineMeters: numeric-string|null}
-     */
-    public static function evaluate(WorkoutDataModel $workout): array
+    public static function evaluate(WorkoutDataModel $workout): WorkoutDataModel
     {
-        return [
-            'duration' => self::computeDuration($workout),
-            'volume' => self::sumOver($workout, static fn (ExerciseSetDataModel $set): ?string => $set->achievedWeight),
-            'distance' => self::sumOver($workout, static fn (ExerciseSetDataModel $set): ?string => $set->achievedDistanceMeters),
-            'inclineMeters' => self::sumOver($workout, static fn (ExerciseSetDataModel $set): ?string => $set->achievedInclineMeters),
-        ];
+        $workout->duration = self::computeDuration($workout);
+        $workout->volume = self::sumOver($workout, static fn (ExerciseSetDataModel $set): ?string => $set->achievedWeight);
+        $workout->distance = self::sumOver($workout, static fn (ExerciseSetDataModel $set): ?string => $set->achievedDistanceMeters);
+        $workout->inclineMeters = self::sumOver($workout, static fn (ExerciseSetDataModel $set): ?string => $set->achievedInclineMeters);
+
+        return $workout;
     }
 
     private static function computeDuration(WorkoutDataModel $workout): ?int

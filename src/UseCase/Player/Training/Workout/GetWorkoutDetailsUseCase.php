@@ -48,6 +48,10 @@ final class GetWorkoutDetailsUseCase extends AbstractLoggedPlayerUseCase
             $workout->dateStart?->format(\DateTimeInterface::ATOM),
             $workout->dateEnd?->format(\DateTimeInterface::ATOM),
             $exercises,
+            $workout->duration,
+            $workout->volume,
+            $workout->distance,
+            $workout->inclineMeters,
         );
     }
 

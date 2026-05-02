@@ -16,7 +16,6 @@ use App\Domain\Gateway\Provider\Training\Workout\WorkoutProviderGateway;
 use App\Domain\Registry\Training\Workout\WorkoutStatusRegistry;
 use App\Domain\Security\LoggedPlayerResolverInterface;
 use App\Domain\Service\PersonalBestEvaluator;
-use App\Domain\Service\WorkoutAggregateEvaluator;
 use App\Domain\Validator\Player\Training\Workout\FinishWorkoutValidator;
 use App\UseCase\AbstractLoggedPlayerUseCase;
 use Psr\Clock\ClockInterface;
@@ -49,11 +48,6 @@ final class FinishWorkoutUseCase extends AbstractLoggedPlayerUseCase
 
         $workout->status = WorkoutStatusRegistry::COMPLETED;
         $workout->dateEnd = $this->clock->now();
-        $aggregates = WorkoutAggregateEvaluator::evaluate($workout);
-        $workout->duration = $aggregates['duration'];
-        $workout->volume = $aggregates['volume'];
-        $workout->distance = $aggregates['distance'];
-        $workout->inclineMeters = $aggregates['inclineMeters'];
         $this->workoutPersister->update($workout);
 
         $newPersonalBestsOutput = [];

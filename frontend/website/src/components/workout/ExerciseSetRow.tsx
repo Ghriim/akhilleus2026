@@ -7,6 +7,7 @@ import type {
   ExerciseSetDataOutput,
   RemoveExerciseSetDataOutput,
 } from '../../api/types';
+import { summarizeSet } from '../../lib/workout';
 import { PencilIcon, TrashIcon } from '../icons';
 import { SetValuesForm } from './SetValuesForm';
 
@@ -64,7 +65,7 @@ export function ExerciseSetRow({ set, movement, workoutId, mode, isCurrent = fal
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-2)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-          <span style={{ fontWeight: 600 }}>{summary(set, movement)}</span>
+          <span style={{ fontWeight: 600 }}>{summarizeSet(set, movement)}</span>
           {set.isComplete && (
             <span style={{ color: 'var(--color-success)', fontSize: '0.85em' }}>
               ✓ completed
@@ -106,23 +107,3 @@ export function ExerciseSetRow({ set, movement, workoutId, mode, isCurrent = fal
   );
 }
 
-/**
- * One-line summary of the set's current values: shows the achieved* values once the set is
- * complete, otherwise the planned* targets. Trackings flags drive which dimensions are listed.
- */
-function summary(set: ExerciseSetDataOutput, movement: ExerciseMovementDataOutput): string {
-  const useAchieved = set.isComplete;
-  const parts: string[] = [];
-  const push = (planned: string | number | null, achieved: string | number | null, unit: string) => {
-    const value = useAchieved ? achieved : planned;
-    if (value === null) return;
-    parts.push(`${value}${unit}`);
-  };
-  if (movement.tracksRepetitions) push(set.plannedReps, set.achievedReps, ' reps');
-  if (movement.tracksWeight) push(set.plannedWeight, set.achievedWeight, ' kg');
-  if (movement.tracksDuration) push(set.plannedDurationSeconds, set.achievedDurationSeconds, ' s');
-  if (movement.tracksDistance) push(set.plannedDistanceMeters, set.achievedDistanceMeters, ' m');
-  if (movement.tracksInclinePercent) push(set.plannedInclinePercent, set.achievedInclinePercent, ' %');
-  if (movement.tracksInclineMeters) push(set.plannedInclineMeters, set.achievedInclineMeters, ' m+');
-  return parts.length > 0 ? parts.join(' · ') : 'no values yet';
-}

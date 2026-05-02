@@ -1,46 +1,74 @@
-import type { WorkoutDetailsDataOutput, WorkoutStatus } from '../../api/types';
-import { formatDateTime } from '../../lib/format';
+import type { WorkoutDetailsDataOutput } from '../../api/types';
+import { formatDuration, formatDurationSeconds, formatNumeric } from '../../lib/format';
+import { summarizeSet } from '../../lib/workout';
+import { WorkoutStatusBadge } from '../WorkoutStatusBadge';
 
 interface Props {
   workout: WorkoutDetailsDataOutput;
 }
 
-const STATUS_LABEL: Record<WorkoutStatus, string> = {
-  PLANNED: 'Planned',
-  IN_PROGRESS: 'In progress',
-  COMPLETED: 'Completed',
-  CANCELED: 'Canceled',
-};
-
 export function ReadOnlyWorkoutView({ workout }: Props) {
+  const duration =
+    formatDurationSeconds(workout.duration) ?? formatDuration(workout.dateStart, workout.dateEnd);
+  const volume = formatNumeric(workout.volume);
+  const distance = formatNumeric(workout.distance);
+  const inclineMeters = formatNumeric(workout.inclineMeters);
+
+  const stats: { label: string; value: string }[] = [];
+  if (duration) stats.push({ label: 'Duration', value: duration });
+  if (volume !== null) stats.push({ label: 'Volume', value: `${volume} kg` });
+  if (distance !== null) stats.push({ label: 'Distance', value: `${distance} m` });
+  if (inclineMeters !== null) stats.push({ label: 'Elevation', value: `${inclineMeters} m` });
+
   return (
     <>
-      <h1 style={{ marginTop: 0 }}>{STATUS_LABEL[workout.status]} workout</h1>
-      <div className="card">
-        {workout.dateStart && (
-          <p style={{ marginTop: 0 }}>
-            Started: <strong>{formatDateTime(workout.dateStart)}</strong>
-          </p>
-        )}
-        {workout.dateEnd && (
-          <p>
-            Finished: <strong>{formatDateTime(workout.dateEnd)}</strong>
-          </p>
-        )}
-        {workout.plannedAt && !workout.dateStart && (
-          <p>
-            Planned for: <strong>{formatDateTime(workout.plannedAt)}</strong>
-          </p>
-        )}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 'var(--space-3)',
+          flexWrap: 'wrap',
+        }}
+      >
+        <h1 style={{ marginTop: 0 }}>{workout.name}</h1>
+        <WorkoutStatusBadge status={workout.status} />
       </div>
+
+      {stats.length > 0 && (
+        <div className="card">
+          <dl
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+              gap: 'var(--space-3)',
+              margin: 0,
+            }}
+          >
+            {stats.map((stat) => (
+              <div key={stat.label}>
+                <dt
+                  className="muted"
+                  style={{
+                    fontSize: '0.75em',
+                    letterSpacing: '0.06em',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  {stat.label}
+                </dt>
+                <dd style={{ margin: 0, fontWeight: 600, fontSize: '1.1em' }}>{stat.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      )}
+
       {workout.exercises.length === 0 && <p className="muted">No movements were logged.</p>}
       {workout.exercises.map((exercise) => (
         <div key={exercise.id} className="card" style={{ padding: 0, overflow: 'hidden' }}>
-          <div style={{ padding: 'var(--space-3)' }}>
-            <strong>{exercise.movement.label}</strong>
-            <div className="muted" style={{ fontSize: '0.85em' }}>
-              {exercise.sets.length} set{exercise.sets.length === 1 ? '' : 's'}
-            </div>
+          <div className="exercise-header">
+            <strong style={{ fontSize: '1.1em' }}>{exercise.movement.label}</strong>
           </div>
           {exercise.sets.map((set) => (
             <div
@@ -48,56 +76,21 @@ export function ReadOnlyWorkoutView({ workout }: Props) {
               style={{
                 padding: 'var(--space-2) var(--space-3)',
                 borderTop: '1px solid var(--color-border)',
-                fontSize: '0.9em',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 'var(--space-2)',
               }}
             >
-              <span style={{ fontWeight: 600 }}>Set {set.position + 1}</span>
+              <span style={{ fontWeight: 600 }}>{summarizeSet(set, exercise.movement)}</span>
               {set.isComplete && (
-                <span style={{ marginLeft: 'var(--space-2)', color: 'var(--color-success)' }}>
-                  ✓
+                <span style={{ color: 'var(--color-success)', fontSize: '0.85em' }}>
+                  ✓ completed
                 </span>
               )}
-              <div className="muted" style={{ fontSize: '0.9em', marginTop: 2 }}>
-                {summarize(set, exercise.movement.tracksRepetitions, exercise.movement.tracksWeight, exercise.movement.tracksDuration, exercise.movement.tracksDistance)}
-              </div>
             </div>
           ))}
         </div>
       ))}
     </>
   );
-}
-
-function summarize(
-  set: { plannedReps: number | null; achievedReps: number | null; plannedWeight: string | null; achievedWeight: string | null; plannedDurationSeconds: number | null; achievedDurationSeconds: number | null; plannedDistanceMeters: string | null; achievedDistanceMeters: string | null },
-  reps: boolean,
-  weight: boolean,
-  duration: boolean,
-  distance: boolean,
-): string {
-  const parts: string[] = [];
-  const pair = (planned: string | number | null, achieved: string | number | null, unit: string) => {
-    if (planned === null && achieved === null) return null;
-    if (achieved !== null) {
-      return `${achieved}${unit}` + (planned !== null && planned !== achieved ? ` (planned ${planned}${unit})` : '');
-    }
-    return `planned ${planned}${unit} (no result)`;
-  };
-  if (reps) {
-    const v = pair(set.plannedReps, set.achievedReps, ' reps');
-    if (v) parts.push(v);
-  }
-  if (weight) {
-    const v = pair(set.plannedWeight, set.achievedWeight, ' kg');
-    if (v) parts.push(v);
-  }
-  if (duration) {
-    const v = pair(set.plannedDurationSeconds, set.achievedDurationSeconds, ' s');
-    if (v) parts.push(v);
-  }
-  if (distance) {
-    const v = pair(set.plannedDistanceMeters, set.achievedDistanceMeters, ' m');
-    if (v) parts.push(v);
-  }
-  return parts.length > 0 ? parts.join(' · ') : '—';
 }

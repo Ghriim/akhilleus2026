@@ -98,6 +98,10 @@ export interface WorkoutDetailsDataOutput {
   dateStart: string | null;
   dateEnd: string | null;
   exercises: ExerciseDetailsDataOutput[];
+  duration: number | null;
+  volume: string | null;
+  distance: string | null;
+  inclineMeters: string | null;
 }
 
 export interface PersonalBestSummaryDataOutput {
