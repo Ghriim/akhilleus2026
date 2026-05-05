@@ -94,6 +94,8 @@ final class GetWorkoutDetailsUseCase extends AbstractLoggedPlayerUseCase
                 $movement->tracksDistance,
                 $movement->tracksInclinePercent,
                 $movement->tracksInclineMeters,
+                $movement->videoLink,
+                $movement->gifLink,
             ),
             $sets,
         );

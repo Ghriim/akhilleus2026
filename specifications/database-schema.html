@@ -401,7 +401,7 @@
 </ul>
 
 <h3 id="movement">movement</h3>
-<p class="summary">Exercise definition. Six boolean flags declare which metrics each movement should track in its sets (reps, weight, duration, distance, incline %, incline meters).</p>
+<p class="summary">Exercise definition. Six boolean flags declare which metrics each movement should track in its sets (reps, weight, duration, distance, incline %, incline meters). Two optional URL columns (<code>video_link</code>, <code>gif_link</code>) carry external demo media surfaced to the player on the workout view.</p>
 <table>
     <thead><tr><th>Column</th><th>Type</th><th>Flags</th><th>Notes</th></tr></thead>
     <tbody>
@@ -415,6 +415,8 @@
         <tr><td class="col">tracks_distance</td><td class="type">TINYINT(1)</td><td></td><td>default <code>0</code></td></tr>
         <tr><td class="col">tracks_incline_percent</td><td class="type">TINYINT(1)</td><td></td><td>default <code>0</code></td></tr>
         <tr><td class="col">tracks_incline_meters</td><td class="type">TINYINT(1)</td><td></td><td>default <code>0</code></td></tr>
+        <tr><td class="col">video_link</td><td class="type">VARCHAR(2048)</td><td class="flags"><span class="badge badge-null">NULL</span></td><td>external URL of a movement demo video</td></tr>
+        <tr><td class="col">gif_link</td><td class="type">VARCHAR(2048)</td><td class="flags"><span class="badge badge-null">NULL</span></td><td>external URL of a movement demo GIF</td></tr>
         <tr><td class="col">created_at</td><td class="type">DATETIME</td><td></td><td></td></tr>
         <tr><td class="col">updated_at</td><td class="type">DATETIME</td><td></td><td></td></tr>
     </tbody>

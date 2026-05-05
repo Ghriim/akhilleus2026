@@ -58,6 +58,8 @@ final class CreateMovementUseCase extends AbstractLoggedAdminUseCase
         $movement->tracksDistance = $input->tracksDistance;
         $movement->tracksInclinePercent = $input->tracksInclinePercent;
         $movement->tracksInclineMeters = $input->tracksInclineMeters;
+        $movement->videoLink = $input->videoLink;
+        $movement->gifLink = $input->gifLink;
 
         $this->movementPersister->create($movement);
 
@@ -88,6 +90,8 @@ final class CreateMovementUseCase extends AbstractLoggedAdminUseCase
             $movement->tracksDistance,
             $movement->tracksInclinePercent,
             $movement->tracksInclineMeters,
+            $movement->videoLink,
+            $movement->gifLink,
         );
     }
 }

@@ -100,4 +100,61 @@ final class CreateMovementUseCaseTest extends KernelTestCase
             self::assertArrayHasKey('mainMuscleId', $e->violations);
         }
     }
+
+    public function testItPersistsVideoAndGifLinks(): void
+    {
+        self::bootKernel();
+        $container = self::getContainer();
+        $createMuscle = $container->get(CreateMuscleUseCase::class);
+        $createMovement = $container->get(CreateMovementUseCase::class);
+
+        $main = $createMuscle->execute(new CreateMuscleDataInput('Test Demo Muscle'));
+
+        $output = $createMovement->execute(new CreateMovementDataInput(
+            'Test Demo Movement',
+            $main->id,
+            [],
+            [],
+            true,
+            false,
+            false,
+            false,
+            false,
+            false,
+            'https://example.com/demo.mp4',
+            'https://example.com/demo.gif',
+        ));
+
+        self::assertSame('https://example.com/demo.mp4', $output->videoLink);
+        self::assertSame('https://example.com/demo.gif', $output->gifLink);
+    }
+
+    public function testItRejectsInvalidVideoLinkUrl(): void
+    {
+        self::bootKernel();
+        $container = self::getContainer();
+        $createMuscle = $container->get(CreateMuscleUseCase::class);
+        $createMovement = $container->get(CreateMovementUseCase::class);
+
+        $main = $createMuscle->execute(new CreateMuscleDataInput('Test Bad Url Muscle'));
+
+        try {
+            $createMovement->execute(new CreateMovementDataInput(
+                'Test Bad Url Movement',
+                $main->id,
+                [],
+                [],
+                true,
+                false,
+                false,
+                false,
+                false,
+                false,
+                'not-a-url',
+            ));
+            self::fail('Expected ValidationException');
+        } catch (ValidationException $e) {
+            self::assertArrayHasKey('videoLink', $e->violations);
+        }
+    }
 }

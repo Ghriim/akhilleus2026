@@ -23,6 +23,8 @@ export interface Movement {
   tracksDistance: boolean;
   tracksInclinePercent: boolean;
   tracksInclineMeters: boolean;
+  videoLink: string | null;
+  gifLink: string | null;
 }
 
 export interface MovementListItem {
@@ -43,4 +45,6 @@ export interface MovementFormValues {
   tracksDistance: boolean;
   tracksInclinePercent: boolean;
   tracksInclineMeters: boolean;
+  videoLink: string | null;
+  gifLink: string | null;
 }

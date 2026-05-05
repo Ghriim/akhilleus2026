@@ -61,6 +61,8 @@ export interface ExerciseMovementDataOutput {
   tracksDistance: boolean;
   tracksInclinePercent: boolean;
   tracksInclineMeters: boolean;
+  videoLink: string | null;
+  gifLink: string | null;
 }
 
 export interface ExerciseSetDataOutput {

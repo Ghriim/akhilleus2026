@@ -5,6 +5,7 @@ import type { ExerciseDetailsDataOutput, RemoveExerciseDataOutput } from '../../
 import { TrashIcon } from '../icons';
 import { ExerciseSetRow } from './ExerciseSetRow';
 import { AddSetForm } from './AddSetForm';
+import { MovementMediaLinks } from './MovementMediaLinks';
 
 interface Props {
   exercise: ExerciseDetailsDataOutput;
@@ -41,6 +42,7 @@ export function ExerciseEditor({ exercise, workoutId, mode, currentSetId = null 
           <div className="muted" style={{ fontSize: '0.85em' }}>
             Rest: {exercise.restDurationSeconds}s
           </div>
+          <MovementMediaLinks movement={exercise.movement} />
         </div>
         <button
           type="button"

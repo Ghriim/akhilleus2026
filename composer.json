@@ -95,6 +95,18 @@
         "test:integration": "vendor/bin/phpunit --testsuite=Integration",
         "test:coverage": "docker compose run --rm -e XDEBUG_MODE=coverage -e DATABASE_URL='mysql://app:!ChangeMe!@database:3306/akhilleus?serverVersion=8.4&charset=utf8mb4' php vendor/bin/phpunit --coverage-text --coverage-html var/coverage",
         "setup:test-db": "docker compose exec -T database sh -c 'mysql -uroot -p\"$MYSQL_ROOT_PASSWORD\"' < docker/mysql/setup-test-db.sql",
+        "dev:up": [
+            "docker compose up -d --wait database frontend-admin frontend-website",
+            "php bin/console lexik:jwt:generate-keypair --skip-if-exists --no-interaction",
+            "php bin/console doctrine:migrations:migrate --no-interaction",
+            "symfony server:start -d",
+            "echo ''",
+            "echo '--- Akhilleus dev environment is up ---'",
+            "echo '  API:         https://127.0.0.1:8000'",
+            "echo '  Admin:       http://localhost:5173'",
+            "echo '  Player site: http://localhost:5174'",
+            "echo ''"
+        ],
         "qa": [
             "@cs",
             "@stan",

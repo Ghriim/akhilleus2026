@@ -2,6 +2,7 @@ import type { WorkoutDetailsDataOutput } from '../../api/types';
 import { formatDuration, formatDurationSeconds, formatNumeric } from '../../lib/format';
 import { summarizeSet } from '../../lib/workout';
 import { WorkoutStatusBadge } from '../WorkoutStatusBadge';
+import { MovementMediaLinks } from './MovementMediaLinks';
 
 interface Props {
   workout: WorkoutDetailsDataOutput;
@@ -68,7 +69,10 @@ export function ReadOnlyWorkoutView({ workout }: Props) {
       {workout.exercises.map((exercise) => (
         <div key={exercise.id} className="card" style={{ padding: 0, overflow: 'hidden' }}>
           <div className="exercise-header">
-            <strong style={{ fontSize: '1.1em' }}>{exercise.movement.label}</strong>
+            <div>
+              <strong style={{ fontSize: '1.1em' }}>{exercise.movement.label}</strong>
+              <MovementMediaLinks movement={exercise.movement} />
+            </div>
           </div>
           {exercise.sets.map((set) => (
             <div

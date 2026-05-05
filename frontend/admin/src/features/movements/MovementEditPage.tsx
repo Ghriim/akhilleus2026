@@ -39,6 +39,8 @@ export const MovementEditPage = () => {
     tracksDistance: movement.tracksDistance,
     tracksInclinePercent: movement.tracksInclinePercent,
     tracksInclineMeters: movement.tracksInclineMeters,
+    videoLink: movement.videoLink,
+    gifLink: movement.gifLink,
   };
 
   const handleSubmit = async (values: MovementFormValues) => {

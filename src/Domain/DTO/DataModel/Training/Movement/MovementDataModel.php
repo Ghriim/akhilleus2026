@@ -63,6 +63,12 @@ class MovementDataModel implements DataModelInterface
     #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
     public bool $tracksInclineMeters = false;
 
+    #[ORM\Column(type: Types::STRING, length: 2048, nullable: true)]
+    public ?string $videoLink = null;
+
+    #[ORM\Column(type: Types::STRING, length: 2048, nullable: true)]
+    public ?string $gifLink = null;
+
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     public \DateTimeImmutable $createdAt;
 

@@ -84,6 +84,8 @@ final class ReorderMovementsUseCase extends AbstractLoggedPlayerUseCase
                     $exercise->movement->tracksDistance,
                     $exercise->movement->tracksInclinePercent,
                     $exercise->movement->tracksInclineMeters,
+                    $exercise->movement->videoLink,
+                    $exercise->movement->gifLink,
                 ),
             ),
             $reordered,

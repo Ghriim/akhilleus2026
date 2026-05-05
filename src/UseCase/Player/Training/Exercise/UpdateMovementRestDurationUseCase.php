@@ -58,6 +58,8 @@ final class UpdateMovementRestDurationUseCase extends AbstractLoggedPlayerUseCas
                 $movement->tracksDistance,
                 $movement->tracksInclinePercent,
                 $movement->tracksInclineMeters,
+                $movement->videoLink,
+                $movement->gifLink,
             ),
         );
     }

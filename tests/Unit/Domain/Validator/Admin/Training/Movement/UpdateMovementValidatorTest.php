@@ -101,4 +101,92 @@ final class UpdateMovementValidatorTest extends TestCase
             self::assertContains('Another movement already uses this label.', $e->violations['label'] ?? []);
         }
     }
+
+    public function testItAcceptsValidVideoAndGifUrls(): void
+    {
+        $self = new MovementDataModel('Bench press', new MuscleDataModel('Chest'));
+        $self->id = 'mine';
+        $this->stringDataTransformer->method('slugify')->willReturn('bench-press');
+        $this->movementProviderGateway->method('findOneBySlugForUniqueness')->willReturn($self);
+        $this->muscleProviderGateway->method('findOneForAdminDetails')->willReturn(new MuscleDataModel('Chest'));
+
+        $this->validator->validate(new UpdateMovementDataInput(
+            'mine',
+            'Bench press',
+            'm-1',
+            [],
+            [],
+            true,
+            true,
+            false,
+            false,
+            false,
+            false,
+            'https://example.com/demo.mp4',
+            'https://example.com/demo.gif',
+        ), $self);
+
+        $this->expectNotToPerformAssertions();
+    }
+
+    public function testItRejectsInvalidVideoLink(): void
+    {
+        $self = new MovementDataModel('Bench press', new MuscleDataModel('Chest'));
+        $self->id = 'mine';
+        $this->stringDataTransformer->method('slugify')->willReturn('bench-press');
+        $this->movementProviderGateway->method('findOneBySlugForUniqueness')->willReturn($self);
+        $this->muscleProviderGateway->method('findOneForAdminDetails')->willReturn(new MuscleDataModel('Chest'));
+
+        try {
+            $this->validator->validate(new UpdateMovementDataInput(
+                'mine',
+                'Bench press',
+                'm-1',
+                [],
+                [],
+                true,
+                false,
+                false,
+                false,
+                false,
+                false,
+                'not-a-url',
+            ), $self);
+            self::fail('Expected ValidationException');
+        } catch (ValidationException $e) {
+            self::assertArrayHasKey('videoLink', $e->violations);
+            self::assertContains('Video link must be a valid URL.', $e->violations['videoLink']);
+        }
+    }
+
+    public function testItRejectsInvalidGifLink(): void
+    {
+        $self = new MovementDataModel('Bench press', new MuscleDataModel('Chest'));
+        $self->id = 'mine';
+        $this->stringDataTransformer->method('slugify')->willReturn('bench-press');
+        $this->movementProviderGateway->method('findOneBySlugForUniqueness')->willReturn($self);
+        $this->muscleProviderGateway->method('findOneForAdminDetails')->willReturn(new MuscleDataModel('Chest'));
+
+        try {
+            $this->validator->validate(new UpdateMovementDataInput(
+                'mine',
+                'Bench press',
+                'm-1',
+                [],
+                [],
+                true,
+                false,
+                false,
+                false,
+                false,
+                false,
+                null,
+                'not-a-url',
+            ), $self);
+            self::fail('Expected ValidationException');
+        } catch (ValidationException $e) {
+            self::assertArrayHasKey('gifLink', $e->violations);
+            self::assertContains('GIF link must be a valid URL.', $e->violations['gifLink']);
+        }
+    }
 }

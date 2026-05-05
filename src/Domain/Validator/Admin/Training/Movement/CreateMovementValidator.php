@@ -67,6 +67,14 @@ final readonly class CreateMovementValidator extends AbstractLoggedAdminValidato
             $violations['tracking'][] = 'At least one tracking field must be enabled.';
         }
 
+        if (null !== $input->videoLink && false === filter_var($input->videoLink, FILTER_VALIDATE_URL)) {
+            $violations['videoLink'][] = 'Video link must be a valid URL.';
+        }
+
+        if (null !== $input->gifLink && false === filter_var($input->gifLink, FILTER_VALIDATE_URL)) {
+            $violations['gifLink'][] = 'GIF link must be a valid URL.';
+        }
+
         if ([] !== $violations) {
             throw new ValidationException('Movement creation data is invalid.', $violations, self::ERROR_CODE);
         }

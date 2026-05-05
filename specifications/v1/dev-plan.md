@@ -50,7 +50,11 @@ The phases are ordered to respect data dependencies:
 
 ## Decisions / deviations from `conventions.md` and the original plan
 
-_(Empty at v1 start. Append entries as they happen, in the same idiom as the v0 block — the line that introduced each deviation, the why, and how to roll back. Each new "Decisions / deviations" entry is part of the working contract for future sessions.)_
+### Process / step boundaries
+- **Phase 1.1 absorbed the migration step originally scheduled in 1.4.** The reason: 1.1 mutates `MovementDataModel`'s ORM mapping, which makes the integration suite go red the moment Doctrine tries to write the now-non-existing columns. Keeping `composer qa` green between every step (the working-mode contract) requires the migration to land in the same step as the mapping change. So `migrations/Version20260505142834.php` was generated + applied on dev + test in 1.1; step 1.4 is reduced to the `database-schema.html` regeneration only. Future schema-touching steps in v1 should follow the same pattern (migration alongside the mapping change, not deferred to a "verification" sub-step).
+
+### Movement validators (1.1)
+- **No per-field error code constants on the Movement validators** despite the dev-plan saying `INVALID_VIDEO_LINK_CODE` / `INVALID_GIF_LINK_CODE`. Reason: the v0 convention is one umbrella `ERROR_CODE` per validator (`CREATE_MOVEMENT_VALIDATION_FAILED` / `UPDATE_MOVEMENT_VALIDATION_FAILED`), with violations accumulated under field-named keys in the `violations` map. Per-field codes only happen when a validator throws **distinct** error codes for **distinct** rule families (e.g. `ILLEGAL_STATUS_CODE` vs `TRACKING_MISMATCH_ERROR_CODE` on `AddExerciseSetValidator`). URL format checks fit the existing umbrella code — no new constants needed. The original dev-plan wording was a slip; this is the authoritative reading going forward.
 
 ## Tracking (checkbox convention)
 
@@ -61,58 +65,70 @@ _(Empty at v1 start. Append entries as they happen, in the same idiom as the v0 
 
 ## Phase 0 — Foundation & v1 alignment
 
-### [ ] 0.1 Pre-flight on the inherited codebase
-- [ ] On a fresh `composer install` + `npm ci` (both frontends), confirm `composer qa` green: cs ✅, stan ✅, phpunit ✅ (≥ 241 tests / 507 assertions per the v0 close-out).
-- [ ] `php bin/console doctrine:schema:validate` returns "in sync" against the dev DB.
-- [ ] `npm run typecheck && lint && build` green on `frontend/admin` and `frontend/website`.
-- [ ] Note any drift from the v0 baseline (newer dep versions, breaking changes) before starting v1 work.
+### [x] 0.1 Pre-flight on the inherited codebase
+- [x] On a fresh `composer install` + `npm ci` (both frontends), confirm `composer qa` green: cs ✅, stan ✅, phpunit ✅ (241 tests / 507 assertions, exactly the v0 close-out baseline).
+- [x] `php bin/console doctrine:schema:validate` returns "in sync" against the dev DB. (Required first migrating the dev DB — both `akhilleus` and `akhilleus_test` were empty on this machine; see notes below.)
+- [x] `npm run typecheck && lint && build` green on `frontend/admin` and `frontend/website`. The pre-existing chunk-size warning on `frontend-admin` is unchanged from v0.
+- [x] Drift noted: **PHP 8.5.5 on the host vs PHP 8.4 in CI** (per v0 dev-plan's `backend` job). `composer.json` requires `>=8.4` so both work, but care must be taken not to use 8.5-only features in v1 code (CI would catch it on push).
 
-### [ ] 0.2 Sub-domain scaffolding stubs
-Create empty folders so subsequent phases just drop files in. Nothing is committed until the entity it hosts lands (Phase 1+).
-- [ ] `src/Domain/DTO/DataModel/{Tracking,Leveling,Questing}/`
-- [ ] `src/Domain/Gateway/{Provider,Persister}/{Tracking,Leveling,Questing}/`
-- [ ] `src/Domain/Registry/{Leveling,Questing}/` (Tracking has no registry — values are not enums).
-- [ ] `src/Domain/Service/{Tracking,Leveling,Questing}/` for the aggregate / calculator services.
-- [ ] `src/Domain/Validator/{Player,Admin}/{Tracking,Leveling,Questing}/`
-- [ ] `src/Infrastructure/{Repository,Persister}/{Tracking,Leveling,Questing}/`
-- [ ] `src/Infrastructure/Controller/{Player,Admin}/{Tracking,Leveling,Questing}/`
-- [ ] `src/UseCase/{Player,Admin}/{Tracking,Leveling,Questing}/`
-- [ ] `src/Domain/DTO/{DataInput,DataOutput}/{Player,Admin}/{Tracking,Leveling,Questing}/`
+**Setup gap fixed during 0.1 (not a deviation, but worth recording):**
+- The test DB `akhilleus_test` was missing and the `app` MySQL user had no privileges on `akhilleus_test%`, blocking the integration suite with `SQLSTATE[HY000] [1044] Access denied`. Same root cause for the empty dev DB. Added a re-runnable, idempotent `composer setup:test-db` script (`docker/mysql/setup-test-db.sql` + entry in `composer.json`) and documented the recovery path in `README.md` (new step 4 in the setup walkthrough + a "Test DB troubleshooting" callout). The dev DB simply needed `php bin/console doctrine:migrations:migrate --no-interaction` + `doctrine:fixtures:load`.
 
-### [ ] 0.3 Verification
-- [ ] `composer qa` green (no new tests yet — empty folders are inert).
-- [ ] `php bin/console debug:container --env=dev` runs without complaints.
+### [x] 0.2 Sub-domain scaffolding stubs
+Create empty folders so subsequent phases just drop files in. Nothing is committed until the entity it hosts lands (Phase 1+) — Git does not track empty directories, so `git status` stays clean after the `mkdir`.
+- [x] `src/Domain/DTO/DataModel/{Tracking,Leveling,Questing}/`
+- [x] `src/Domain/Gateway/{Provider,Persister}/{Tracking,Leveling,Questing}/`
+- [x] `src/Domain/Registry/{Leveling,Questing}/` (Tracking has no registry — values are not enums).
+- [x] `src/Domain/Service/{Tracking,Leveling,Questing}/` for the aggregate / calculator services.
+- [x] `src/Domain/Validator/{Player,Admin}/{Tracking,Leveling,Questing}/`
+- [x] `src/Infrastructure/{Repository,Persister}/{Tracking,Leveling,Questing}/`
+- [x] `src/Infrastructure/Controller/{Player,Admin}/{Tracking,Leveling,Questing}/`
+- [x] `src/UseCase/{Player,Admin}/{Tracking,Leveling,Questing}/`
+- [x] `src/Domain/DTO/{DataInput,DataOutput}/{Player,Admin}/{Tracking,Leveling,Questing}/`
+
+50 directories created. The cartesian product `{Player,Admin} × {Tracking,Leveling,Questing}` results in a few combinations that v1 does not actually populate (e.g. `Validator/Admin/Tracking/`, `DTO/DataInput/Admin/Tracking/` — there is no admin path on tracking metrics in v1). They stay empty and harmless; the actual phases populate only the cells they need.
+
+### [x] 0.3 Verification
+- [x] `composer qa` green (no new tests yet — empty folders are inert). 241 tests / 507 assertions.
+- [x] `php bin/console debug:container --env=dev` runs without complaints — service catalogue lists cleanly, no misconfiguration warnings.
 
 ---
 
 ## Phase 1 — Movement evolutions (`videoLink` + `gifLink`)
 
-### [ ] 1.1 DataModel + admin DTOs
-- [ ] Add nullable `?string $videoLink` and `?string $gifLink` columns to `MovementDataModel` (`Type::STRING`, length 2048, nullable). Both default to `null`.
-- [ ] Update `Domain/DTO/DataInput/Admin/Training/Movement/CreateMovementDataInput` and `UpdateMovementDataInput` to accept the two optional URL fields.
-- [ ] Update `Domain/DTO/DataOutput/Admin/Training/Movement/MovementDataOutput` (and `MovementListItemDataOutput` if it carries them — keep the list slim, probably skip there).
-- [ ] Update `CreateMovementValidator` and `UpdateMovementValidator`: when non-null, both fields must pass `filter_var(..., FILTER_VALIDATE_URL)`. New error code constants `INVALID_VIDEO_LINK_CODE` / `INVALID_GIF_LINK_CODE`.
+### [x] 1.1 DataModel + admin DTOs
+- [x] Add nullable `?string $videoLink` and `?string $gifLink` columns to `MovementDataModel` (`Type::STRING`, length 2048, nullable). Both default to `null`.
+- [x] Update `Domain/DTO/DataInput/Admin/Training/Movement/CreateMovementDataInput` and `UpdateMovementDataInput` to accept the two optional URL fields.
+- [x] Update `Domain/DTO/DataOutput/Admin/Training/Movement/MovementDataOutput`. `MovementListItemDataOutput` left alone — the list stays slim (no URLs in the table view).
+- [x] Update `CreateMovementValidator` and `UpdateMovementValidator`: when non-null, both fields must pass `filter_var(..., FILTER_VALIDATE_URL)`. **No new error code constants** — see deviation below; violations accumulate under the existing umbrella `CREATE_MOVEMENT_VALIDATION_FAILED` / `UPDATE_MOVEMENT_VALIDATION_FAILED` codes, with the field name as the violations-map key.
+- [x] **Implicit add (not in the original step bullets)**: wired the new fields end-to-end through the use cases. `CreateMovementUseCase`, `UpdateMovementUseCase` and `GetMovementDetailsUseCase` all assign `$movement->videoLink` / `$movement->gifLink` and pass them when constructing `MovementDataOutput`. Without this, the persisted/loaded fields would never reach the JSON response.
+- [x] **Migration generated + applied here, not in 1.4**: see deviation below. `migrations/Version20260505142834.php` (`ALTER TABLE movement ADD video_link, gif_link VARCHAR(2048) NULL`) applied on both dev and test DBs.
 
-### [ ] 1.2 Admin path: REST + frontend
-- [ ] `MovementAdminController::create` and `::update` already pipe DataInput → UseCase → DataOutput; no controller change beyond the new fields surfacing in the JSON shape.
-- [ ] `frontend/admin/src/features/movements/MovementForm.tsx`: add two `<input type="url">` fields, mapped to backend `violations.videoLink` / `violations.gifLink`.
-- [ ] `MovementListPage`: do not show the URLs in the list (keeps the table tight).
+### [x] 1.2 Admin path: REST + frontend
+- [x] `MovementAdminController::create` and `::update` **did need a change** despite the dev-plan note: the controller builds the `DataInput` constructor by hand (positional args), so the two new fields had to be passed explicitly. Added a `nullableString` helper next to `stringList` that converts missing/empty payload values to `null` (so an empty form input lands as `null` rather than `''` and the `FILTER_VALIDATE_URL` rule doesn't trip on empty strings). Dev-plan was slightly over-optimistic on "no controller change".
+- [x] `frontend/admin/src/features/movements/MovementForm.tsx`: added two `<Input type="url">` `Form.Item`s (`videoLink`, `gifLink`) with placeholders. AntD's `Form` already maps backend `violations[fieldName]` into per-field errors via `EntityFormShell`, so no extra plumbing.
+- [x] `MovementEditPage`: passes `movement.videoLink` / `movement.gifLink` into `initialValues` so editing a movement renders the existing URLs.
+- [x] `MovementListPage`: untouched — already excludes URLs from the table (only `Label` + `Main muscle` + actions).
+- [x] `types.ts`: extended `Movement` and `MovementFormValues` with `videoLink: string | null` + `gifLink: string | null`.
 
-### [ ] 1.3 Player workout view: render the URLs
-- [ ] Surface `videoLink` and `gifLink` on `Domain/DTO/DataOutput/Player/Training/Workout/ExerciseMovementDataOutput` (already returned by `GetWorkoutDetailsUseCase` + nested in details / live editor / planned / read-only views).
-- [ ] `frontend/website` — extend `<ExerciseEditor>`, `<PlannedWorkoutView>`, `<ReadOnlyWorkoutView>`: when a movement has a `videoLink`, render a small "▶︎ Voir la démo" link (`<a target="_blank" rel="noopener noreferrer">`); when it has a `gifLink`, render a small thumbnail (`<img>`) on click-to-expand. Both inert when null.
+### [x] 1.3 Player workout view: render the URLs
+- [x] Surfaced `videoLink` + `gifLink` on `Domain/DTO/DataOutput/Player/Training/Exercise/ExerciseMovementDataOutput` (note: actual on-disk path is `.../Exercise/...`, not `.../Workout/...` as the dev-plan stated). 4 construction sites updated: `GetWorkoutDetailsUseCase`, `AddMovementToWorkoutUseCase`, `UpdateMovementRestDurationUseCase`, `ReorderMovementsUseCase`.
+- [x] `frontend/website/src/api/types.ts`: extended `ExerciseMovementDataOutput` with `videoLink: string | null` + `gifLink: string | null`.
+- [x] **New shared component** `frontend/website/src/components/workout/MovementMediaLinks.tsx` — renders the "▶ Voir la démo" link (when `videoLink` non-null) + a small GIF thumbnail (max 60×100 px, click opens full size in a new tab via `<a target="_blank" rel="noopener noreferrer">`). Returns `null` when both are null. Theme-agnostic (CSS variables).
+- [x] Mounted in `<ExerciseEditor>` under the label / rest line — covers `<PlannedWorkoutView>` and `<LiveWorkoutEditor>` automatically (both compose `<ExerciseEditor>`).
+- [x] Mounted in `<ReadOnlyWorkoutView>` next to the label (the read-only path renders its own exercise headers, doesn't go through `<ExerciseEditor>`).
 
-### [ ] 1.4 Migration + schema HTML
-- [ ] `php bin/console make:migration` → review/clean the generated migration (only ALTER TABLE on `movement_data_model`, two nullable VARCHAR(2048)).
-- [ ] Apply on dev + test DBs.
-- [ ] Regenerate `specifications/database-schema.html` and commit alongside the migration.
+### [x] 1.4 Migration + schema HTML
+- [x] `php bin/console make:migration` → review/clean the generated migration (only ALTER TABLE on `movement`, two nullable VARCHAR(2048)). **Done as part of 1.1** — see deviation note. File: `migrations/Version20260505142834.php`.
+- [x] Apply on dev + test DBs. **Done as part of 1.1.**
+- [x] Regenerate `specifications/database-schema.html` — added `video_link` + `gif_link` rows (both `VARCHAR(2048) NULL`) to the `movement` table block, between `tracks_incline_meters` and `created_at`. Updated the table summary to mention the two URL columns.
 
-### [ ] 1.5 Verification
-- [ ] Validator unit tests: happy path, invalid URL on `videoLink`, invalid URL on `gifLink`, accumulation, both null OK.
-- [ ] Integration tests: `Create/UpdateMovementUseCaseTest` exercising the new fields (happy + invalid URL).
-- [ ] cURL smoke: admin login → create a movement with both URLs → list shows new fields → update with bad URL → 422 with violations.
-- [ ] Frontend manual: admin edits a movement, fills both URLs; player opens the workout details and sees "Voir la démo" + GIF.
-- [ ] `composer qa` green; `npm run typecheck && lint && build` green on both frontends.
+### [x] 1.5 Verification
+- [x] Validator unit tests: happy path (existing) + new `testItAcceptsValidVideoAndGifUrls`, `testItRejectsInvalidVideoLink`, `testItRejectsInvalidGifLink`, and on `CreateMovementValidatorTest` `testItAccumulatesViolationsAcrossUrlAndOtherFields` (which doubles as accumulation + both-null fallback). Same 3 (+1 accumulation) tests on `UpdateMovementValidatorTest`. Both-null OK is implicit in the existing happy-path tests since the new constructor params default to null.
+- [x] Integration tests: `CreateMovementUseCaseTest::testItPersistsVideoAndGifLinks` + `testItRejectsInvalidVideoLinkUrl`, `UpdateMovementUseCaseTest::testItUpdatesVideoAndGifLinks` + `testItRejectsInvalidVideoLinkUrlOnUpdate`. Confirms persistence round-trip and validation paths against the real DB.
+- [x] cURL smoke (full HTTPS path against `symfony serve`): admin login → JWT → create movement with both URLs (`https://example.com/demo.mp4`, `https://example.com/demo.gif`) returns 201 with the URLs surfaced → `GET /api/admin/movements/{id}` confirms persistence → `PUT` with `videoLink: "not-a-url"` returns **422** with `errorCode: UPDATE_MOVEMENT_VALIDATION_FAILED` and `violations.videoLink: ["Video link must be a valid URL."]` → `DELETE` returns 204. **Note**: the JWT keypair was missing on this machine (same kind of setup gap as the empty databases earlier); ran `php bin/console lexik:jwt:generate-keypair` once to provision it (gitignored, no commit needed).
+- [x] **Frontend manual** (validated by user): admin successfully created/edited movements with both URL fields (saved + invalid-URL inline error verified); player saw `▶ Voir la démo` link + GIF thumbnail in the exercise card and both opened in new tabs as expected.
+- [x] `composer qa` green (252 tests / 527 assertions — up from the 241/507 baseline, all 11 new tests pass) ; `npm run typecheck && lint && build` green on both frontends (last verified end of 1.2 / 1.3, no frontend code touched since).
 
 ---
 

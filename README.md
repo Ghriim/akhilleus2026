@@ -52,6 +52,16 @@ symfony server:start -d
 > the test schema or its grants got dropped (most often after a `docker compose down -v`).
 > Re-run `composer setup:test-db` followed by `APP_ENV=test php bin/console doctrine:migrations:migrate --no-interaction` to recover.
 
+### Daily startup
+
+Once the one-shot setup above is done, subsequent sessions can boot everything in one go:
+
+```bash
+composer dev:up
+```
+
+This brings up the database + both frontend containers (waits on the MySQL healthcheck), generates the JWT keypair if it is missing, applies any pending migrations on the dev DB, and starts the Symfony API in the background. The script prints the three local URLs (API / admin / player site) at the end. Idempotent — safe to re-run anytime. **Does not** load fixtures (would truncate any test data you have entered manually); when you need a clean re-seed, run `php bin/console doctrine:fixtures:load --no-interaction` on its own.
+
 Seeded credentials:
 
 | Role          | Email                    | Password       |

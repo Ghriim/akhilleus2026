@@ -149,4 +149,112 @@ final class CreateMovementValidatorTest extends TestCase
             self::assertContains('Another movement already uses this label.', $e->violations['label'] ?? []);
         }
     }
+
+    public function testItAcceptsValidVideoAndGifUrls(): void
+    {
+        $this->stringDataTransformer->method('slugify')->willReturn('bench-press');
+        $this->movementProviderGateway->method('findOneBySlugForUniqueness')->willReturn(null);
+        $this->muscleProviderGateway->method('findOneForAdminDetails')->willReturn(new MuscleDataModel('Chest'));
+        $this->equipmentProviderGateway->method('findOneForAdminDetails')->willReturn(new EquipmentDataModel('Barbell'));
+
+        $this->validator->validate(new CreateMovementDataInput(
+            'Bench press',
+            'm-1',
+            [],
+            [],
+            true,
+            true,
+            false,
+            false,
+            false,
+            false,
+            'https://example.com/demo.mp4',
+            'https://example.com/demo.gif',
+        ));
+
+        $this->expectNotToPerformAssertions();
+    }
+
+    public function testItRejectsInvalidVideoLink(): void
+    {
+        $this->stringDataTransformer->method('slugify')->willReturn('bench-press');
+        $this->movementProviderGateway->method('findOneBySlugForUniqueness')->willReturn(null);
+        $this->muscleProviderGateway->method('findOneForAdminDetails')->willReturn(new MuscleDataModel('Chest'));
+
+        try {
+            $this->validator->validate(new CreateMovementDataInput(
+                'Bench press',
+                'm-1',
+                [],
+                [],
+                true,
+                false,
+                false,
+                false,
+                false,
+                false,
+                'not-a-url',
+            ));
+            self::fail('Expected ValidationException');
+        } catch (ValidationException $e) {
+            self::assertArrayHasKey('videoLink', $e->violations);
+            self::assertContains('Video link must be a valid URL.', $e->violations['videoLink']);
+        }
+    }
+
+    public function testItRejectsInvalidGifLink(): void
+    {
+        $this->stringDataTransformer->method('slugify')->willReturn('bench-press');
+        $this->movementProviderGateway->method('findOneBySlugForUniqueness')->willReturn(null);
+        $this->muscleProviderGateway->method('findOneForAdminDetails')->willReturn(new MuscleDataModel('Chest'));
+
+        try {
+            $this->validator->validate(new CreateMovementDataInput(
+                'Bench press',
+                'm-1',
+                [],
+                [],
+                true,
+                false,
+                false,
+                false,
+                false,
+                false,
+                null,
+                'not-a-url',
+            ));
+            self::fail('Expected ValidationException');
+        } catch (ValidationException $e) {
+            self::assertArrayHasKey('gifLink', $e->violations);
+            self::assertContains('GIF link must be a valid URL.', $e->violations['gifLink']);
+        }
+    }
+
+    public function testItAccumulatesViolationsAcrossUrlAndOtherFields(): void
+    {
+        $this->muscleProviderGateway->method('findOneForAdminDetails')->willReturn(new MuscleDataModel('Chest'));
+
+        try {
+            $this->validator->validate(new CreateMovementDataInput(
+                '',
+                'm-1',
+                [],
+                [],
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                'broken',
+                'also-broken',
+            ));
+            self::fail('Expected ValidationException');
+        } catch (ValidationException $e) {
+            self::assertArrayHasKey('label', $e->violations);
+            self::assertArrayHasKey('tracking', $e->violations);
+            self::assertArrayHasKey('videoLink', $e->violations);
+            self::assertArrayHasKey('gifLink', $e->violations);
+        }
+    }
 }

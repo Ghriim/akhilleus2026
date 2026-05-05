@@ -76,6 +76,8 @@ final class AddMovementToWorkoutUseCase extends AbstractLoggedPlayerUseCase
                 $movement->tracksDistance,
                 $movement->tracksInclinePercent,
                 $movement->tracksInclineMeters,
+                $movement->videoLink,
+                $movement->gifLink,
             ),
         );
     }

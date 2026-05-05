@@ -51,6 +51,8 @@ final readonly class MovementAdminController
             (bool) ($payload['tracksDistance'] ?? false),
             (bool) ($payload['tracksInclinePercent'] ?? false),
             (bool) ($payload['tracksInclineMeters'] ?? false),
+            $this->nullableString($payload['videoLink'] ?? null),
+            $this->nullableString($payload['gifLink'] ?? null),
         ));
 
         return new JsonResponse($output, 201);
@@ -73,6 +75,8 @@ final readonly class MovementAdminController
             (bool) ($payload['tracksDistance'] ?? false),
             (bool) ($payload['tracksInclinePercent'] ?? false),
             (bool) ($payload['tracksInclineMeters'] ?? false),
+            $this->nullableString($payload['videoLink'] ?? null),
+            $this->nullableString($payload['gifLink'] ?? null),
         ));
 
         return new JsonResponse($output);
@@ -106,5 +110,16 @@ final readonly class MovementAdminController
         }
 
         return array_values(array_map(static fn (mixed $v) => (string) $v, $raw));
+    }
+
+    private function nullableString(mixed $raw): ?string
+    {
+        if (null === $raw) {
+            return null;
+        }
+
+        $value = (string) $raw;
+
+        return '' === $value ? null : $value;
     }
 }

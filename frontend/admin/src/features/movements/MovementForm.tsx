@@ -74,6 +74,8 @@ export const MovementForm = ({
     tracksDistance: false,
     tracksInclinePercent: false,
     tracksInclineMeters: false,
+    videoLink: null,
+    gifLink: null,
     ...(initialValues ?? {}),
   };
 
@@ -114,6 +116,14 @@ export const MovementForm = ({
 
       <Form.Item label="Equipments" name="equipmentIds">
         <Select mode="multiple" options={equipmentOptions} optionFilterProp="label" allowClear />
+      </Form.Item>
+
+      <Form.Item label="Video link" name="videoLink">
+        <Input type="url" placeholder="https://… (optional)" autoComplete="off" />
+      </Form.Item>
+
+      <Form.Item label="GIF link" name="gifLink">
+        <Input type="url" placeholder="https://… (optional)" autoComplete="off" />
       </Form.Item>
 
       <Typography.Title level={5} style={{ marginTop: 16 }}>

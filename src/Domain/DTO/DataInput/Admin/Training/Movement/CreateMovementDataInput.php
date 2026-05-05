@@ -23,6 +23,8 @@ final readonly class CreateMovementDataInput implements DataInputInterface
         public bool $tracksDistance,
         public bool $tracksInclinePercent,
         public bool $tracksInclineMeters,
+        public ?string $videoLink = null,
+        public ?string $gifLink = null,
     ) {
     }
 }

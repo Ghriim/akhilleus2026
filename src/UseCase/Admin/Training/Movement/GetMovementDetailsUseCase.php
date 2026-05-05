@@ -52,6 +52,8 @@ final class GetMovementDetailsUseCase extends AbstractPublicUseCase
             $movement->tracksDistance,
             $movement->tracksInclinePercent,
             $movement->tracksInclineMeters,
+            $movement->videoLink,
+            $movement->gifLink,
         );
     }
 }
