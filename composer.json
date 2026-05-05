@@ -94,6 +94,7 @@
         "test:unit": "vendor/bin/phpunit --testsuite=Unit",
         "test:integration": "vendor/bin/phpunit --testsuite=Integration",
         "test:coverage": "docker compose run --rm -e XDEBUG_MODE=coverage -e DATABASE_URL='mysql://app:!ChangeMe!@database:3306/akhilleus?serverVersion=8.4&charset=utf8mb4' php vendor/bin/phpunit --coverage-text --coverage-html var/coverage",
+        "setup:test-db": "docker compose exec -T database sh -c 'mysql -uroot -p\"$MYSQL_ROOT_PASSWORD\"' < docker/mysql/setup-test-db.sql",
         "qa": [
             "@cs",
             "@stan",

@@ -1,13 +1,14 @@
 # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-A complete plan for this project as been written in @specifications/dev-plan.md.
 
-## Project status (snapshot — verify against `specifications/dev-plan.md` checkboxes)
+The MVP/v0 plan that produced the current codebase has been executed and is archived at `@specifications/v0/dev-plan.md` (paired with `specifications/v0/initial-requirements.md`). **v1 is the active scope going forward** — its plan will live at `specifications/v1/dev-plan.md` (to be generated from `specifications/v1/initial-requirements.md`). When v1's dev-plan exists, it becomes the source of truth for "what's done" and "what's next."
 
-The project is mid-build, executing the plan in `specifications/dev-plan.md`. **Always start a session by reading `specifications/dev-plan.md` to see which subsections are checked off (`[x]`) and which are next (`[ ]`)** — it is the source of truth, this section is just a quick orientation.
+## v0 / MVP state (the codebase you'll inherit when starting v1)
 
-As of the last session:
+The MVP plan in `specifications/v0/dev-plan.md` was executed phase-by-phase to produce the current codebase. v1 has not started yet; the summary below describes what's already built, not active work scope. Once `specifications/v1/dev-plan.md` exists, **always start a session by reading it** to see which subsections are checked off (`[x]`) and which are next (`[ ]`).
+
+As of the v0 close-out:
 - **Phases 0 → 7 are functionally complete** (foundation, entities, admin REST API + frontend, full Player REST API, full Player website with D&D theming + month-grid `/planning` calendar). The ⏸ admin/player checkpoint is passed. Phase 7's manual Chrome/Firefox smoke remains pending — non-blocking.
 - **Phase 8 (Hardening) is `[~]`**: 3/4 done.
   - **Coverage baseline OK**: 35/35 concrete UseCases tested, 25/25 non-abstract validators tested, 3/3 stateful Domain services tested. Run: `composer qa` → 241 tests / 507 assertions green.
@@ -26,28 +27,29 @@ As of the last session:
 
 `composer qa` last known green: cs ✅, stan ✅, phpunit ✅ (241 tests / 507 assertions). `npm run typecheck && lint && build` green on `frontend/website`. CI green on the latest push.
 
-When picking up work, **never rebuild what's already in place** — always check the on-disk reality first (`composer.json`, `src/`, `config/packages/`, `frontend/website/src/`, the dev-plan checkboxes) before scaffolding. The dev-plan's "Decisions / deviations" section is the authoritative summary of conventions that apply to all subsequent work (esp. the Admin/Player abstract split, the date-as-ISO-8601-string DataOutput convention, the controller-per-batch landing strategy, the moved registration endpoint, the planned/achieved split, and the auto-derived `isComplete` + `name` + workout aggregates).
+When picking up work, **never rebuild what's already in place** — always check the on-disk reality first (`composer.json`, `src/`, `config/packages/`, `frontend/website/src/`, plus the v0 dev-plan checkboxes for what was already covered) before scaffolding. The v0 dev-plan's "Decisions / deviations" section is the authoritative summary of conventions that apply to all subsequent work — including v1 (esp. the Admin/Player abstract split, the date-as-ISO-8601-string DataOutput convention, the controller-per-batch landing strategy, the moved registration endpoint, the planned/achieved split, and the auto-derived `isComplete` + `name` + workout aggregates).
 
 ## Working mode
 
-Implementation work proceeds **step-by-step**, where each "step" is one numbered subsection of `specifications/dev-plan.md` (e.g. `0.1`, `0.2`, …, `1.1`, `1.2`, …, `6.2`, `6.3`, …). After completing a step:
+Implementation work proceeds **step-by-step**, where each "step" is one numbered subsection of the active dev-plan — going forward, `specifications/v1/dev-plan.md` (same numbering convention as the archived v0 plan: `0.1`, `0.2`, …, `1.1`, `1.2`, …). After completing a step:
 
 1. Run `composer qa` (or the relevant subset) to confirm green.
-2. Update `specifications/dev-plan.md` — flip `[ ]` to `[x]` for everything genuinely done in that step. Keep `[~]` for partially-done steps where some leaf bullets remain pending in a later sub-step (e.g. the controllers landed per batch land in `6.5` but the work itself is in 6.x).
+2. Update `specifications/v1/dev-plan.md` — flip `[ ]` to `[x]` for everything genuinely done in that step. Keep `[~]` for partially-done steps where some leaf bullets remain pending in a later sub-step.
 3. **Pause** and summarize what was done and what design choices were made (especially anything that deviates from `conventions.md` — flag those clearly so the user can roll back).
 4. Wait for the user to say "next" / "go" / similar before starting the next step.
 
-Do not commit, push, or chain multiple steps without explicit user confirmation. If you encounter a decision that materially deviates from `conventions.md` or the dev-plan, raise it for review before applying — don't silently take the deviation. When you do take one, **append a note to `specifications/dev-plan.md`'s "Decisions / deviations" block** so the next session inherits the working contract.
+Do not commit, push, or chain multiple steps without explicit user confirmation. If you encounter a decision that materially deviates from `conventions.md` or the dev-plan, raise it for review before applying — don't silently take the deviation. When you do take one, **append a note to `specifications/v1/dev-plan.md`'s "Decisions / deviations" block** so the next session inherits the working contract.
 
 The user works in French; responses can be in French.
 
 ## Authoritative specifications
 
-Three files in `specifications/` are the source of truth — read them before designing or implementing anything:
+The `specifications/` folder holds the project's source of truth. v0 (MVP) is archived; v1 is the active scope (initial-requirements forthcoming, dev-plan to be generated from it). Read them before designing or implementing anything:
 
-- **`specifications/conventions.md`** — non-negotiable coding rules (final classes, `declare(strict_types=1)`, Yoda conditions, class suffixes, Domain isolation, DTO categories, Repository/Persister + Gateway pattern, UseCase contract). Apply these to every PHP file you write.
-- **`specifications/initial-requirements.md`** — product scope: a gamified (RPG-style) training-tracking app with an admin (React + TS + AntD), a player+coach website (React TS), and a REST API with JWT auth. Defines the domain entities (Equipment, Muscle, Movement, Workout, ExerciseSet, personal bests…) and the muscle fixture seed list.
-- **`specifications/dev-plan.md`** — the executable roadmap with `[x]` / `[ ]` / `[~]` checkboxes per subsection and per leaf bullet. Source of truth for "what's done" and "what's next."
+- **`specifications/conventions.md`** — non-negotiable coding rules (final classes, `declare(strict_types=1)`, Yoda conditions, class suffixes, Domain isolation, DTO categories, Repository/Persister + Gateway pattern, UseCase contract). Apply these to every PHP file you write. **Version-agnostic** — applies to v0, v1, and beyond.
+- **`specifications/v1/initial-requirements.md`** — v1 product scope (forthcoming — to be added by the user before generating the v1 dev-plan).
+- **`specifications/v1/dev-plan.md`** — the v1 executable roadmap with `[x]` / `[ ]` / `[~]` checkboxes per subsection and per leaf bullet. Source of truth for "what's done" and "what's next." To be generated from `specifications/v1/initial-requirements.md`.
+- **`specifications/v0/initial-requirements.md`** & **`specifications/v0/dev-plan.md`** — archived MVP scope and roadmap. The current codebase is the result of executing the v0 plan; read them for context on what's already built and the conventions that emerged (esp. the v0 dev-plan's "Decisions / deviations" block).
 
 Per `conventions.md`, whenever the database schema changes you must regenerate `specifications/database-schema.html` (HTML5 schema diagram).
 
@@ -65,7 +67,7 @@ The conventions impose a strict **Domain / Infrastructure / UseCase** split:
 - **`Infrastructure/`** — adapters.
   - `Infrastructure/Repository/{SubDomain}/{Entity}/` — implements a `Provider` gateway. **Never** call generic Doctrine finders (`find`, `findOneBy`, …); write context-named methods like `findOneForWorkoutDetails` or `findOneByIdForPlayerAction`. Never rely on lazy-loading.
   - `Infrastructure/Persister/{SubDomain}/{Entity}/` — extends `AbstractBaseMysqlPersister`, implements a `Persister` gateway, owns `createdAt`/`updatedAt` via `ClockInterface`, and is where post-create/update/delete side effects live (including derived-property computation: `slug` from `label`, hashed `password` from `plainPassword`, etc.).
-  - `Infrastructure/DataFixtures/` — Symfony FixtureBundle fixtures (the muscle list in `initial-requirements.md` is a fixture seed). Fixtures **must inject the matching `*PersisterGateway` and call `create(...)`** — they never set timestamps or call `EntityManager::persist/flush` directly.
+  - `Infrastructure/DataFixtures/` — Symfony FixtureBundle fixtures (the muscle list in `specifications/v0/initial-requirements.md` is a fixture seed). Fixtures **must inject the matching `*PersisterGateway` and call `create(...)`** — they never set timestamps or call `EntityManager::persist/flush` directly.
   - `Infrastructure/Controller/{Admin,Player,Security,User}/...` — thin HTTP entry points. Together with Commands they are the only callers allowed to reach into `UseCase`. Controllers land **per phase batch** alongside the use cases they expose (not all in one final pass) — the dev-plan's Phase 6.5 is therefore tracked as `[~]` while sub-phases populate it.
   - `Infrastructure/Controller/DomainExceptionListener` — `#[AsEventListener]` on `ExceptionEvent`; maps `ValidationException` → 422, `EntityNotFoundException` → 404, `UnauthorizedException` → 401.
 - **`UseCase/`** — `final` classes implementing `UseCaseInterface`, single `execute(DataInputInterface): DataOutputInterface|list<DataOutputInterface>`. Three abstract bases:

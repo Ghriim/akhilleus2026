@@ -10,9 +10,9 @@ The full product spec, the architectural conventions, and the implementation roa
 
 | Document                                                       | What it is                                                                                          |
 |----------------------------------------------------------------|------------------------------------------------------------------------------------------------------|
-| [`specifications/initial-requirements.md`](specifications/initial-requirements.md) | Frozen product spec (do not edit). Defines the domain entities, the muscle seed list, the player flows. |
+| [`specifications/initial-requirements.md`](specifications/v0/initial-requirements.md) | Frozen product spec (do not edit). Defines the domain entities, the muscle seed list, the player flows. |
 | [`specifications/conventions.md`](specifications/conventions.md)                   | Non-negotiable coding rules (final classes, strict types, Yoda, suffix rules, DTO categories, Repository/Persister pattern, UseCase contract, boolean naming). |
-| [`specifications/dev-plan.md`](specifications/dev-plan.md)                         | Executable roadmap with `[x]` / `[ ]` / `[~]` checkboxes. Source of truth for "what's done" / "what's next". |
+| [`specifications/dev-plan.md`](specifications/v0/dev-plan.md)                         | Executable roadmap with `[x]` / `[ ]` / `[~]` checkboxes. Source of truth for "what's done" / "what's next". |
 
 ## Setup
 
@@ -31,16 +31,26 @@ composer install
 # 3. Generate the JWT keypair (passphrase: see JWT_PASSPHRASE in .env).
 php bin/console lexik:jwt:generate-keypair
 
-# 4. Run the migrations on dev + test databases.
+# 4. Provision the test database (creates `akhilleus_test` and grants the
+#    `app` user access to `akhilleus_test%`). Idempotent — also re-runnable
+#    after `docker compose down -v` or any MySQL volume reset.
+composer setup:test-db
+
+# 5. Run the migrations on dev + test databases.
 php bin/console doctrine:migrations:migrate --no-interaction
 APP_ENV=test php bin/console doctrine:migrations:migrate --no-interaction
 
-# 5. Load the dev fixtures (admin + player accounts, muscles, equipments, movements).
+# 6. Load the dev fixtures (admin + player accounts, muscles, equipments, movements).
 php bin/console doctrine:fixtures:load --no-interaction
 
-# 6. Start the API (HTTPS, https://127.0.0.1:8000).
+# 7. Start the API (HTTPS, https://127.0.0.1:8000).
 symfony server:start -d
 ```
+
+> **Test DB troubleshooting** — if the integration suite suddenly errors with
+> `SQLSTATE[HY000] [1044] Access denied for user 'app'@'%' to database 'akhilleus_test'`,
+> the test schema or its grants got dropped (most often after a `docker compose down -v`).
+> Re-run `composer setup:test-db` followed by `APP_ENV=test php bin/console doctrine:migrations:migrate --no-interaction` to recover.
 
 Seeded credentials:
 
@@ -87,6 +97,7 @@ composer stan            # PHPStan level 8
 composer test            # Full PHPUnit suite (Unit + Integration)
 composer test:unit       # Unit suite only (what the pre-commit hook runs)
 composer test:integration # Integration suite (needs MySQL up)
+composer setup:test-db    # Re-provision the test DB + grants if they were dropped
 
 # Single test class
 vendor/bin/phpunit --filter SomeTest
