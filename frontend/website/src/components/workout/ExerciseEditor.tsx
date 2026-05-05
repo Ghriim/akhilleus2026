@@ -5,7 +5,7 @@ import type { ExerciseDetailsDataOutput, RemoveExerciseDataOutput } from '../../
 import { TrashIcon } from '../icons';
 import { ExerciseSetRow } from './ExerciseSetRow';
 import { AddSetForm } from './AddSetForm';
-import { MovementMediaLinks } from './MovementMediaLinks';
+import { MovementMedia } from './MovementMedia';
 
 interface Props {
   exercise: ExerciseDetailsDataOutput;
@@ -42,7 +42,6 @@ export function ExerciseEditor({ exercise, workoutId, mode, currentSetId = null 
           <div className="muted" style={{ fontSize: '0.85em' }}>
             Rest: {exercise.restDurationSeconds}s
           </div>
-          <MovementMediaLinks movement={exercise.movement} />
         </div>
         <button
           type="button"
@@ -59,23 +58,30 @@ export function ExerciseEditor({ exercise, workoutId, mode, currentSetId = null 
           <TrashIcon />
         </button>
       </div>
-      {exercise.sets.map((set) => (
-        <ExerciseSetRow
-          key={set.id}
-          set={set}
-          movement={exercise.movement}
-          workoutId={workoutId}
-          mode={mode}
-          isCurrent={currentSetId === set.id}
-        />
-      ))}
-      <AddSetForm
-        exerciseId={exercise.id}
-        movement={exercise.movement}
-        workoutId={workoutId}
-        mode={mode}
-        defaultOpen={exercise.sets.length === 0}
-      />
+      <div className="exercise-body">
+        <aside className="exercise-media">
+          <MovementMedia movement={exercise.movement} />
+        </aside>
+        <div className="exercise-sets">
+          {exercise.sets.map((set) => (
+            <ExerciseSetRow
+              key={set.id}
+              set={set}
+              movement={exercise.movement}
+              workoutId={workoutId}
+              mode={mode}
+              isCurrent={currentSetId === set.id}
+            />
+          ))}
+          <AddSetForm
+            exerciseId={exercise.id}
+            movement={exercise.movement}
+            workoutId={workoutId}
+            mode={mode}
+            defaultOpen={exercise.sets.length === 0}
+          />
+        </div>
+      </div>
     </div>
   );
 }

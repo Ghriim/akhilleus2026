@@ -2,7 +2,7 @@ import type { WorkoutDetailsDataOutput } from '../../api/types';
 import { formatDuration, formatDurationSeconds, formatNumeric } from '../../lib/format';
 import { summarizeSet } from '../../lib/workout';
 import { WorkoutStatusBadge } from '../WorkoutStatusBadge';
-import { MovementMediaLinks } from './MovementMediaLinks';
+import { MovementMedia } from './MovementMedia';
 
 interface Props {
   workout: WorkoutDetailsDataOutput;
@@ -69,30 +69,34 @@ export function ReadOnlyWorkoutView({ workout }: Props) {
       {workout.exercises.map((exercise) => (
         <div key={exercise.id} className="card" style={{ padding: 0, overflow: 'hidden' }}>
           <div className="exercise-header">
-            <div>
-              <strong style={{ fontSize: '1.1em' }}>{exercise.movement.label}</strong>
-              <MovementMediaLinks movement={exercise.movement} />
+            <strong style={{ fontSize: '1.1em' }}>{exercise.movement.label}</strong>
+          </div>
+          <div className="exercise-body">
+            <aside className="exercise-media">
+              <MovementMedia movement={exercise.movement} />
+            </aside>
+            <div className="exercise-sets">
+              {exercise.sets.map((set) => (
+                <div
+                  key={set.id}
+                  style={{
+                    padding: 'var(--space-2) var(--space-3)',
+                    borderTop: '1px solid var(--color-border)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 'var(--space-2)',
+                  }}
+                >
+                  <span style={{ fontWeight: 600 }}>{summarizeSet(set, exercise.movement)}</span>
+                  {set.isComplete && (
+                    <span style={{ color: 'var(--color-success)', fontSize: '0.85em' }}>
+                      ✓ completed
+                    </span>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
-          {exercise.sets.map((set) => (
-            <div
-              key={set.id}
-              style={{
-                padding: 'var(--space-2) var(--space-3)',
-                borderTop: '1px solid var(--color-border)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 'var(--space-2)',
-              }}
-            >
-              <span style={{ fontWeight: 600 }}>{summarizeSet(set, exercise.movement)}</span>
-              {set.isComplete && (
-                <span style={{ color: 'var(--color-success)', fontSize: '0.85em' }}>
-                  ✓ completed
-                </span>
-              )}
-            </div>
-          ))}
         </div>
       ))}
     </>

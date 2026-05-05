@@ -715,6 +715,91 @@ a.card:hover {
   border-bottom: 1px solid var(--color-gold);
 }
 
+/*
+ * Exercise body: 2-column layout under the header. Sets list grows to fill the left column;
+ * the media tile sits on the right at a fixed-ish width. `flex-wrap` lets the media drop
+ * below the sets on narrow viewports without introducing a full media-query layer.
+ */
+.exercise-body {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.exercise-sets {
+  flex: 1 1 320px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.exercise-media {
+  flex: 0 0 auto;
+  width: 280px;
+  max-width: 100%;
+}
+
+/*
+ * Movement media tile — 16:9 box, four variants:
+ *   - YouTube embed (inline iframe)
+ *   - non-YouTube video link → big play tile (clickable, opens external)
+ *   - GIF link → big GIF tile (clickable, opens external)
+ *   - placeholder when no demo is configured
+ */
+.movement-media {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--color-bg);
+}
+
+.movement-media > iframe,
+.movement-media > img,
+.movement-media > a {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.movement-media__play-tile {
+  background: linear-gradient(135deg, var(--color-bg-deep), var(--color-bg));
+  border: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  color: var(--color-primary);
+  font-size: 3rem;
+  cursor: pointer;
+  transition: filter 120ms;
+}
+.movement-media__play-tile:hover,
+.movement-media__play-tile:focus-visible {
+  filter: brightness(1.05);
+}
+
+.movement-media__gif-link {
+  border: 1px solid var(--color-border);
+}
+.movement-media__gif {
+  object-fit: cover;
+}
+
+.movement-media__placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed var(--color-border);
+  color: var(--color-text-muted);
+  font-size: 0.85em;
+  font-style: italic;
+}
+
 /* === Header icon-button cluster === */
 
 .layout-header__actions {
