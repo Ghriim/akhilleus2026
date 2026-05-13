@@ -97,7 +97,6 @@
         "setup:test-db": "docker compose exec -T database sh -c 'mysql -uroot -p\"$MYSQL_ROOT_PASSWORD\"' < docker/mysql/setup-test-db.sql",
         "dev:up": [
             "docker compose up -d --wait database frontend-admin frontend-website",
-            "php bin/console lexik:jwt:generate-keypair --skip-if-exists --no-interaction",
             "php bin/console doctrine:migrations:migrate --no-interaction",
             "symfony server:start -d",
             "echo ''",

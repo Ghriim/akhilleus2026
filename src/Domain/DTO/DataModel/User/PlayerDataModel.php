@@ -24,6 +24,16 @@ class PlayerDataModel implements DataModelInterface
     #[ORM\Column(type: Types::STRING, length: 100)]
     public string $displayName;
 
+    /**
+     * Player-wide default daily hydration target in millilitres. Initialised to 1000 for new
+     * players (and backfilled to 1000 on existing rows by the v1 migration). Can be edited by
+     * the player from a profile section. Each `HydrationDailySummary` snapshots this value at
+     * create time into its own `targetMl` column, so editing the global default afterwards
+     * does not retroactively change past days' targets.
+     */
+    #[ORM\Column(type: Types::INTEGER, options: ['default' => 1000])]
+    public int $dailyHydrationTargetMl = 1000;
+
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     public \DateTimeImmutable $createdAt;
 

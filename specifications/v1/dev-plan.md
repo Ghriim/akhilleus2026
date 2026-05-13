@@ -2,10 +2,15 @@
 
 ## Resume pointer (last session snapshot)
 
-- **v1 not started yet.** All phases below are `[ ]`. The v0 plan (`specifications/v0/dev-plan.md`) is closed; the codebase you inherit is the result of executing it. Do not rebuild what's already there — always read the on-disk reality (`composer.json`, `src/`, `frontend/{admin,website}/src/`, plus `CLAUDE.md`'s "v0 / MVP state" summary) before scaffolding.
-- **Next pending step**: Phase 0.1 (pre-flight) — verify `composer qa` is green, the doctrine schema validates, and both frontends build cleanly on a fresh checkout. This sets the v1 baseline.
-- **v0 leftover non-blockers** carried over (out of v1 scope unless the user asks otherwise): Phase 7 manual Chrome/Firefox smoke; Phase 8 prod Dockerfile + `compose.prod.yaml` (deferred until the hosting target is chosen).
-- The "Decisions / deviations" block below is empty at v1 start; populate it as we go (anything that materially deviates from `specifications/conventions.md` or this plan).
+- **Last completed step**: 2.4 — **Steps sub-batch only** (3 UseCases). Phases 0 and 1 fully `[x]`; Phase 2 is at `[~]` with 2.1 → 2.3 fully `[x]` and 2.4 partial (Steps `[x]`, Hydration / Sleep / Weight still `[ ]`). `composer qa` last green at **274 tests / 561 assertions** (+14 tests / +24 assertions vs the 2.3 baseline).
+- **Next pending step**: **2.4 — Hydration sub-batch** (6 UseCases: `GetTodayHydrationUseCase`, `UpdateHydrationDailyTargetUseCase`, `UpdatePlayerDailyHydrationTargetUseCase`, `AddHydrationEntryUseCase`, `UpdateHydrationEntryUseCase`, `DeleteHydrationEntryUseCase`). Then Sleep × 4, Weight × 4. Same per-batch cadence as Steps (one sub-domain per pause).
+- **Tooling at the user's disposal in any new session** (added during the v1 work):
+  - `composer dev:up` — boots Docker (database + frontend-admin + frontend-website with healthcheck wait), generates the JWT keypair if missing, applies pending dev-DB migrations, starts `symfony serve -d`. Idempotent. Does not touch fixtures.
+  - `composer setup:test-db` — provisions `akhilleus_test` + grants for the `app` MySQL user. Run after a fresh `docker compose down -v` or on a brand-new machine.
+  - The README "Setup" + "Daily startup" + "Test DB troubleshooting" callouts cover the recovery flows.
+- **Uncommitted work at session end**: see `git status`; everything that was implemented in 2.1–2.3 is on disk but not yet committed. Suggested split for the next `git commit` is to bundle the phase-1 + tooling work first, then the phase-2.1→2.3 work as a second commit (the dev-plan ticks lump them all together so order doesn't matter much).
+- **v0 leftover non-blockers** still out of v1 scope: Phase 7 manual Chrome/Firefox smoke; Phase 8 prod Dockerfile + `compose.prod.yaml` (deferred until the hosting target is chosen).
+- The "Decisions / deviations" block now holds 4 entries (Phase 0 setup gap workaround, Phase 1.1 migration absorbed into mapping step, Phase 1.1 validator error-code convention, Phase 2.1 derived-property initialisation pattern). Read it before designing anything new.
 - `specifications/v1/initial-requirements.md` is the **frozen v1 user spec** — do not edit it. Clarifications/decisions go into this dev-plan.
 
 ## Context
@@ -55,6 +60,16 @@ The phases are ordered to respect data dependencies:
 
 ### Movement validators (1.1)
 - **No per-field error code constants on the Movement validators** despite the dev-plan saying `INVALID_VIDEO_LINK_CODE` / `INVALID_GIF_LINK_CODE`. Reason: the v0 convention is one umbrella `ERROR_CODE` per validator (`CREATE_MOVEMENT_VALIDATION_FAILED` / `UPDATE_MOVEMENT_VALIDATION_FAILED`), with violations accumulated under field-named keys in the `violations` map. Per-field codes only happen when a validator throws **distinct** error codes for **distinct** rule families (e.g. `ILLEGAL_STATUS_CODE` vs `TRACKING_MISMATCH_ERROR_CODE` on `AddExerciseSetValidator`). URL format checks fit the existing umbrella code — no new constants needed. The original dev-plan wording was a slip; this is the authoritative reading going forward.
+
+### Steps UseCases (2.4 sub-batch — first one)
+- **No `Validator` for `DeleteStepsForDayUseCase`.** Reason: deletion is keyed by `(player, date)` and the provider call `findOneByPlayerAndDate($player, $date)` already scopes to the logged player, so `assertPlayerOwns` is a no-op and there are no other rules. Following the principle "don't create empty abstractions just for symmetry," the use case talks to the gateway directly and throws `EntityNotFoundException` when the lookup misses. The other two Steps UseCases keep their validators (`UpsertStepsForDayValidator` enforces `count >= 0`; `ListStepsForRangeValidator` enforces `from <= to`).
+- **`UpsertStepsForDayUseCase` chosen over a separate Create + Update pair.** The dev-plan listed it that way — confirmed during implementation: a daily steps count is naturally idempotent per `(player, date)` and the unique constraint would force any "create" caller to handle the duplicate-key path anyway. One UC, one route, one widget action.
+- **Validator-level rules kept minimal**: no future-date guard on `UpsertStepsForDayDataInput.date` (players legitimately backfill yesterday's count), no upper bound on `count` (a marathon day can crest 50k+ steps; arbitrary caps are wrong here). If we later need a "no future dates" guard, apply it consistently across all 4 tracking metrics in one pass.
+- **`ListStepsForRangeValidator` is standalone** (does not extend `AbstractLoggedPlayerValidator`) — same shape as `ListWorkoutsByMonthValidator`. List endpoints do not need the logged-player accessor; the use case scopes to the player through the gateway call.
+
+### Tracking DataModels (2.1)
+- **`WeightEntryDataModel.date` is derived in the constructor**, not exclusively in the persister, breaking the v0 "derived properties live on the model and are computed in the persister" rule. Reason: `date` is a non-nullable `DATE_IMMUTABLE` column used in the unique constraint `(player_id, date)`. PHP requires it to be initialised before persist, and `\DateTimeImmutable` has no `''`-equivalent default value (unlike `string $slug = ''` on `MovementDataModel`, which the persister overwrites). Cleanest accommodation: `$this->date = $loggedAt->setTime(0, 0, 0)` in the constructor — one-line, no logic, mirrors the persister's behaviour. The persister (Phase 2.3) will still recompute on update so `loggedAt` mutations stay in sync.
+- **`SleepDailyEntryDataModel.durationMinutes` and `HydrationDailySummaryDataModel.amountConsumedMl` keep the slug-style "default placeholder, persister overwrites" pattern** (defaults `0`). Their derivation involves real logic (`floor((wake − bed) / 60)`, sum of entry values) that belongs in a domain service (`SleepDurationEvaluator`, `HydrationAggregateEvaluator`) called from the persister — duplicating it in the constructor would split the source of truth.
 
 ## Tracking (checkbox convention)
 
@@ -136,34 +151,58 @@ Create empty folders so subsequent phases just drop files in. Nothing is committ
 
 Goal: `Steps`, `Hydration`, `Sleep`, `Weight` end-to-end (DataModel → use cases → REST → dashboard widget) with the snapshot/lazy/aggregate semantics from `specifications/v1/initial-requirements.md`.
 
-### [ ] 2.1 DataModels + Player change
-- [ ] Add `int $dailyHydrationTargetMl` (non-null, default 1000) on `PlayerDataModel`.
-- [ ] `Domain/DTO/DataModel/Tracking/Steps/StepsDailyEntryDataModel` — `player` (M:1), `date` (DATE), `count` (INT ≥ 0). Unique index on (`player_id`, `date`).
-- [ ] `Domain/DTO/DataModel/Tracking/Hydration/HydrationDailySummaryDataModel` — `player`, `date`, `targetMl` (INT non-null, snapshotted at create time from `Player.dailyHydrationTargetMl`), `amountConsumedMl` (INT non-null, default 0, auto-derived). Unique on (`player_id`, `date`).
-- [ ] `Domain/DTO/DataModel/Tracking/Hydration/HydrationEntryDataModel` — `summary` (M:1 `HydrationDailySummaryDataModel`), `loggedAt` (DATETIME), `valueMl` (INT > 0).
-- [ ] `Domain/DTO/DataModel/Tracking/Sleep/SleepDailyEntryDataModel` — `player`, `date` (DATE — wake-up date), `bedAt` (DATETIME), `wakeAt` (DATETIME), `durationMinutes` (INT, auto-derived), `quality` (nullable INT 1–5). Unique on (`player_id`, `date`).
-- [ ] `Domain/DTO/DataModel/Tracking/Weight/WeightEntryDataModel` — `player`, `loggedAt` (DATETIME), `valueGrams` (INT > 0), `date` (DATE, auto-derived from `loggedAt` in the persister). Unique on (`player_id`, `date`).
-- [ ] All five new DataModels carry `createdAt` / `updatedAt` per the `AbstractBaseMysqlPersister` contract.
+### [x] 2.1 DataModels + Player change
+- [x] Added `int $dailyHydrationTargetMl` (non-null, default 1000) on `PlayerDataModel`. Doctrine `options: ['default' => 1000]` makes the migration backfill existing rows automatically — no separate UPDATE needed.
+- [x] `Domain/DTO/DataModel/Tracking/Steps/StepsDailyEntryDataModel` — `player` (M:1), `date` (DATE), `count` (INT). Unique constraint `uniq_steps_daily_entry_player_date (player_id, date)`. Implements `OwnedByPlayerInterface` directly.
+- [x] `Domain/DTO/DataModel/Tracking/Hydration/HydrationDailySummaryDataModel` — `player`, `date`, `targetMl` (INT non-null, snapshotted by the persister at create time from `Player.dailyHydrationTargetMl`), `amountConsumedMl` (INT non-null, default 0, recomputed by `HydrationAggregateEvaluator`). Has the OneToMany inverse `entries` to `HydrationEntryDataModel` (orphan removal on). Unique on (`player_id`, `date`).
+- [x] `Domain/DTO/DataModel/Tracking/Hydration/HydrationEntryDataModel` — `summary` (M:1, `inversedBy: 'entries'`), `loggedAt` (DATETIME), `valueMl` (INT). Implements `OwnedByPlayerInterface` via virtual property hook `public PlayerDataModel $player { get => $this->summary->player; }` — same pattern as v0's `ExerciseDataModel`/`ExerciseSetDataModel`.
+- [x] `Domain/DTO/DataModel/Tracking/Sleep/SleepDailyEntryDataModel` — `player`, `date` (DATE — wake-up date), `bedAt` (DATETIME), `wakeAt` (DATETIME), `durationMinutes` (INT, default 0, will be overwritten by `SleepDurationEvaluator` from the persister), `quality` (nullable SMALLINT, range `[1,5]` enforced at validator level — out of scope for 2.1). Unique on (`player_id`, `date`).
+- [x] `Domain/DTO/DataModel/Tracking/Weight/WeightEntryDataModel` — `player`, `loggedAt` (DATETIME), `valueGrams` (INT), `date` (DATE — derived from `loggedAt->setTime(0,0,0)` in the constructor; the persister will recompute on update for consistency). Unique on (`player_id`, `date`). See deviation note below.
+- [x] All five new DataModels carry `createdAt` / `updatedAt` per the `AbstractBaseMysqlPersister` contract (set by the parent persister's `doCreate` / `doUpdate`).
+- [x] **Migration generated + applied here, not in 2.7** (same pattern as Phase 1.1 — see deviations block). `migrations/Version20260505153556.php`: 5 CREATE TABLE + 5 ADD CONSTRAINT (FKs to `player` / `hydration_daily_summary`) + 1 ALTER TABLE adding `daily_hydration_target_ml INT DEFAULT 1000 NOT NULL` to `player`. Applied on dev + test DBs.
+- [x] `composer qa` ✅ (252/527, baseline preserved); `php bin/console doctrine:schema:validate` ✅ (mapping + database in sync). Schema HTML regen deferred to step 2.7.
 
-### [ ] 2.2 Aggregate / derivation services
-- [ ] `Domain/Service/Tracking/Hydration/HydrationAggregateEvaluator::recompute(HydrationDailySummaryDataModel $summary): HydrationDailySummaryDataModel` — sums all `HydrationEntry.valueMl` linked to `$summary` into `$summary->amountConsumedMl`. Mutates in place + returns the same instance (mirrors `WorkoutAggregateEvaluator`). Triggered by `HydrationEntryPersister::create / update / delete` and by `HydrationDailySummaryPersister::update`.
-- [ ] `Domain/Service/Tracking/Sleep/SleepDurationEvaluator::recompute(SleepDailyEntryDataModel $entry): SleepDailyEntryDataModel` — `durationMinutes = floor((wakeAt − bedAt) / 60)`. Validator guards against `wakeAt ≤ bedAt`. Triggered by `SleepDailyEntryPersister::create / update`.
-- [ ] Weight date derivation lives directly in `WeightEntryPersister::create / update` (`$model->date = \DateTimeImmutable::createFromInterface($model->loggedAt)->setTime(0,0,0)`) — no separate service for a one-line derivation.
+### [x] 2.2 Aggregate / derivation services
+- [x] `Domain/Service/Tracking/Hydration/HydrationAggregateEvaluator::recompute(HydrationDailySummaryDataModel $summary): HydrationDailySummaryDataModel` — sums all `HydrationEntry.valueMl` linked to `$summary` into `$summary->amountConsumedMl`. Mutates in place + returns the same instance (mirrors `WorkoutAggregateEvaluator`). Stateless `final readonly` class with a single `static` method. Will be triggered by `HydrationEntryPersister::create / update / delete` and by `HydrationDailySummaryPersister::update` once Phase 2.3 lands.
+- [x] `Domain/Service/Tracking/Sleep/SleepDurationEvaluator::recompute(SleepDailyEntryDataModel $entry): SleepDailyEntryDataModel` — `durationMinutes = floor((wakeAt − bedAt) / 60)` via `getTimestamp()` arithmetic. Caller responsibility to ensure `wakeAt > bedAt` (validator on the use case enforces it in Phase 2.4); the service does not re-check, mirroring how `WorkoutAggregateEvaluator` trusts its caller.
+- [x] **No service for Weight date derivation** — confirmed: `$model->date = $model->loggedAt->setTime(0, 0, 0)` is a one-liner that lives in the constructor of `WeightEntryDataModel` (already done in 2.1) and will be re-applied by `WeightEntryPersister::create / update` (Phase 2.3) on every persist for safety.
+- [x] **Layout decision (sub-folders)**: new evaluators live under `Domain/Service/Tracking/{Hydration,Sleep}/` (sub-folder per sub-domain + entity), not flat under `Domain/Service/` like the v0 evaluators. Consistent with the 0.2 scaffolding that already created these sub-folders. v0 evaluators stay flat — moving them would be a separate refactor outside v1 scope.
+- [x] Unit tests under `tests/Unit/Domain/Service/Tracking/{Hydration,Sleep}/`:
+  - `HydrationAggregateEvaluatorTest` (4 tests): sums multiple entries, resets stale value to 0 when collection is empty, single-entry path, idempotent on repeated calls.
+  - `SleepDurationEvaluatorTest` (4 tests): exact 8h sleep crossing midnight, sleep within the same day, floor on partial-minute remainder, overwrites stale duration on re-run.
+- [x] `composer qa` ✅ — 260 tests / 537 assertions (+8 / +10 vs Phase 2.1 baseline).
 
-### [ ] 2.3 Gateways + Repositories + Persisters
-For each of the five new entities (`StepsDailyEntry`, `HydrationDailySummary`, `HydrationEntry`, `SleepDailyEntry`, `WeightEntry`):
-- [ ] `Domain/Gateway/Provider/Tracking/{Entity}/{Entity}ProviderGateway` — context-named methods only (`findOneByPlayerAndDate`, `findAllByPlayerForDateRange`, etc.). No generic finders.
-- [ ] `Domain/Gateway/Persister/Tracking/{Entity}/{Entity}PersisterGateway` — `create`, `update`, `delete` typed per `DataModel`.
-- [ ] `Infrastructure/Repository/Tracking/{Entity}/{Entity}Repository implements {Entity}ProviderGateway`.
-- [ ] `Infrastructure/Persister/Tracking/{Entity}/{Entity}Persister extends AbstractBaseMysqlPersister implements {Entity}PersisterGateway`.
+### [x] 2.3 Gateways + Repositories + Persisters
+20 files landed (5 entities × 4 files each: Provider gateway interface + Persister gateway interface + Repository impl + Persister impl). All under the matching `Tracking/{Steps,Hydration,Sleep,Weight}/` sub-folders. Concrete provider methods chosen per entity based on the use cases planned for Phase 2.4:
 
-### [ ] 2.4 Player UseCases per metric
+- [x] **Steps** (`StepsDailyEntryProviderGateway`):
+  - `findOneByPlayerAndDate(player, date)` — for upsert and delete-by-date.
+  - `findAllByPlayerForRange(player, from, to)` — inclusive range, ordered by date ASC.
+- [x] **HydrationDailySummary** (`HydrationDailySummaryProviderGateway`):
+  - `findOneByPlayerAndDateWithEntries(player, date)` — eager-fetches the `entries` collection (LEFT JOIN + addSelect) so the widget renders without a follow-up query. Single query covers both the read path and the lazy-create check.
+- [x] **HydrationEntry** (`HydrationEntryProviderGateway`):
+  - `findOneByIdForPlayerAction(id, player)` — INNER JOIN `summary`, scoped to `summary.player = :player`. Replaces the manual ownership check at the use case level.
+- [x] **SleepDailyEntry** (`SleepDailyEntryProviderGateway`):
+  - `findOneByPlayerAndDate(player, date)` — uniqueness check from the create validator.
+  - `findOneByIdForPlayerAction(id, player)` — Update / Delete ownership scoping.
+  - `findAllByPlayerForRange(player, from, to)` — inclusive, ordered by date ASC.
+- [x] **WeightEntry** (`WeightEntryProviderGateway`):
+  - Same three methods as Sleep, with `findAllByPlayerForRange` ordered by `loggedAt ASC` (feeds the future progression chart in time-of-day order, not just per-day).
+- [x] **Persister gateways** all expose the standard `create / update / delete` triplet typed per `DataModel`.
+- [x] **Persisters** (`extends AbstractBaseMysqlPersister<TDataModel>`, `final readonly`):
+  - `StepsDailyEntryPersister`, `HydrationDailySummaryPersister`: pass-through to `doCreate / doUpdate / doDelete`.
+  - `SleepDailyEntryPersister`: calls `SleepDurationEvaluator::recompute($model)` before `doCreate` and `doUpdate` to keep `durationMinutes` in sync with `bedAt` / `wakeAt`.
+  - `WeightEntryPersister`: re-derives `$model->date = $model->loggedAt->setTime(0, 0, 0)` before each `doCreate` / `doUpdate` so the `(player, date)` unique constraint stays in sync if `loggedAt` was mutated.
+  - `HydrationEntryPersister`: **injects `HydrationDailySummaryPersisterGateway`**. After every entry create / update / delete, runs `HydrationAggregateEvaluator::recompute` on the parent summary and persists the new `amountConsumedMl` via the summary persister. Manually keeps the `summary->entries` collection in sync (`->add()` after create, `->removeElement()` before delete) — same identity-map trap as v0's `AddMovementToWorkoutUseCase` (Doctrine returns the cached parent on subsequent calls, the inverse collection is never auto-refreshed).
+- [x] No new tests in this step — repositories and persisters are exercised via the Phase 2.4 / 2.8 use case integration tests. PHPStan + CS already enforce the structural correctness (`composer qa` ✅, still at 260 / 537).
+
+### [~] 2.4 Player UseCases per metric
 All under `UseCase/Player/Tracking/...`, extending `AbstractLoggedPlayerUseCase`. Validators extend `AbstractLoggedPlayerValidator` (or are standalone for List shapes). Player-edit validators implement `assertPlayerOwns` against the `OwnedByPlayerInterface` virtual hook on each tracking DataModel (where applicable: `HydrationEntry::$player` virtual hook → `$this->summary->player`).
 
-- [ ] **Steps** (`UseCase/Player/Tracking/Steps/`):
-  - [ ] `UpsertStepsForDayUseCase` — `(date, count)` → create or update the `StepsDailyEntry` for that day.
-  - [ ] `DeleteStepsForDayUseCase` — soft-not-needed, hard delete is fine; daily values are user-correctible.
-  - [ ] `ListStepsForRangeUseCase` — read-only listing (used by widget + future stats).
+- [x] **Steps** (`UseCase/Player/Tracking/Steps/`):
+  - [x] `UpsertStepsForDayUseCase` — `(date, count)` → create or update the `StepsDailyEntry` for that day.
+  - [x] `DeleteStepsForDayUseCase` — soft-not-needed, hard delete is fine; daily values are user-correctible.
+  - [x] `ListStepsForRangeUseCase` — read-only listing (used by widget + future stats).
 - [ ] **Hydration** (`UseCase/Player/Tracking/Hydration/`):
   - [ ] `GetTodayHydrationUseCase` — returns the day's `HydrationDailySummary` + the list of `HydrationEntry`. Lazy-creates the Summary if missing (snapshots `Player.dailyHydrationTargetMl` into `targetMl`).
   - [ ] `UpdateHydrationDailyTargetUseCase` — overrides `targetMl` for a specific day's Summary (does **not** touch `Player.dailyHydrationTargetMl`).
