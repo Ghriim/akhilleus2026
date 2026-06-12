@@ -1,8 +1,3 @@
-/**
- * Hand-rolled mirror of the backend DataOutput / DataInput shapes used by the player site.
- * Phase 8 may swap this for openapi-typescript generation.
- */
-
 export type WorkoutStatus = 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELED';
 
 export type PersonalBestType =
@@ -37,7 +32,6 @@ export interface WorkoutDataOutput {
   plannedAt: string | null;
   dateStart: string | null;
   dateEnd: string | null;
-  /** Workout-level aggregates persisted at finish time. Null until the workout is completed. */
   duration: number | null;
   volume: string | null;
   distance: string | null;

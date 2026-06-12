@@ -1,72 +1,52 @@
-/**
- * Lightweight date helpers. Intl-based so we get the user's locale for free.
- */
+export function formatDate(iso: string | null | undefined): string {
+  if (!iso) return '—';
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  return date.toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' });
+}
 
-export function formatDateTime(iso: string | null): string {
+export function formatDateTime(iso: string | null | undefined): string {
   if (!iso) return '—';
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return iso;
   return date.toLocaleString(undefined, {
-    dateStyle: 'medium',
-    timeStyle: 'short',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
   });
 }
 
-export function formatDate(iso: string | null): string {
-  if (!iso) return '—';
+export function formatDurationSeconds(seconds: number | null | undefined): string {
+  if (seconds === null || seconds === undefined) return '—';
+  if (seconds < 60) return `${seconds}s`;
+  const min = Math.floor(seconds / 60);
+  const rem = seconds % 60;
+  if (min < 60) return rem ? `${min}m ${rem}s` : `${min}m`;
+  const hours = Math.floor(min / 60);
+  const minRest = min % 60;
+  return minRest ? `${hours}h ${minRest}m` : `${hours}h`;
+}
+
+export function formatNumber(value: string | number | null | undefined, fractionDigits = 2): string {
+  if (value === null || value === undefined) return '—';
+  const num = typeof value === 'string' ? Number(value) : value;
+  if (Number.isNaN(num)) return String(value);
+  return num.toLocaleString(undefined, {
+    maximumFractionDigits: fractionDigits,
+    minimumFractionDigits: 0,
+  });
+}
+
+export function toDatetimeLocalValue(iso: string | null | undefined): string {
+  if (!iso) return '';
   const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return iso;
-  return date.toLocaleDateString(undefined, { dateStyle: 'medium' });
+  if (Number.isNaN(date.getTime())) return '';
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-/**
- * Formats a number of seconds as "XhYmin" — or "Ymin" when X is zero. Returns null when the
- * input is null or non-positive.
- */
-export function formatDurationSeconds(totalSeconds: number | null): string | null {
-  if (totalSeconds === null || totalSeconds <= 0) return null;
-  const totalMinutes = Math.round(totalSeconds / 60);
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-  return hours === 0 ? `${minutes}min` : `${hours}h${minutes}min`;
-}
-
-/**
- * Same as `formatDurationSeconds` but takes two ISO datetimes — kept as a thin convenience
- * for callers that don't already have a stored duration in seconds.
- */
-export function formatDuration(startIso: string | null, endIso: string | null): string | null {
-  if (!startIso || !endIso) return null;
-  const start = new Date(startIso);
-  const end = new Date(endIso);
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null;
-  return formatDurationSeconds(Math.round((end.getTime() - start.getTime()) / 1000));
-}
-
-/**
- * Trims trailing zeros from a NUMERIC-string ("120.00" → "120", "12.50" → "12.5"). Returns
- * null on null input. Keeps the original string when it isn't a valid finite number.
- */
-export function formatNumeric(value: string | null): string | null {
-  if (value === null) return null;
-  const parsed = Number.parseFloat(value);
-  if (!Number.isFinite(parsed)) return value;
-  return parsed.toString();
-}
-
-export function formatRelative(iso: string | null): string {
-  if (!iso) return '—';
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return iso;
-
-  const diffMs = date.getTime() - Date.now();
-  const absMin = Math.round(Math.abs(diffMs) / 60000);
-  const future = diffMs >= 0;
-
-  if (absMin < 1) return 'now';
-  if (absMin < 60) return `${future ? 'in ' : ''}${absMin} min${future ? '' : ' ago'}`;
-  const absHour = Math.round(absMin / 60);
-  if (absHour < 24) return `${future ? 'in ' : ''}${absHour}h${future ? '' : ' ago'}`;
-  const absDay = Math.round(absHour / 24);
-  return `${future ? 'in ' : ''}${absDay}d${future ? '' : ' ago'}`;
+export function fromDatetimeLocalValue(value: string): string {
+  return new Date(value).toISOString();
 }

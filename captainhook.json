@@ -3,13 +3,13 @@
         "enabled": true,
         "actions": [
             {
-                "action": "vendor/bin/php-cs-fixer fix --dry-run --diff"
+                "action": "docker compose run --rm --no-deps -T php vendor/bin/php-cs-fixer fix --dry-run --diff"
             },
             {
-                "action": "vendor/bin/phpstan analyse --memory-limit=1G --no-progress"
+                "action": "docker compose run --rm --no-deps -T php vendor/bin/phpstan analyse --memory-limit=1G --no-progress"
             },
             {
-                "action": "vendor/bin/phpunit --testsuite=Unit"
+                "action": "docker compose run --rm --no-deps -T php vendor/bin/phpunit --testsuite=Unit"
             }
         ]
     },

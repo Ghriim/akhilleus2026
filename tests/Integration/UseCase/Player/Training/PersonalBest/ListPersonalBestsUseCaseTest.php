@@ -75,7 +75,35 @@ final class ListPersonalBestsUseCaseTest extends KernelTestCase
         $output = self::buildUseCase($container, $playerA)->execute(new ListPersonalBestsDataInput());
 
         self::assertCount(1, $output);
-        self::assertSame('100.0000', $output[0]->personalBests[0]->value);
+        self::assertSame('100 kg', $output[0]->personalBests[0]->value);
+    }
+
+    public function testItFormatsValuesWithCommaAndDropsZeroDecimals(): void
+    {
+        self::bootKernel();
+        $container = self::getContainer();
+        $player = self::createTestPlayer($container, 'pb-format');
+        $integerMvt = self::createTestMovement($container, 'pb-format-int');
+        $decimalMvt = self::createTestMovement($container, 'pb-format-dec');
+        $roundingMvt = self::createTestMovement($container, 'pb-format-round');
+
+        // Integer-valued PB: "100.0000" → "100 kg" (no comma, no decimals).
+        self::seedPB($container, $player, $integerMvt, PersonalBestTypeRegistry::HIGHEST_WEIGHT, '100.0000');
+        // Non-integer PB: "82.5000" → "82,50 kg" (comma, padded to 2 decimals).
+        self::seedPB($container, $player, $decimalMvt, PersonalBestTypeRegistry::HIGHEST_WEIGHT, '82.5000');
+        // High-precision PB: "75.1234" → "75,12 kg" (rounded to 2 decimals).
+        self::seedPB($container, $player, $roundingMvt, PersonalBestTypeRegistry::HIGHEST_WEIGHT, '75.1234');
+
+        $output = self::buildUseCase($container, $player)->execute(new ListPersonalBestsDataInput());
+
+        $byMovementId = [];
+        foreach ($output as $bucket) {
+            $byMovementId[$bucket->movement->id] = $bucket->personalBests[0]->value;
+        }
+
+        self::assertSame('100 kg', $byMovementId[$integerMvt->id]);
+        self::assertSame('82,50 kg', $byMovementId[$decimalMvt->id]);
+        self::assertSame('75,12 kg', $byMovementId[$roundingMvt->id]);
     }
 
     private static function createTestPlayer(ContainerInterface $container, string $emailSlug): PlayerDataModel
