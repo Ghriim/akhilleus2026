@@ -1,0 +1,56 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\UseCase\Player\Tracking\Sleep;
+
+use App\Domain\DTO\DataInput\DataInputInterface;
+use App\Domain\DTO\DataInput\Player\Tracking\Sleep\UpdateSleepDataInput;
+use App\Domain\DTO\DataOutput\Player\Tracking\Sleep\SleepDailyEntryDataOutput;
+use App\Domain\Exception\EntityNotFoundException;
+use App\Domain\Gateway\Persister\Tracking\Sleep\SleepDailyEntryPersisterGateway;
+use App\Domain\Gateway\Provider\Tracking\Sleep\SleepDailyEntryProviderGateway;
+use App\Domain\Security\LoggedPlayerResolverInterface;
+use App\Domain\Validator\Player\Tracking\Sleep\UpdateSleepValidator;
+use App\UseCase\AbstractLoggedPlayerUseCase;
+
+final class UpdateSleepUseCase extends AbstractLoggedPlayerUseCase
+{
+    public function __construct(
+        private readonly UpdateSleepValidator $validator,
+        private readonly LoggedPlayerResolverInterface $loggedPlayerResolver,
+        private readonly SleepDailyEntryProviderGateway $sleepProvider,
+        private readonly SleepDailyEntryPersisterGateway $sleepPersister,
+    ) {
+    }
+
+    /**
+     * @param UpdateSleepDataInput $input
+     */
+    public function execute(DataInputInterface $input): SleepDailyEntryDataOutput
+    {
+        $player = $this->loggedPlayerResolver->getLoggedPlayer();
+        $this->validator->validate($player, $input);
+
+        $entry = $this->sleepProvider->findOneByIdForPlayerAction($input->id, $player);
+        if (null === $entry) {
+            throw new EntityNotFoundException(sprintf('No sleep entry "%s" for this player.', $input->id));
+        }
+
+        $entry->bedAt = $input->bedAt;
+        $entry->wakeAt = $input->wakeAt;
+        $entry->date = $input->wakeAt->setTime(0, 0, 0);
+        $entry->quality = $input->quality;
+
+        $this->sleepPersister->update($entry);
+
+        return new SleepDailyEntryDataOutput(
+            $entry->id,
+            $entry->date->format(\DateTimeInterface::ATOM),
+            $entry->bedAt->format(\DateTimeInterface::ATOM),
+            $entry->wakeAt->format(\DateTimeInterface::ATOM),
+            $entry->durationMinutes,
+            $entry->quality,
+        );
+    }
+}
