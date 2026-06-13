@@ -33,12 +33,14 @@ final class UpsertStepsForDayUseCaseTest extends KernelTestCase
 
         self::assertNotEmpty($output->id);
         self::assertSame(8500, $output->count);
+        self::assertSame(5000, $output->target, 'target is snapshotted from the player default at create');
         self::assertSame((new \DateTimeImmutable('2026-05-07'))->setTime(0, 0, 0)->format(\DateTimeInterface::ATOM), $output->date);
 
         $repo = new StepsDailyEntryRepository($container->get(ManagerRegistry::class));
         $persisted = $repo->findOneByPlayerAndDate($player, new \DateTimeImmutable('2026-05-07'));
         self::assertNotNull($persisted);
         self::assertSame(8500, $persisted->count);
+        self::assertSame(5000, $persisted->target);
     }
 
     public function testItUpdatesAnExistingEntryForTheSameDay(): void

@@ -163,3 +163,61 @@ export interface RemoveExerciseDataOutput {
 export interface RemoveExerciseSetDataOutput {
   exerciseSetId: string;
 }
+
+// --- Tracking sub-domain ---
+
+export interface StepsDailyEntryDataOutput {
+  id: string;
+  date: string;
+  count: number;
+  target: number;
+}
+
+export interface DeleteStepsForDayDataOutput {
+  deletedDate: string;
+}
+
+export interface PlayerStepsTargetDataOutput {
+  dailyStepsTarget: number;
+}
+
+export interface HydrationEntryDataOutput {
+  id: string;
+  loggedAt: string;
+  valueMl: number;
+}
+
+export interface HydrationDayDataOutput {
+  date: string;
+  targetMl: number;
+  amountConsumedMl: number;
+  entries: HydrationEntryDataOutput[];
+}
+
+export interface PlayerHydrationTargetDataOutput {
+  dailyHydrationTargetMl: number;
+}
+
+export interface SleepDailyEntryDataOutput {
+  id: string;
+  date: string;
+  bedAt: string;
+  wakeAt: string;
+  durationMinutes: number;
+  quality: number | null;
+}
+
+export interface DeleteSleepDataOutput {
+  deletedId: string;
+}
+
+export interface WeightEntryDataOutput {
+  id: string;
+  date: string;
+  loggedAt: string;
+  valueGrams: number;
+}
+
+export interface DeleteWeightDataOutput {
+  deletedId: string;
+}

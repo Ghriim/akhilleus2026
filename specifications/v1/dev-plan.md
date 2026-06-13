@@ -2,8 +2,8 @@
 
 ## Resume pointer (last session snapshot)
 
-- **Last completed step**: 2.4 — **Sleep sub-batch** (4 UseCases + 3 validators + DTOs + tests). Phases 0 and 1 fully `[x]`; Phase 2 is at `[~]` with 2.1 → 2.3 fully `[x]` and 2.4 partial (Steps `[x]`, Hydration `[x]`, Sleep `[x]`, Weight still `[ ]`). `composer qa` last green at **331 tests / 669 assertions** (+27 tests / +45 assertions vs the Hydration baseline). cs ✅ / stan ✅ / phpunit ✅, all run via the `php` container on PHP 8.4.
-- **Next pending step**: **2.4 — Weight sub-batch** (4 UseCases: `LogWeightUseCase`, `UpdateWeightUseCase`, `DeleteWeightUseCase`, `ListWeightForRangeUseCase`). Last sub-domain of 2.4 — after it, 2.4 flips to `[x]` and the next step is **2.5 Player REST controllers** for all four metrics. Same per-batch cadence (one sub-domain per pause). **Note on running the suite in-container**: the integration tests need MySQL; the host's `127.0.0.1` is not reachable from inside the `php` container, so run with `docker compose run --rm -e DATABASE_URL="mysql://app:!ChangeMe!@database:3306/akhilleus?serverVersion=8.4&charset=utf8mb4" php vendor/bin/phpunit` (Flex appends the `_test` suffix). `composer qa` from the host works too if host PHP has `mbstring` (host 8.4 currently lacks it — see the pre-commit hook now running in-container).
+- **Last completed step**: post-2.6 **steps daily-target addition** (user request) — full hydration-target mirror for steps: `Player.dailyStepsTarget` (default 5000) + `StepsDailyEntry.target` (per-day snapshot), `GetTodaySteps`/`UpdateStepsDailyTarget`/`UpdatePlayerDailyStepsTarget` UCs + validators + 3 controller routes + `StepsCard` rewrite with progress bar & editable goal. Migration `Version20260613111300` applied (dev+test), `schema:validate` ✅. See the "Steps daily target" deviation block. Backend `composer qa` green at **368 tests / 735 assertions**; `frontend/website` typecheck/lint/build green. Phase 2: 2.1 → 2.5 `[x]`, 2.6 `[~]` (code done incl. steps target, browser check pending), 2.7 `[~]` (migrations applied, HTML regen pending), 2.8 `[ ]`.
+- **Next pending step**: **2.7 — Schema HTML regen** (the 5 tracking tables + `player.daily_hydration_target_ml` migration was already applied in 2.1, so only `specifications/database-schema.html` needs regenerating). Then **2.8 — verification** (unit/integration coverage already in place from 2.4; remaining is the cURL/frontend smoke + final `composer qa` + both-frontends green). **Note on running the suite in-container**: the integration tests need MySQL; the host's `127.0.0.1` is not reachable from inside the `php` container, so run with `docker compose run --rm -e DATABASE_URL="mysql://app:!ChangeMe!@database:3306/akhilleus?serverVersion=8.4&charset=utf8mb4" php vendor/bin/phpunit` (Flex appends the `_test` suffix). Frontend checks run via `docker compose exec -T frontend-website sh -c "npm run typecheck|lint|build"`.
 - **Tooling at the user's disposal in any new session** (added during the v1 work):
   - `composer dev:up` — boots Docker (database + frontend-admin + frontend-website with healthcheck wait), generates the JWT keypair if missing, applies pending dev-DB migrations, starts `symfony serve -d`. Idempotent. Does not touch fixtures.
   - `composer setup:test-db` — provisions `akhilleus_test` + grants for the `app` MySQL user. Run after a fresh `docker compose down -v` or on a brand-new machine.
@@ -81,6 +81,20 @@ The phases are ordered to respect data dependencies:
 - **`UpdateSleep` duplicate guard excludes the entry itself**: the validator queries `findOneByPlayerAndDate(player, newDate)` and only flags a violation when the found row's id differs from `input->id` — so keeping a night on its own date, or editing its times without moving the date, never trips the `(player, date)` unique constraint.
 - **Return shape = the single `SleepDailyEntryDataOutput`** (no "day view" wrapper) since sleep is one record per night — mirrors the Steps entity-return pattern, unlike Hydration's day view (which aggregated multiple entries). `DeleteSleep` returns `DeleteSleepDataOutput {deletedId}` (delete is keyed by id, not by date as in Steps).
 - **`date` = `wakeAt->setTime(0,0,0)`** (the wake-up day), computed in the UseCase and re-applied on update; `durationMinutes` stays auto-derived by `SleepDurationEvaluator` from the persister. No future-date guard on `wakeAt` (consistent with the Steps "no arbitrary date caps" stance).
+
+### Weight UseCases (2.4 sub-batch — fourth, closes 2.4)
+- **Structurally a clone of Sleep** (one entry per day, `(player, date)` unique, gateway-scoped 404 on update/delete, two-arg `validate(player, input)` on `Log`/`Update` injecting `WeightEntryProviderGateway`, standalone `ListWeightForRangeValidator`, single-entity returns + `DeleteWeightDataOutput {deletedId}`). Same deviations as the Sleep block apply.
+- **Validator rule = `valueGrams > 0` + the `(player, date)` uniqueness guard** (Update excludes self by id). The dev-plan only spelled out the duplicate rule; the positive-value guard was added for parity with the other metrics (a zero/negative weight is meaningless) — no arbitrary upper bound.
+- **`ListWeightForRange` widens the closing bound to end-of-day.** Unlike Steps/Sleep (whose range gateways filter on the `date` column), `WeightEntryRepository::findAllByPlayerForRange` filters on `loggedAt` (a datetime, to feed the progression chart in time order). So the UseCase passes `from->setTime(0,0,0)` and `to->setTime(23,59,59,999999)` to keep the range inclusive of an entry logged at any time on the closing date (covered by a dedicated test). `date` stays auto-derived from `loggedAt` by `WeightEntryPersister` on create/update — the UseCase doesn't set it.
+
+### Steps daily target (post-2.6 addition — mirrors the hydration target)
+Added on user request (2026-06-13): a daily step **goal**, replicating the hydration target mechanism end-to-end. Spans 2.4/2.5/2.6 retroactively (those boxes stay `[x]`; this is an additive extension, not a reopen).
+- **Two levels, like hydration**: `Player.dailyStepsTarget` (global default **5000**, editable) + `StepsDailyEntry.target` (snapshotted from the player default at create time, editable per day). Migration `Version20260613111300` (both columns `INT DEFAULT 5000 NOT NULL`, existing rows backfilled).
+- **`StepsDailyEntryDataModel` constructor gained a required `int $target`** (4th arg) — same shape as `HydrationDailySummary` taking `targetMl`. The two `UpsertStepsForDay` create-path callers + the new UCs snapshot `player->dailyStepsTarget`; `StepsDailyEntryDataOutput` gained `target`.
+- **New UCs** under `UseCase/Player/Tracking/Steps/`: `GetTodayStepsUseCase` (lazy-creates today's entry with `count=0`, `target=player default` — mirrors `GetTodayHydration`, a new read-creates-row case for steps), `UpdateStepsDailyTargetUseCase` (today's per-day target, lazy-create), `UpdatePlayerDailyStepsTargetUseCase` (global default). Two new validators (`target > 0`).
+- **Controller**: `StepsPlayerController` gained `GET /steps/today`, `PUT /steps/today/target`, `PUT /steps/target`. To stop the static `today`/`target` segments being swallowed by `PUT/DELETE /steps/{date}`, the `{date}` routes now carry a `requirements: ['date' => '\d{4}-\d{2}-\d{2}']` ISO-date constraint.
+- **Frontend**: `StepsCard` rewritten to mirror `HydrationCard` (progress bar `count / target`, inline-editable day target ✎); it now reads via `getTodaySteps` (server-side "today", lazy-created) instead of the `[today,today]` range, and derives the upsert date from the response (`date.slice(0,10)`) so the count write targets the same day the server resolved. `api/types.ts`, `api/endpoints/tracking.ts`, `hooks/tracking/` extended accordingly.
+- **`database-schema.html`**: not updated here — folded into the still-pending 2.7 wholesale regen (the doc is missing all Phase-2 tables; see 2.7).
 
 ### Tracking DataModels (2.1)
 - **`WeightEntryDataModel.date` is derived in the constructor**, not exclusively in the persister, breaking the v0 "derived properties live on the model and are computed in the persister" rule. Reason: `date` is a non-nullable `DATE_IMMUTABLE` column used in the unique constraint `(player_id, date)`. PHP requires it to be initialised before persist, and `\DateTimeImmutable` has no `''`-equivalent default value (unlike `string $slug = ''` on `MovementDataModel`, which the persister overwrites). Cleanest accommodation: `$this->date = $loggedAt->setTime(0, 0, 0)` in the constructor — one-line, no logic, mirrors the persister's behaviour. The persister (Phase 2.3) will still recompute on update so `loggedAt` mutations stay in sync.
@@ -211,7 +225,7 @@ Goal: `Steps`, `Hydration`, `Sleep`, `Weight` end-to-end (DataModel → use case
   - `HydrationEntryPersister`: **injects `HydrationDailySummaryPersisterGateway`**. After every entry create / update / delete, runs `HydrationAggregateEvaluator::recompute` on the parent summary and persists the new `amountConsumedMl` via the summary persister. Manually keeps the `summary->entries` collection in sync (`->add()` after create, `->removeElement()` before delete) — same identity-map trap as v0's `AddMovementToWorkoutUseCase` (Doctrine returns the cached parent on subsequent calls, the inverse collection is never auto-refreshed).
 - [x] No new tests in this step — repositories and persisters are exercised via the Phase 2.4 / 2.8 use case integration tests. PHPStan + CS already enforce the structural correctness (`composer qa` ✅, still at 260 / 537).
 
-### [~] 2.4 Player UseCases per metric
+### [x] 2.4 Player UseCases per metric
 All under `UseCase/Player/Tracking/...`, extending `AbstractLoggedPlayerUseCase`. Validators extend `AbstractLoggedPlayerValidator` (or are standalone for List shapes). Player-edit validators implement `assertPlayerOwns` against the `OwnedByPlayerInterface` virtual hook on each tracking DataModel (where applicable: `HydrationEntry::$player` virtual hook → `$this->summary->player`).
 
 - [x] **Steps** (`UseCase/Player/Tracking/Steps/`):
@@ -230,34 +244,35 @@ All under `UseCase/Player/Tracking/...`, extending `AbstractLoggedPlayerUseCase`
   - [x] `UpdateSleepUseCase` — same rules + ownership.
   - [x] `DeleteSleepUseCase`.
   - [x] `ListSleepForRangeUseCase`.
-- [ ] **Weight** (`UseCase/Player/Tracking/Weight/`):
-  - [ ] `LogWeightUseCase` — `(loggedAt, valueGrams)`. Validator rejects duplicate (`player`, `date(loggedAt)`).
-  - [ ] `UpdateWeightUseCase`.
-  - [ ] `DeleteWeightUseCase`.
-  - [ ] `ListWeightForRangeUseCase` (powers the future progression graph).
+- [x] **Weight** (`UseCase/Player/Tracking/Weight/`):
+  - [x] `LogWeightUseCase` — `(loggedAt, valueGrams)`. Validator rejects duplicate (`player`, `date(loggedAt)`).
+  - [x] `UpdateWeightUseCase`.
+  - [x] `DeleteWeightUseCase`.
+  - [x] `ListWeightForRangeUseCase` (powers the future progression graph).
 
-### [ ] 2.5 Player REST controllers
-Under `Infrastructure/Controller/Player/Tracking/`. Match the `WorkoutPlayerController` style (`POST` for actions, `GET` for reads, `PUT` for updates, `DELETE` for deletes). All routes under `/api/player/tracking/*`, gated by `ROLE_PLAYER`.
-- [ ] `StepsPlayerController` — `PUT /api/player/tracking/steps/{date}` (upsert), `DELETE`, `GET /api/player/tracking/steps?from=…&to=…`.
-- [ ] `HydrationPlayerController` — `GET /today` (full summary + entries), `PUT /today/target` (override), `PUT /target` (player global), `POST /entries`, `PUT /entries/{id}`, `DELETE /entries/{id}`.
-- [ ] `SleepPlayerController` — `POST /api/player/tracking/sleep`, `PUT /{id}`, `DELETE /{id}`, `GET ?from=…&to=…`.
-- [ ] `WeightPlayerController` — `POST /api/player/tracking/weight`, `PUT /{id}`, `DELETE /{id}`, `GET ?from=…&to=…`.
-- [ ] DataOutputs use the date-string convention (`?->format(\DateTimeInterface::ATOM)`).
+### [x] 2.5 Player REST controllers
+Under `Infrastructure/Controller/Player/Tracking/`. Match the `WorkoutPlayerController` style (`POST` for actions, `GET` for reads, `PUT` for updates, `DELETE` for deletes). All routes under `/api/player/tracking/*`, gated by `ROLE_PLAYER`. 17 routes total, all attribute-based, auto-discovered, confirmed via `debug:router`.
+- [x] `StepsPlayerController` — `PUT /api/player/tracking/steps/{date}` (upsert), `DELETE /api/player/tracking/steps/{date}`, `GET /api/player/tracking/steps?from=…&to=…`.
+- [x] `HydrationPlayerController` — `GET /hydration/today`, `PUT /hydration/today/target`, `PUT /hydration/target` (player global), `POST /hydration/entries`, `PUT /hydration/entries/{id}`, `DELETE /hydration/entries/{id}`.
+- [x] `SleepPlayerController` — `POST /api/player/tracking/sleep`, `PUT /sleep/{id}`, `DELETE /sleep/{id}`, `GET /sleep?from=…&to=…`.
+- [x] `WeightPlayerController` — `POST /api/player/tracking/weight`, `PUT /weight/{id}`, `DELETE /weight/{id}`, `GET /weight?from=…&to=…`.
+- [x] DataOutputs use the date-string convention (`?->format(\DateTimeInterface::ATOM)`) — already enforced at the UseCase layer (2.4).
 
-### [ ] 2.6 Player frontend: dashboard tracking widget
-- [ ] `frontend/website/src/features/tracking/` — new feature folder.
-- [ ] `<TrackingWidget />` — composite. Four sub-cards stacked or grouped: `<StepsCard />`, `<HydrationCard />`, `<SleepCard />`, `<WeightCard />`. Each shows the day's value + an inline editor (no modal — cheap to edit on the spot).
-- [ ] `<HydrationCard />` shows the progress bar `amountConsumedMl / targetMl` + a "+ Add entry" affordance and a small list of today's entries with Trash icons (reuse `<button class="icon-button --danger">` from the existing icon kit).
-- [ ] `<StepsCard />` — single int input (count for today).
-- [ ] `<SleepCard />` — `bedAt` + `wakeAt` + `quality` (1–5 emoji selector). Shows last night's record if any.
-- [ ] `<WeightCard />` — single int input in kg (UI), converted to grams at the boundary (`* 1000`).
-- [ ] Mount the `<TrackingWidget />` on the dashboard (`/`). Layout: above or beside the existing "Next Workout" widget — TBD by the user during implementation; default to a vertical stack.
-- [ ] All styling stays theme-agnostic (CSS variables only). Reuse existing `.card`, `.icon-button`, `.status-badge` patterns.
+### [x] 2.6 Player frontend: dashboard tracking widget
+- [x] `frontend/website/src/components/tracking/` — new component folder. **Deviation**: placed under `components/tracking/` (mirrors the on-disk `components/workout/`), not `features/tracking/` — the website has no `features/` dir (pages live in `pages/`, shared components in `components/<domain>/`). Data layer added at `api/endpoints/tracking.ts`, `api/types.ts` (Tracking DTOs), `hooks/tracking/{keys,useTracking}.ts` (TanStack Query, mutations invalidate `trackingKeys.all`).
+- [x] `<TrackingWidget />` — composite. **Responsive 2×2 grid** (`grid-cols-1 sm:grid-cols-2`, user-chosen) of `<StepsCard />`, `<HydrationCard />`, `<SleepCard />`, `<WeightCard />`. Each shows the day's value + an inline editor (no modal).
+- [x] `<HydrationCard />` — progress bar `amountConsumedMl / targetMl` + a "+ Ajouter" affordance (ml input) + a list of today's entries each with a "Supprimer" button. Inline editable day-target (✎). Uses `GET /hydration/today` (server-side "today", lazy-created).
+- [x] `<StepsCard />` — single int input for today's count (reads via `listSteps(today, today)`, writes via `upsertSteps`).
+- [x] `<SleepCard />` — `bedAt` + `wakeAt` (`datetime-local`) + `quality` (1–5 emoji selector). Shows last night's record if any (duration + emoji + bed→wake times). Logs if no record for the day, updates otherwise.
+- [x] `<WeightCard />` — int/decimal input in kg (UI), converted to grams at the boundary (`Math.round(kg * 1000)`). Logs-or-updates today's entry.
+- [x] Mounted on the dashboard (`/`, `pages/workout/DashboardPage.tsx`) **above the upcoming-workouts list** (user-chosen), under the `PageHeader`.
+- [x] All styling theme-agnostic (Tailwind v4 CSS-variable utilities only). Reused the `ui` kit (`Card`/`Button`/`Input`/`Label`/`Spinner`/`Alert`). **Note**: the website has no `icon-button` kit (that note in `CLAUDE.md` describes a kit that isn't present on disk here) — action buttons follow the actual on-disk pattern (`<Button variant="ghost" size="sm">` text buttons, as in `SetRow`).
+- [x] `npm run typecheck && lint && build` green on `frontend/website` (lint: 0 errors; 4 pre-existing warnings in AuthContext/SetForm, none from the new files).
+- [~] **Manual browser validation pending by the user** (Vite dev server on the `frontend-website` container). Backend HTTP path already cURL-smoked in 2.5.
 
-### [ ] 2.7 Migration + schema HTML
-- [ ] `php bin/console make:migration` → 5 new tables + 1 ALTER on `player_data_model` (`daily_hydration_target_ml INT NOT NULL DEFAULT 1000`).
-- [ ] Apply on dev + test DBs.
-- [ ] Regenerate `specifications/database-schema.html`.
+### [~] 2.7 Migration + schema HTML
+- [x] **Migrations applied** (dev + test): `Version20260505153556` (5 tracking tables + `player.daily_hydration_target_ml`, done in 2.1) and `Version20260613111300` (`player.daily_steps_target` global default 5000 + `steps_daily_entry.target` per-day snapshot, backfilled to 5000). `doctrine:schema:validate` ✅ in sync.
+- [ ] **Regenerate `specifications/database-schema.html`** — STILL PENDING and now owes the whole Phase-2 surface: the 5 tracking tables (`steps_daily_entry`, `hydration_daily_summary`, `hydration_entry`, `sleep_daily_entry`, `weight_entry`), plus on `player` the `daily_hydration_target_ml` (default 1000) **and** `daily_steps_target` (default 5000) columns, plus on `steps_daily_entry` the `target` column (default 5000). The HTML is hand-maintained (SVG diagram + per-table blocks) and was never refreshed during Phase 2, so this is a single wholesale regen, not incremental edits.
 
 ### [ ] 2.8 Verification
 - [ ] **Unit tests**: every Validator under `tests/Unit/Domain/Validator/Player/Tracking/...`. Cover happy / each rule / accumulation / `assertPlayerOwns` for player-edit shapes.

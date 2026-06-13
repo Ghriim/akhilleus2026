@@ -30,6 +30,13 @@ class StepsDailyEntryDataModel implements DataModelInterface, OwnedByPlayerInter
     #[ORM\Column(type: Types::INTEGER)]
     public int $count;
 
+    /**
+     * Daily step goal, snapshotted from the player's `dailyStepsTarget` at create time, then
+     * editable per-day. Editing the player's global default afterwards does not change this value.
+     */
+    #[ORM\Column(type: Types::INTEGER, options: ['default' => 5000])]
+    public int $target;
+
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     public \DateTimeImmutable $createdAt;
 
@@ -40,9 +47,11 @@ class StepsDailyEntryDataModel implements DataModelInterface, OwnedByPlayerInter
         PlayerDataModel $player,
         \DateTimeImmutable $date,
         int $count,
+        int $target,
     ) {
         $this->player = $player;
         $this->date = $date;
         $this->count = $count;
+        $this->target = $target;
     }
 }

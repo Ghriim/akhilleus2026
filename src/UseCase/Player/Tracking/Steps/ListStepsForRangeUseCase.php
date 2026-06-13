@@ -43,6 +43,7 @@ final class ListStepsForRangeUseCase extends AbstractLoggedPlayerUseCase
                 $entry->id,
                 $entry->date->format(\DateTimeInterface::ATOM),
                 $entry->count,
+                $entry->target,
             ),
             $entries,
         );

@@ -34,6 +34,15 @@ class PlayerDataModel implements DataModelInterface
     #[ORM\Column(type: Types::INTEGER, options: ['default' => 1000])]
     public int $dailyHydrationTargetMl = 1000;
 
+    /**
+     * Player-wide default daily step goal. Initialised to 5000 for new players (and backfilled
+     * to 5000 on existing rows by the v1 migration). Can be edited by the player. Each
+     * `StepsDailyEntry` snapshots this value at create time into its own `target` column, so
+     * editing the global default afterwards does not retroactively change past days' goals.
+     */
+    #[ORM\Column(type: Types::INTEGER, options: ['default' => 5000])]
+    public int $dailyStepsTarget = 5000;
+
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     public \DateTimeImmutable $createdAt;
 
