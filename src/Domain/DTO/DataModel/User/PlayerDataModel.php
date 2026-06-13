@@ -43,6 +43,22 @@ class PlayerDataModel implements DataModelInterface
     #[ORM\Column(type: Types::INTEGER, options: ['default' => 5000])]
     public int $dailyStepsTarget = 5000;
 
+    /** Current player level (≥ 1). Bumped only by the nightly leveling cron (Phase 5/6). */
+    #[ORM\Column(type: Types::INTEGER, options: ['default' => 1])]
+    public int $level = 1;
+
+    /** Experience accumulated toward the next level (0 ≤ currentXp < xpToNextLevel). */
+    #[ORM\Column(type: Types::INTEGER, options: ['default' => 0])]
+    public int $currentXp = 0;
+
+    /**
+     * Marginal XP cost of the next level. Recomputed at registration by `LevelingCalculator`
+     * (Phase 3.3) and on each level-up. Defaults to 4000 (= 1000×2²+0, the seeded bracket #1
+     * cost for level 2) so existing rows backfill to a playable value.
+     */
+    #[ORM\Column(type: Types::INTEGER, options: ['default' => 4000])]
+    public int $xpToNextLevel = 4000;
+
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     public \DateTimeImmutable $createdAt;
 

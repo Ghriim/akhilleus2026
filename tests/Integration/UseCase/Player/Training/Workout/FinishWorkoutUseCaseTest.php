@@ -17,11 +17,15 @@ use App\Domain\Exception\ValidationException;
 use App\Domain\Gateway\Persister\Training\Movement\MovementPersisterGateway;
 use App\Domain\Gateway\Persister\Training\Muscle\MusclePersisterGateway;
 use App\Domain\Gateway\Persister\User\PlayerPersisterGateway;
+use App\Domain\Gateway\Provider\Leveling\EarnedExperience\EarnedExperienceProviderGateway;
+use App\Domain\Gateway\Provider\Leveling\LevelingConfig\LevelingConfigProviderGateway;
+use App\Domain\Registry\Leveling\EarnedExperience\EarnedExperienceSourceTypeRegistry;
 use App\Domain\Registry\Training\Workout\PersonalBestTypeRegistry;
 use App\Domain\Registry\Training\Workout\WorkoutStatusRegistry;
 use App\Domain\Security\LoggedPlayerResolverInterface;
 use App\Domain\Service\PersonalBestEvaluator;
 use App\Domain\Validator\Player\Training\Workout\FinishWorkoutValidator;
+use App\Infrastructure\Persister\Leveling\EarnedExperience\EarnedExperiencePersister;
 use App\Infrastructure\Persister\Training\Workout\ExercisePersister;
 use App\Infrastructure\Persister\Training\Workout\ExerciseSetPersister;
 use App\Infrastructure\Persister\Training\Workout\PersonalBestPersister;
@@ -50,6 +54,8 @@ final class FinishWorkoutUseCaseTest extends KernelTestCase
 
         self::assertSame(WorkoutStatusRegistry::COMPLETED, $output->workout->status);
         self::assertNotNull($output->workout->dateEnd);
+        // dateStart = now-1h, dateEnd = now → 60 min × 50 xpPerWorkoutMinute (seeded singleton) = 3000 XP.
+        self::assertSame(3000, $output->earnedXp);
         // Five PBs expected for a strength movement: weight, reps, vol_one_set, vol_workout — and that's it (no duration/distance/speed).
         $byType = [];
         foreach ($output->newPersonalBests as $pb) {
@@ -121,6 +127,27 @@ final class FinishWorkoutUseCaseTest extends KernelTestCase
         self::assertNotNull($afterSecond);
         self::assertSame($originalId, $afterSecond->id, 'Existing PB row must be updated in place, not duplicated.');
         self::assertSame('80.0000', $afterSecond->value);
+    }
+
+    public function testItPersistsAnUnlockedEarnedExperienceForTheCompletedWorkout(): void
+    {
+        self::bootKernel();
+        $container = self::getContainer();
+        $player = self::createTestPlayer($container, 'finish-xp');
+        $movement = self::createTestMovement($container, 'finish-xp-mvt', tracksRepetitions: true, tracksWeight: true);
+        $workout = self::seedInProgressWorkoutWithSets($container, $player, $movement, [['reps' => 10, 'weight' => '50.00']]);
+
+        self::buildUseCase($container, $player)->execute(new FinishWorkoutDataInput($workout->id));
+
+        $earnedProvider = $container->get(EarnedExperienceProviderGateway::class);
+        $earned = $earnedProvider->findOneBySourceTypeAndId(EarnedExperienceSourceTypeRegistry::WORKOUT, $workout->id);
+        self::assertNotNull($earned);
+        self::assertSame(3000, $earned->amount);
+        self::assertSame(EarnedExperienceSourceTypeRegistry::WORKOUT, $earned->sourceType);
+        self::assertSame($workout->id, $earned->sourceId);
+        self::assertSame($player->id, $earned->player->id);
+        self::assertFalse($earned->isLocked, 'A freshly granted entry stays unlocked until the nightly cron.');
+        self::assertSame('Workout: '.$workout->name, $earned->label);
     }
 
     public function testItRejectsAWorkoutWithIncompleteSets(): void
@@ -273,6 +300,8 @@ final class FinishWorkoutUseCaseTest extends KernelTestCase
             new WorkoutPersister($em, $clock),
             new PersonalBestPersister($em, $clock),
             new PersonalBestEvaluator($pbRepo),
+            $container->get(LevelingConfigProviderGateway::class),
+            new EarnedExperiencePersister($em, $clock),
             $clock,
         );
     }

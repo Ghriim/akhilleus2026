@@ -19,6 +19,7 @@ use App\Domain\DTO\DataModel\User\PlayerDataModel;
 use App\Domain\Gateway\Persister\Training\Movement\MovementPersisterGateway;
 use App\Domain\Gateway\Persister\Training\Muscle\MusclePersisterGateway;
 use App\Domain\Gateway\Persister\User\PlayerPersisterGateway;
+use App\Domain\Gateway\Provider\Leveling\LevelingConfig\LevelingConfigProviderGateway;
 use App\Domain\Registry\Training\Workout\PersonalBestTypeRegistry;
 use App\Domain\Registry\Training\Workout\WorkoutStatusRegistry;
 use App\Domain\Security\LoggedPlayerResolverInterface;
@@ -29,6 +30,7 @@ use App\Domain\Validator\Player\Training\ExerciseSet\UpdateExerciseSetAchievedVa
 use App\Domain\Validator\Player\Training\Workout\FinishWorkoutValidator;
 use App\Domain\Validator\Player\Training\Workout\ListWorkoutHistoryValidator;
 use App\Domain\Validator\Player\Training\Workout\StartEmptyWorkoutValidator;
+use App\Infrastructure\Persister\Leveling\EarnedExperience\EarnedExperiencePersister;
 use App\Infrastructure\Persister\Training\Workout\ExercisePersister;
 use App\Infrastructure\Persister\Training\Workout\ExerciseSetPersister;
 use App\Infrastructure\Persister\Training\Workout\PersonalBestPersister;
@@ -219,6 +221,8 @@ final class PlayerWorkoutLifecycleTest extends KernelTestCase
                 $workoutPersister,
                 $personalBestPersister,
                 new PersonalBestEvaluator($personalBestRepo),
+                $container->get(LevelingConfigProviderGateway::class),
+                new EarnedExperiencePersister($em, $clock),
                 $clock,
             ),
             listHistory: new ListWorkoutHistoryUseCase(

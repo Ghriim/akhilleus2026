@@ -42,6 +42,14 @@ final class RegisterPlayerUseCaseTest extends KernelTestCase
         self::assertNotNull($player);
         self::assertSame($output->playerId, $player->id);
         self::assertSame('Happy Hero', $player->displayName);
+
+        // Leveling / tracking baseline set by PlayerPersister::create at registration.
+        self::assertSame(1, $player->level);
+        self::assertSame(0, $player->currentXp);
+        // marginalCostFor(2) = 1000 × 2² + 0 on bracket #1 of the curve seeded by
+        // Version20260613120000 (present in the migrated test DB).
+        self::assertSame(4000, $player->xpToNextLevel);
+        self::assertSame(1000, $player->dailyHydrationTargetMl);
     }
 
     public function testItRejectsAnInvalidEmailFormat(): void

@@ -16,6 +16,7 @@
             --null: #f6f6f6;
             --lane-training: #fbf3e6;
             --lane-user: #eef2fb;
+            --lane-tracking: #eaf6f0;
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -82,6 +83,7 @@
         .schema-diagram .lane { stroke: var(--rule); stroke-width: 1; }
         .schema-diagram .lane-training { fill: var(--lane-training); }
         .schema-diagram .lane-user { fill: var(--lane-user); }
+        .schema-diagram .lane-tracking { fill: var(--lane-tracking); }
         .schema-diagram .lane-title {
             font-size: 12px;
             fill: var(--muted);
@@ -169,13 +171,18 @@
     <li><a href="#equipment"><code>equipment</code></a> — admin-managed reference (barbell, dumbbell, …)</li>
     <li><a href="#exercise"><code>exercise</code></a> — one movement inside a workout, ordered by position</li>
     <li><a href="#exercise_set"><code>exercise_set</code></a> — one set inside an exercise, with planned/achieved metrics</li>
+    <li><a href="#hydration_daily_summary"><code>hydration_daily_summary</code></a> — one row per player per day; snapshotted target + summed intake</li>
+    <li><a href="#hydration_entry"><code>hydration_entry</code></a> — a single drink logged against a day's hydration summary</li>
     <li><a href="#movement"><code>movement</code></a> — admin-managed exercise definition (slug, label, main muscle, tracking flags)</li>
     <li><a href="#movement_equipment"><code>movement_equipment</code></a> — M:N join, equipment options per movement</li>
     <li><a href="#movement_secondary_muscle"><code>movement_secondary_muscle</code></a> — M:N join, secondary muscles per movement</li>
     <li><a href="#muscle"><code>muscle</code></a> — admin-managed reference (biceps, triceps, …)</li>
     <li><a href="#personal_best"><code>personal_best</code></a> — current best for a (player, movement, type) tuple</li>
     <li><a href="#player"><code>player</code></a> — player profile attached 1:1 to a user</li>
+    <li><a href="#sleep_daily_entry"><code>sleep_daily_entry</code></a> — one sleep record per player per night (wake-up date)</li>
+    <li><a href="#steps_daily_entry"><code>steps_daily_entry</code></a> — one step count + goal per player per day</li>
     <li><a href="#user"><code>user</code></a> — accounts (auth credentials, roles)</li>
+    <li><a href="#weight_entry"><code>weight_entry</code></a> — one body-weight measurement per player per day</li>
     <li><a href="#workout"><code>workout</code></a> — a planned, in-progress, completed or canceled training session</li>
 </ul>
 
@@ -185,7 +192,7 @@
     <span class="swatch swatch-opt"></span> optional / nullable FK
     <span class="swatch swatch-mtm"></span> many-to-many (via join table)
 </p>
-<svg class="schema-diagram" viewBox="0 0 1100 600" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Akhilleus database schema diagram">
+<svg class="schema-diagram" viewBox="0 0 1100 740" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Akhilleus database schema diagram">
     <defs>
         <marker id="arrow-fk" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
             <path d="M 0 0 L 9 3 L 0 6 z" class="arrow-fk" />
@@ -201,9 +208,11 @@
     <!-- Top-level zones, mirroring src/Domain/DTO/DataModel/{Training,User} -->
     <rect x="20" y="40" width="1060" height="420" rx="10" class="lane lane-training" />
     <rect x="20" y="480" width="1060" height="100" rx="10" class="lane lane-user" />
+    <rect x="20" y="600" width="1060" height="120" rx="10" class="lane lane-tracking" />
 
     <text x="40" y="32" class="lane-title">Training</text>
     <text x="40" y="472" class="lane-title">User</text>
+    <text x="40" y="592" class="lane-title">Tracking</text>
 
     <!-- Training: row 1 - Equipment / Movement / Muscle -->
     <g class="entity">
@@ -254,6 +263,36 @@
         <text x="550" y="544" text-anchor="middle" class="entity-name">player</text>
     </g>
 
+    <!-- Tracking zone: per-player daily metrics (all N:1 to player; hydration_entry N:1 to its summary) -->
+    <g class="entity">
+        <rect x="45" y="625" width="190" height="60" rx="6" />
+        <text x="140" y="651" text-anchor="middle" class="entity-name">steps_daily_entry</text>
+        <text x="140" y="670" text-anchor="middle" class="entity-meta">FK: player</text>
+    </g>
+    <g class="entity">
+        <rect x="250" y="625" width="190" height="60" rx="6" />
+        <text x="345" y="651" text-anchor="middle" class="entity-name">hydration_daily_summary</text>
+        <text x="345" y="670" text-anchor="middle" class="entity-meta">FK: player</text>
+    </g>
+    <g class="entity">
+        <rect x="455" y="625" width="190" height="60" rx="6" />
+        <text x="550" y="651" text-anchor="middle" class="entity-name">hydration_entry</text>
+        <text x="550" y="670" text-anchor="middle" class="entity-meta">FK: summary</text>
+    </g>
+    <g class="entity">
+        <rect x="660" y="625" width="190" height="60" rx="6" />
+        <text x="755" y="651" text-anchor="middle" class="entity-name">sleep_daily_entry</text>
+        <text x="755" y="670" text-anchor="middle" class="entity-meta">FK: player</text>
+    </g>
+    <g class="entity">
+        <rect x="865" y="625" width="190" height="60" rx="6" />
+        <text x="960" y="651" text-anchor="middle" class="entity-name">weight_entry</text>
+        <text x="960" y="670" text-anchor="middle" class="entity-meta">FK: player</text>
+    </g>
+
+    <!-- hydration_entry -> hydration_daily_summary (FK on entry) -->
+    <line x1="455" y1="655" x2="440" y2="655" class="rel-fk" marker-end="url(#arrow-fk)" />
+
     <!-- Training row 1 relationships -->
     <line x1="475" y1="117" x2="265" y2="117" class="rel-fk" marker-end="url(#arrow-fk)" />
     <text x="370" y="111" class="rel-label" text-anchor="middle">main muscle (N:1)</text>
@@ -301,7 +340,7 @@
     <text x="460" y="530" class="rel-label" text-anchor="middle">1:1</text>
 </svg>
 <p class="meta">
-    The <code>movement → personal_best</code> link (one PB per movement, per player, per type) is shown by the FK list inside the <code>personal_best</code> box rather than a separate arrow, to keep the diagram readable.
+    The <code>movement → personal_best</code> link (one PB per movement, per player, per type) is shown by the FK list inside the <code>personal_best</code> box rather than a separate arrow, to keep the diagram readable. Likewise, every <strong>Tracking</strong> entity is N:1 to <code>player</code> (one row per player per day, except <code>hydration_entry</code> which is N:1 to its <code>hydration_daily_summary</code>); these player FKs are noted inside each box instead of drawn as crossing arrows.
 </p>
 
 <h2>Tables</h2>
@@ -398,6 +437,49 @@
 </ul>
 <ul class="fks">
     <li><span class="badge badge-fk">FK</span> <code>exercise_id</code> → <code>exercise.id</code></li>
+</ul>
+
+<h3 id="hydration_daily_summary">hydration_daily_summary</h3>
+<p class="summary">One row per player per day, lazy-created on first read of <code>GET /api/player/tracking/hydration/today</code> (or first entry write). <code>target_ml</code> is snapshotted from <code>player.daily_hydration_target_ml</code> at create time and is editable per day; <code>amount_consumed_ml</code> is auto-derived (sum of the linked <code>hydration_entry.value_ml</code>) by <code>HydrationAggregateEvaluator</code> from the entry persister.</p>
+<table>
+    <thead><tr><th>Column</th><th>Type</th><th>Flags</th><th>Notes</th></tr></thead>
+    <tbody>
+        <tr class="pk"><td class="col">id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-pk">PK</span></td><td>ULID</td></tr>
+        <tr class="fk"><td class="col">player_id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-fk">FK</span></td><td>→ <code>player.id</code></td></tr>
+        <tr><td class="col">date</td><td class="type">DATE</td><td></td><td>the day this summary covers</td></tr>
+        <tr><td class="col">target_ml</td><td class="type">INT</td><td></td><td>snapshotted from <code>player.daily_hydration_target_ml</code>, editable per day</td></tr>
+        <tr><td class="col">amount_consumed_ml</td><td class="type">INT</td><td></td><td>default <code>0</code>; auto-derived sum of <code>hydration_entry.value_ml</code></td></tr>
+        <tr><td class="col">created_at</td><td class="type">DATETIME</td><td></td><td></td></tr>
+        <tr><td class="col">updated_at</td><td class="type">DATETIME</td><td></td><td></td></tr>
+    </tbody>
+</table>
+<ul class="idx">
+    <li><span class="badge badge-uniq">UNIQUE</span> <code>uniq_hydration_daily_summary_player_date (player_id, date)</code></li>
+    <li><span class="badge badge-idx">IDX</span> <code>IDX_5F9E39C599E6F5DF (player_id)</code></li>
+</ul>
+<ul class="fks">
+    <li><span class="badge badge-fk">FK</span> <code>player_id</code> → <code>player.id</code></li>
+</ul>
+<p class="meta">Inverse side <code>entries</code> (1:N to <code>hydration_entry</code>, orphan-removal on) — the FK lives on <code>hydration_entry.summary_id</code>.</p>
+
+<h3 id="hydration_entry">hydration_entry</h3>
+<p class="summary">A single drink logged against a day's <code>hydration_daily_summary</code>. Reaches the owning player transitively through <code>summary.player</code> (no direct <code>player_id</code> column). Every create/update/delete recomputes the parent summary's <code>amount_consumed_ml</code>.</p>
+<table>
+    <thead><tr><th>Column</th><th>Type</th><th>Flags</th><th>Notes</th></tr></thead>
+    <tbody>
+        <tr class="pk"><td class="col">id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-pk">PK</span></td><td>ULID</td></tr>
+        <tr class="fk"><td class="col">summary_id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-fk">FK</span></td><td>→ <code>hydration_daily_summary.id</code></td></tr>
+        <tr><td class="col">logged_at</td><td class="type">DATETIME</td><td></td><td>when the drink was logged</td></tr>
+        <tr><td class="col">value_ml</td><td class="type">INT</td><td></td><td>amount in millilitres (&gt; 0)</td></tr>
+        <tr><td class="col">created_at</td><td class="type">DATETIME</td><td></td><td></td></tr>
+        <tr><td class="col">updated_at</td><td class="type">DATETIME</td><td></td><td></td></tr>
+    </tbody>
+</table>
+<ul class="idx">
+    <li><span class="badge badge-idx">IDX</span> <code>IDX_44C767202AC2D45C (summary_id)</code></li>
+</ul>
+<ul class="fks">
+    <li><span class="badge badge-fk">FK</span> <code>summary_id</code> → <code>hydration_daily_summary.id</code></li>
 </ul>
 
 <h3 id="movement">movement</h3>
@@ -512,6 +594,8 @@
         <tr class="pk"><td class="col">id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-pk">PK</span></td><td>ULID</td></tr>
         <tr class="uniq fk"><td class="col">user_id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-uniq">UNIQUE</span><span class="badge badge-fk">FK</span></td><td>→ <code>user.id</code> (1:1)</td></tr>
         <tr><td class="col">display_name</td><td class="type">VARCHAR(100)</td><td></td><td></td></tr>
+        <tr><td class="col">daily_hydration_target_ml</td><td class="type">INT</td><td></td><td>default <code>1000</code>; player-wide hydration goal, snapshotted per day into <code>hydration_daily_summary.target_ml</code></td></tr>
+        <tr><td class="col">daily_steps_target</td><td class="type">INT</td><td></td><td>default <code>5000</code>; player-wide step goal, snapshotted per day into <code>steps_daily_entry.target</code></td></tr>
         <tr><td class="col">created_at</td><td class="type">DATETIME</td><td></td><td></td></tr>
         <tr><td class="col">updated_at</td><td class="type">DATETIME</td><td></td><td></td></tr>
     </tbody>
@@ -521,6 +605,52 @@
 </ul>
 <ul class="fks">
     <li><span class="badge badge-fk">FK</span> <code>user_id</code> → <code>user.id</code></li>
+</ul>
+
+<h3 id="sleep_daily_entry">sleep_daily_entry</h3>
+<p class="summary">One sleep record per player per night, keyed by the wake-up <code>date</code>. <code>duration_minutes</code> is auto-derived (<code>floor((wake_at − bed_at) / 60)</code>) by <code>SleepDurationEvaluator</code> from the persister. <code>quality</code> is an optional 1–5 score.</p>
+<table>
+    <thead><tr><th>Column</th><th>Type</th><th>Flags</th><th>Notes</th></tr></thead>
+    <tbody>
+        <tr class="pk"><td class="col">id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-pk">PK</span></td><td>ULID</td></tr>
+        <tr class="fk"><td class="col">player_id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-fk">FK</span></td><td>→ <code>player.id</code></td></tr>
+        <tr><td class="col">date</td><td class="type">DATE</td><td></td><td>wake-up date (the night belongs to the morning)</td></tr>
+        <tr><td class="col">bed_at</td><td class="type">DATETIME</td><td></td><td></td></tr>
+        <tr><td class="col">wake_at</td><td class="type">DATETIME</td><td></td><td>must be &gt; <code>bed_at</code></td></tr>
+        <tr><td class="col">duration_minutes</td><td class="type">INT</td><td></td><td>auto-derived from <code>bed_at</code>/<code>wake_at</code></td></tr>
+        <tr><td class="col">quality</td><td class="type">SMALLINT</td><td class="flags"><span class="badge badge-null">NULL</span></td><td>optional subjective score 1–5</td></tr>
+        <tr><td class="col">created_at</td><td class="type">DATETIME</td><td></td><td></td></tr>
+        <tr><td class="col">updated_at</td><td class="type">DATETIME</td><td></td><td></td></tr>
+    </tbody>
+</table>
+<ul class="idx">
+    <li><span class="badge badge-uniq">UNIQUE</span> <code>uniq_sleep_daily_entry_player_date (player_id, date)</code></li>
+    <li><span class="badge badge-idx">IDX</span> <code>IDX_2DF9D49899E6F5DF (player_id)</code></li>
+</ul>
+<ul class="fks">
+    <li><span class="badge badge-fk">FK</span> <code>player_id</code> → <code>player.id</code></li>
+</ul>
+
+<h3 id="steps_daily_entry">steps_daily_entry</h3>
+<p class="summary">One step count + goal per player per day (idempotent upsert keyed by <code>(player, date)</code>). <code>target</code> is snapshotted from <code>player.daily_steps_target</code> at create time and is editable per day. Today's row is lazy-created on <code>GET /api/player/tracking/steps/today</code>.</p>
+<table>
+    <thead><tr><th>Column</th><th>Type</th><th>Flags</th><th>Notes</th></tr></thead>
+    <tbody>
+        <tr class="pk"><td class="col">id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-pk">PK</span></td><td>ULID</td></tr>
+        <tr class="fk"><td class="col">player_id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-fk">FK</span></td><td>→ <code>player.id</code></td></tr>
+        <tr><td class="col">date</td><td class="type">DATE</td><td></td><td>the day this count covers</td></tr>
+        <tr><td class="col">count</td><td class="type">INT</td><td></td><td>steps walked (&ge; 0)</td></tr>
+        <tr><td class="col">target</td><td class="type">INT</td><td></td><td>default <code>5000</code>; snapshotted from <code>player.daily_steps_target</code>, editable per day</td></tr>
+        <tr><td class="col">created_at</td><td class="type">DATETIME</td><td></td><td></td></tr>
+        <tr><td class="col">updated_at</td><td class="type">DATETIME</td><td></td><td></td></tr>
+    </tbody>
+</table>
+<ul class="idx">
+    <li><span class="badge badge-uniq">UNIQUE</span> <code>uniq_steps_daily_entry_player_date (player_id, date)</code></li>
+    <li><span class="badge badge-idx">IDX</span> <code>IDX_E7164B8699E6F5DF (player_id)</code></li>
+</ul>
+<ul class="fks">
+    <li><span class="badge badge-fk">FK</span> <code>player_id</code> → <code>player.id</code></li>
 </ul>
 
 <h3 id="user">user</h3>
@@ -538,6 +668,28 @@
 </table>
 <ul class="idx">
     <li><span class="badge badge-uniq">UNIQUE</span> <code>UNIQ_8D93D649E7927C74 (email)</code></li>
+</ul>
+
+<h3 id="weight_entry">weight_entry</h3>
+<p class="summary">One body-weight measurement per player per day. <code>date</code> is derived from <code>logged_at</code> (<code>->setTime(0,0,0)</code>) — recomputed by the persister on every write — and backs the one-per-day unique constraint. Stored in grams; the UI converts to/from kg.</p>
+<table>
+    <thead><tr><th>Column</th><th>Type</th><th>Flags</th><th>Notes</th></tr></thead>
+    <tbody>
+        <tr class="pk"><td class="col">id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-pk">PK</span></td><td>ULID</td></tr>
+        <tr class="fk"><td class="col">player_id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-fk">FK</span></td><td>→ <code>player.id</code></td></tr>
+        <tr><td class="col">logged_at</td><td class="type">DATETIME</td><td></td><td>when the measurement was taken</td></tr>
+        <tr><td class="col">date</td><td class="type">DATE</td><td></td><td>derived from <code>logged_at</code>; one weight per day</td></tr>
+        <tr><td class="col">value_grams</td><td class="type">INT</td><td></td><td>body weight in grams (&gt; 0)</td></tr>
+        <tr><td class="col">created_at</td><td class="type">DATETIME</td><td></td><td></td></tr>
+        <tr><td class="col">updated_at</td><td class="type">DATETIME</td><td></td><td></td></tr>
+    </tbody>
+</table>
+<ul class="idx">
+    <li><span class="badge badge-uniq">UNIQUE</span> <code>uniq_weight_entry_player_date (player_id, date)</code></li>
+    <li><span class="badge badge-idx">IDX</span> <code>IDX_1486C8C099E6F5DF (player_id)</code></li>
+</ul>
+<ul class="fks">
+    <li><span class="badge badge-fk">FK</span> <code>player_id</code> → <code>player.id</code></li>
 </ul>
 
 <h3 id="workout">workout</h3>

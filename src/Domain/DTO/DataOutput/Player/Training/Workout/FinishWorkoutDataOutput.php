@@ -14,6 +14,7 @@ final readonly class FinishWorkoutDataOutput implements DataOutputInterface
     public function __construct(
         public WorkoutDataOutput $workout,
         public array $newPersonalBests,
+        public ?int $earnedXp = null,
     ) {
     }
 }
