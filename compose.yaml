@@ -43,7 +43,7 @@ services:
             - ./frontend/admin:/app
             - frontend_admin_node_modules:/app/node_modules
         environment:
-            VITE_API_BASE_URL: ${VITE_API_BASE_URL:-https://127.0.0.1:8000}
+            VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://127.0.0.1:8000}
         # Use host network so the npm registry is reachable on this machine
         # (the docker bridge does not forward outbound on this host's
         # current setup); Vite binds 0.0.0.0:5173 which is then the host's

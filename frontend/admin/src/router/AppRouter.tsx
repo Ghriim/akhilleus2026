@@ -11,6 +11,9 @@ import { MuscleEditPage } from '@/features/muscles/MuscleEditPage';
 import { MovementListPage } from '@/features/movements/MovementListPage';
 import { MovementCreatePage } from '@/features/movements/MovementCreatePage';
 import { MovementEditPage } from '@/features/movements/MovementEditPage';
+import { LevelBracketListPage } from '@/features/levelBrackets/LevelBracketListPage';
+import { LevelBracketCreatePage } from '@/features/levelBrackets/LevelBracketCreatePage';
+import { LevelBracketEditPage } from '@/features/levelBrackets/LevelBracketEditPage';
 
 export const AppRouter = () => (
   <Routes>
@@ -38,6 +41,11 @@ export const AppRouter = () => (
         <Route index element={<MovementListPage />} />
         <Route path="new" element={<MovementCreatePage />} />
         <Route path=":id" element={<MovementEditPage />} />
+      </Route>
+      <Route path="level-brackets">
+        <Route index element={<LevelBracketListPage />} />
+        <Route path="new" element={<LevelBracketCreatePage />} />
+        <Route path=":id" element={<LevelBracketEditPage />} />
       </Route>
     </Route>
     <Route path="*" element={<Navigate to="/" replace />} />

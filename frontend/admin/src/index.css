@@ -1,0 +1,18 @@
+/* Minimal global reset. Browsers apply a default 8px margin to <body>, which showed as a white
+   frame around the full-height antd Layout (which is sized to 100vh). Zero it and let the app
+   fill the viewport. */
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
