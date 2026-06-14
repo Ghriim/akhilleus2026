@@ -101,7 +101,7 @@
             "symfony server:start -d --no-tls",
             "echo ''",
             "echo '--- Akhilleus dev environment is up ---'",
-            "echo '  API:         https://127.0.0.1:8000'",
+            "echo '  API:         http://127.0.0.1:8000'",
             "echo '  Admin:       http://localhost:5173'",
             "echo '  Player site: http://localhost:5174'",
             "echo ''"
