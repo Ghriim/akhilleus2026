@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
+import { PlayerLevelBadge } from '@/components/layout/PlayerLevelBadge';
 import { useAuth } from '@/auth/useAuth';
 import { cn } from '@/lib/cn';
 
@@ -9,6 +10,7 @@ const LINKS: { to: string; label: string; end: boolean }[] = [
   { to: '/history', label: 'Historique', end: false },
   { to: '/movements', label: 'Mouvements', end: false },
   { to: '/achievements', label: 'Records', end: false },
+  { to: '/leveling/journal', label: 'Journal XP', end: false },
 ];
 
 export function NavBar() {
@@ -19,12 +21,15 @@ export function NavBar() {
   return (
     <header className="sticky top-0 z-10 bg-(--color-surface) border-b border-(--color-border)">
       <div className="mx-auto max-w-6xl flex items-center justify-between gap-4 px-4 py-3">
-        <NavLink
-          to="/"
-          className="text-(length:--text-xl) font-(--font-display) font-semibold text-(--color-text)"
-        >
-          Akhilleus
-        </NavLink>
+        <div className="flex items-center gap-4">
+          <NavLink
+            to="/"
+            className="text-(length:--text-xl) font-(--font-display) font-semibold text-(--color-text)"
+          >
+            Akhilleus
+          </NavLink>
+          <PlayerLevelBadge />
+        </div>
         <nav className="flex gap-1 overflow-x-auto">
           {LINKS.map((l) => (
             <NavLink

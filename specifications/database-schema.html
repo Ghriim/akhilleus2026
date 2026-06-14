@@ -17,6 +17,7 @@
             --lane-training: #fbf3e6;
             --lane-user: #eef2fb;
             --lane-tracking: #eaf6f0;
+            --lane-leveling: #f6eefb;
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -84,6 +85,7 @@
         .schema-diagram .lane-training { fill: var(--lane-training); }
         .schema-diagram .lane-user { fill: var(--lane-user); }
         .schema-diagram .lane-tracking { fill: var(--lane-tracking); }
+        .schema-diagram .lane-leveling { fill: var(--lane-leveling); }
         .schema-diagram .lane-title {
             font-size: 12px;
             fill: var(--muted);
@@ -168,11 +170,14 @@
 <h2>Entity overview</h2>
 <ul>
     <li><a href="#admin"><code>admin</code></a> — admin profile attached 1:1 to a user</li>
+    <li><a href="#earned_experience"><code>earned_experience</code></a> — an immutable XP grant (workout completion or claimed quest), locked by the nightly cron</li>
     <li><a href="#equipment"><code>equipment</code></a> — admin-managed reference (barbell, dumbbell, …)</li>
     <li><a href="#exercise"><code>exercise</code></a> — one movement inside a workout, ordered by position</li>
     <li><a href="#exercise_set"><code>exercise_set</code></a> — one set inside an exercise, with planned/achieved metrics</li>
     <li><a href="#hydration_daily_summary"><code>hydration_daily_summary</code></a> — one row per player per day; snapshotted target + summed intake</li>
     <li><a href="#hydration_entry"><code>hydration_entry</code></a> — a single drink logged against a day's hydration summary</li>
+    <li><a href="#level_bracket"><code>level_bracket</code></a> — one contiguous slice of the leveling curve (marginal XP cost <code>a·n^k + b</code>)</li>
+    <li><a href="#leveling_config"><code>leveling_config</code></a> — singleton of admin-editable leveling parameters (<code>xp_per_workout_minute</code>)</li>
     <li><a href="#movement"><code>movement</code></a> — admin-managed exercise definition (slug, label, main muscle, tracking flags)</li>
     <li><a href="#movement_equipment"><code>movement_equipment</code></a> — M:N join, equipment options per movement</li>
     <li><a href="#movement_secondary_muscle"><code>movement_secondary_muscle</code></a> — M:N join, secondary muscles per movement</li>
@@ -192,7 +197,7 @@
     <span class="swatch swatch-opt"></span> optional / nullable FK
     <span class="swatch swatch-mtm"></span> many-to-many (via join table)
 </p>
-<svg class="schema-diagram" viewBox="0 0 1100 740" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Akhilleus database schema diagram">
+<svg class="schema-diagram" viewBox="0 0 1100 880" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Akhilleus database schema diagram">
     <defs>
         <marker id="arrow-fk" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
             <path d="M 0 0 L 9 3 L 0 6 z" class="arrow-fk" />
@@ -209,10 +214,12 @@
     <rect x="20" y="40" width="1060" height="420" rx="10" class="lane lane-training" />
     <rect x="20" y="480" width="1060" height="100" rx="10" class="lane lane-user" />
     <rect x="20" y="600" width="1060" height="120" rx="10" class="lane lane-tracking" />
+    <rect x="20" y="740" width="1060" height="120" rx="10" class="lane lane-leveling" />
 
     <text x="40" y="32" class="lane-title">Training</text>
     <text x="40" y="472" class="lane-title">User</text>
     <text x="40" y="592" class="lane-title">Tracking</text>
+    <text x="40" y="732" class="lane-title">Leveling</text>
 
     <!-- Training: row 1 - Equipment / Movement / Muscle -->
     <g class="entity">
@@ -290,6 +297,23 @@
         <text x="960" y="670" text-anchor="middle" class="entity-meta">FK: player</text>
     </g>
 
+    <!-- Leveling zone: earned_experience (N:1 player) + the two reference/singleton config tables -->
+    <g class="entity">
+        <rect x="45" y="765" width="190" height="60" rx="6" />
+        <text x="140" y="791" text-anchor="middle" class="entity-name">earned_experience</text>
+        <text x="140" y="810" text-anchor="middle" class="entity-meta">FK: player</text>
+    </g>
+    <g class="entity">
+        <rect x="250" y="765" width="190" height="60" rx="6" />
+        <text x="345" y="791" text-anchor="middle" class="entity-name">level_bracket</text>
+        <text x="345" y="810" text-anchor="middle" class="entity-meta">reference (no FK)</text>
+    </g>
+    <g class="entity">
+        <rect x="455" y="765" width="190" height="60" rx="6" />
+        <text x="550" y="791" text-anchor="middle" class="entity-name">leveling_config</text>
+        <text x="550" y="810" text-anchor="middle" class="entity-meta">singleton (no FK)</text>
+    </g>
+
     <!-- hydration_entry -> hydration_daily_summary (FK on entry) -->
     <line x1="455" y1="655" x2="440" y2="655" class="rel-fk" marker-end="url(#arrow-fk)" />
 
@@ -340,7 +364,7 @@
     <text x="460" y="530" class="rel-label" text-anchor="middle">1:1</text>
 </svg>
 <p class="meta">
-    The <code>movement → personal_best</code> link (one PB per movement, per player, per type) is shown by the FK list inside the <code>personal_best</code> box rather than a separate arrow, to keep the diagram readable. Likewise, every <strong>Tracking</strong> entity is N:1 to <code>player</code> (one row per player per day, except <code>hydration_entry</code> which is N:1 to its <code>hydration_daily_summary</code>); these player FKs are noted inside each box instead of drawn as crossing arrows.
+    The <code>movement → personal_best</code> link (one PB per movement, per player, per type) is shown by the FK list inside the <code>personal_best</code> box rather than a separate arrow, to keep the diagram readable. Likewise, every <strong>Tracking</strong> entity is N:1 to <code>player</code> (one row per player per day, except <code>hydration_entry</code> which is N:1 to its <code>hydration_daily_summary</code>); these player FKs are noted inside each box instead of drawn as crossing arrows. In the <strong>Leveling</strong> lane, <code>earned_experience</code> is N:1 to <code>player</code> (FK noted in-box); <code>level_bracket</code> (the XP curve) and the <code>leveling_config</code> singleton carry no foreign keys.
 </p>
 
 <h2>Tables</h2>
@@ -382,6 +406,30 @@
 </table>
 <ul class="idx">
     <li><span class="badge badge-uniq">UNIQUE</span> <code>UNIQ_D338D583989D9B62 (slug)</code></li>
+</ul>
+
+<h3 id="earned_experience">earned_experience</h3>
+<p class="summary">An immutable XP grant — a workout completion (<code>source_type = workout</code>) or a claimed quest reward (<code>source_type = quest</code>); <code>source_id</code> is the ULID of the originating row. Entries stay <code>is_locked = 0</code> until the nightly leveling cron (Phase 5/6) folds them into the player's <code>level</code>/<code>current_xp</code> and locks them.</p>
+<table>
+    <thead><tr><th>Column</th><th>Type</th><th>Flags</th><th>Notes</th></tr></thead>
+    <tbody>
+        <tr class="pk"><td class="col">id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-pk">PK</span></td><td>ULID</td></tr>
+        <tr class="fk"><td class="col">player_id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-fk">FK</span></td><td>→ <code>player.id</code></td></tr>
+        <tr><td class="col">label</td><td class="type">VARCHAR(255)</td><td></td><td>e.g. <code>Workout: Monday Morning</code></td></tr>
+        <tr><td class="col">amount</td><td class="type">INT</td><td></td><td>XP granted</td></tr>
+        <tr><td class="col">earned_at</td><td class="type">DATETIME</td><td></td><td>when the XP was earned</td></tr>
+        <tr><td class="col">source_type</td><td class="type">VARCHAR(20)</td><td></td><td><code>workout</code> | <code>quest</code></td></tr>
+        <tr><td class="col">source_id</td><td class="type">VARCHAR(26)</td><td></td><td>ULID of the originating workout / quest progression</td></tr>
+        <tr><td class="col">is_locked</td><td class="type">TINYINT(1)</td><td></td><td>default <code>0</code>; set by the nightly cron once folded into the player's totals</td></tr>
+        <tr><td class="col">created_at</td><td class="type">DATETIME</td><td></td><td></td></tr>
+        <tr><td class="col">updated_at</td><td class="type">DATETIME</td><td></td><td></td></tr>
+    </tbody>
+</table>
+<ul class="idx">
+    <li><span class="badge badge-idx">IDX</span> <code>IDX_5C5591099E6F5DF (player_id)</code></li>
+</ul>
+<ul class="fks">
+    <li><span class="badge badge-fk">FK</span> <code>player_id</code> → <code>player.id</code></li>
 </ul>
 
 <h3 id="exercise">exercise</h3>
@@ -481,6 +529,37 @@
 <ul class="fks">
     <li><span class="badge badge-fk">FK</span> <code>summary_id</code> → <code>hydration_daily_summary.id</code></li>
 </ul>
+
+<h3 id="level_bracket">level_bracket</h3>
+<p class="summary">One contiguous slice of the leveling curve: for any level <code>n</code> in <code>[from_level, to_level]</code> (<code>to_level = NULL</code> means open-ended, last bracket), the marginal XP cost of the next level is <code>coefficient_a · n^exponent_k + offset_b</code>. The admin CRUD validators enforce contiguity, a single open-ended bracket, and <code>from_level = 1</code> on the first row. Seeded by <code>Version20260613120000</code> (3 baseline rows).</p>
+<table>
+    <thead><tr><th>Column</th><th>Type</th><th>Flags</th><th>Notes</th></tr></thead>
+    <tbody>
+        <tr class="pk"><td class="col">id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-pk">PK</span></td><td>ULID</td></tr>
+        <tr class="uniq"><td class="col">from_level</td><td class="type">INT</td><td class="flags"><span class="badge badge-uniq">UNIQUE</span></td><td>first level covered by this bracket</td></tr>
+        <tr><td class="col">to_level</td><td class="type">INT</td><td class="flags"><span class="badge badge-null">NULL</span></td><td><code>NULL</code> = open-ended (last bracket)</td></tr>
+        <tr><td class="col">coefficient_a</td><td class="type">INT</td><td></td><td>curve coefficient <code>a</code></td></tr>
+        <tr><td class="col">exponent_k</td><td class="type">INT</td><td></td><td>curve exponent <code>k</code></td></tr>
+        <tr><td class="col">offset_b</td><td class="type">INT</td><td></td><td>curve offset <code>b</code></td></tr>
+        <tr><td class="col">created_at</td><td class="type">DATETIME</td><td></td><td></td></tr>
+        <tr><td class="col">updated_at</td><td class="type">DATETIME</td><td></td><td></td></tr>
+    </tbody>
+</table>
+<ul class="idx">
+    <li><span class="badge badge-uniq">UNIQUE</span> <code>uniq_level_bracket_from_level (from_level)</code></li>
+</ul>
+
+<h3 id="leveling_config">leveling_config</h3>
+<p class="summary">Singleton holding admin-editable leveling parameters — exactly one row keyed by a well-known fixed id (<code>01000000000000000000000000</code>), never created or deleted at runtime (only <code>update</code>). Seeded by <code>Version20260613130000</code>. <code>xp_per_workout_minute</code> is the XP granted per minute of a completed workout (admin-enforced ≥ 50).</p>
+<table>
+    <thead><tr><th>Column</th><th>Type</th><th>Flags</th><th>Notes</th></tr></thead>
+    <tbody>
+        <tr class="pk"><td class="col">id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-pk">PK</span></td><td>well-known fixed id (not a generated ULID)</td></tr>
+        <tr><td class="col">xp_per_workout_minute</td><td class="type">INT</td><td></td><td>default <code>50</code>; XP per minute of a completed workout</td></tr>
+        <tr><td class="col">created_at</td><td class="type">DATETIME</td><td></td><td></td></tr>
+        <tr><td class="col">updated_at</td><td class="type">DATETIME</td><td></td><td></td></tr>
+    </tbody>
+</table>
 
 <h3 id="movement">movement</h3>
 <p class="summary">Exercise definition. Six boolean flags declare which metrics each movement should track in its sets (reps, weight, duration, distance, incline %, incline meters). Two optional URL columns (<code>video_link</code>, <code>gif_link</code>) carry external demo media surfaced to the player on the workout view.</p>
@@ -596,6 +675,9 @@
         <tr><td class="col">display_name</td><td class="type">VARCHAR(100)</td><td></td><td></td></tr>
         <tr><td class="col">daily_hydration_target_ml</td><td class="type">INT</td><td></td><td>default <code>1000</code>; player-wide hydration goal, snapshotted per day into <code>hydration_daily_summary.target_ml</code></td></tr>
         <tr><td class="col">daily_steps_target</td><td class="type">INT</td><td></td><td>default <code>5000</code>; player-wide step goal, snapshotted per day into <code>steps_daily_entry.target</code></td></tr>
+        <tr><td class="col">level</td><td class="type">INT</td><td></td><td>default <code>1</code>; bumped only by the nightly leveling cron (Phase 5/6)</td></tr>
+        <tr><td class="col">current_xp</td><td class="type">INT</td><td></td><td>default <code>0</code>; XP accumulated toward the next level (<code>0 ≤ current_xp &lt; xp_to_next_level</code>)</td></tr>
+        <tr><td class="col">xp_to_next_level</td><td class="type">INT</td><td></td><td>default <code>4000</code>; marginal cost of the next level, recomputed at registration / level-up by <code>LevelingCalculator</code></td></tr>
         <tr><td class="col">created_at</td><td class="type">DATETIME</td><td></td><td></td></tr>
         <tr><td class="col">updated_at</td><td class="type">DATETIME</td><td></td><td></td></tr>
     </tbody>

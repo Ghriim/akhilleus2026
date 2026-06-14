@@ -11,6 +11,7 @@ import { WorkoutNewPage } from '@/pages/workout/WorkoutNewPage';
 import { WorkoutDetailsPage } from '@/pages/workout/WorkoutDetailsPage';
 import { MovementsPage } from '@/pages/movement/MovementsPage';
 import { AchievementsPage } from '@/pages/personal-best/AchievementsPage';
+import { XpJournalPage } from '@/pages/leveling/XpJournalPage';
 
 export function App() {
   return (
@@ -28,6 +29,7 @@ export function App() {
               <Route path="/workouts/:id" element={<WorkoutDetailsPage />} />
               <Route path="/movements" element={<MovementsPage />} />
               <Route path="/achievements" element={<AchievementsPage />} />
+              <Route path="/leveling/journal" element={<XpJournalPage />} />
             </Route>
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />

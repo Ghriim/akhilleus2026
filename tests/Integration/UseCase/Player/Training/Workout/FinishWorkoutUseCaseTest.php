@@ -150,6 +150,24 @@ final class FinishWorkoutUseCaseTest extends KernelTestCase
         self::assertSame('Workout: '.$workout->name, $earned->label);
     }
 
+    public function testItGrantsNoExperienceForAZeroMinuteWorkout(): void
+    {
+        self::bootKernel();
+        $container = self::getContainer();
+        $player = self::createTestPlayer($container, 'finish-zero-xp');
+        $movement = self::createTestMovement($container, 'finish-zero-mvt', tracksRepetitions: true, tracksWeight: true);
+        $clock = $container->get(ClockInterface::class);
+        // dateStart = now → finish sets dateEnd = now → 0 rounded minutes → no XP, no EarnedExperience.
+        $workout = self::seedInProgressWorkoutWithSets($container, $player, $movement, [['reps' => 10, 'weight' => '50.00']], $clock->now());
+
+        $output = self::buildUseCase($container, $player)->execute(new FinishWorkoutDataInput($workout->id));
+
+        self::assertNull($output->earnedXp);
+        $earned = $container->get(EarnedExperienceProviderGateway::class)
+            ->findOneBySourceTypeAndId(EarnedExperienceSourceTypeRegistry::WORKOUT, $workout->id);
+        self::assertNull($earned, 'A zero-minute workout must not create an EarnedExperience.');
+    }
+
     public function testItRejectsAWorkoutWithIncompleteSets(): void
     {
         self::bootKernel();
@@ -237,6 +255,7 @@ final class FinishWorkoutUseCaseTest extends KernelTestCase
         PlayerDataModel $player,
         MovementDataModel $movement,
         array $setSpecs,
+        ?\DateTimeImmutable $dateStart = null,
     ): WorkoutDataModel {
         [$workoutPersister, $clock] = self::buildWorkoutLayer($container);
         $em = $container->get('doctrine.orm.entity_manager');
@@ -244,7 +263,7 @@ final class FinishWorkoutUseCaseTest extends KernelTestCase
         $exerciseSetPersister = new ExerciseSetPersister($em, $clock);
 
         $workout = new WorkoutDataModel($player, WorkoutStatusRegistry::IN_PROGRESS);
-        $workout->dateStart = $clock->now()->modify('-1 hour');
+        $workout->dateStart = $dateStart ?? $clock->now()->modify('-1 hour');
         $workoutPersister->create($workout);
 
         $exercise = new ExerciseDataModel($workout, $movement, 0, 60);

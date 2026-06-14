@@ -19,6 +19,14 @@ export interface LoginResponse {
   token: string;
 }
 
+export interface PlayerProfileDataOutput {
+  id: string;
+  displayName: string;
+  level: number;
+  currentXp: number;
+  xpToNextLevel: number;
+}
+
 export interface RegisterPlayerResponse {
   playerId: string;
   email: string;
@@ -220,4 +228,21 @@ export interface WeightEntryDataOutput {
 
 export interface DeleteWeightDataOutput {
   deletedId: string;
+}
+
+export interface EarnedExperienceDataOutput {
+  id: string;
+  label: string;
+  amount: number;
+  earnedAt: string;
+  sourceType: string;
+  sourceId: string;
+  isLocked: boolean;
+}
+
+export interface EarnedExperienceJournalDataOutput {
+  items: EarnedExperienceDataOutput[];
+  page: number;
+  perPage: number;
+  totalCount: number;
 }
