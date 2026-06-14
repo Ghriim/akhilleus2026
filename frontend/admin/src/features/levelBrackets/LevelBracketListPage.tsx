@@ -6,6 +6,7 @@ import { DataTable } from '@/components/DataTable';
 import { DeleteConfirmButton } from '@/components/DeleteConfirmButton';
 import { PageHeader } from '@/components/PageHeader';
 import { LevelCurveChart } from './LevelCurveChart';
+import { LevelingConfigCard } from './LevelingConfigCard';
 import { useDeleteLevelBracketMutation, useLevelBracketsQuery } from './hooks';
 import type { LevelBracket } from './types';
 
@@ -83,6 +84,7 @@ export const LevelBracketListPage = () => {
           </Link>
         }
       />
+      <LevelingConfigCard />
       {data !== undefined && data.length > 0 ? (
         <Card title="Curve preview — marginal XP cost per level" style={{ marginBottom: 24 }}>
           <LevelCurveChart brackets={data} />
