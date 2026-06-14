@@ -25,7 +25,7 @@ final class Version20260613130000 extends AbstractMigration
     {
         $this->addSql(
             'INSERT INTO leveling_config (id, xp_per_workout_minute, created_at, updated_at)'
-            .' VALUES (:id, 25, :now, :now)',
+            .' VALUES (:id, 50, :now, :now)',
             ['id' => '01000000000000000000000000', 'now' => '2026-06-13 00:00:00'],
         );
     }

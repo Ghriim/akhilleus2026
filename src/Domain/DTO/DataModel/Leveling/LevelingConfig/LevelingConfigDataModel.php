@@ -24,8 +24,8 @@ class LevelingConfigDataModel implements DataModelInterface
     #[ORM\GeneratedValue(strategy: 'NONE')]
     public string $id = self::LEVELING_CONFIG_ID;
 
-    #[ORM\Column(type: Types::INTEGER, options: ['default' => 25])]
-    public int $xpPerWorkoutMinute = 25;
+    #[ORM\Column(type: Types::INTEGER, options: ['default' => 50])]
+    public int $xpPerWorkoutMinute = 50;
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     public \DateTimeImmutable $createdAt;
@@ -33,7 +33,7 @@ class LevelingConfigDataModel implements DataModelInterface
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     public \DateTimeImmutable $updatedAt;
 
-    public function __construct(int $xpPerWorkoutMinute = 25)
+    public function __construct(int $xpPerWorkoutMinute = 50)
     {
         $this->xpPerWorkoutMinute = $xpPerWorkoutMinute;
     }

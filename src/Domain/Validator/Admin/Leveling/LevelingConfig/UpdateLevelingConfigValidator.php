@@ -12,7 +12,7 @@ final readonly class UpdateLevelingConfigValidator extends AbstractLoggedAdminVa
 {
     public const string ERROR_CODE = 'LEVELING_CONFIG_VALIDATION_FAILED';
 
-    public const int MIN_XP_PER_WORKOUT_MINUTE = 25;
+    public const int MIN_XP_PER_WORKOUT_MINUTE = 50;
 
     public function validate(UpdateLevelingConfigDataInput $input): void
     {
