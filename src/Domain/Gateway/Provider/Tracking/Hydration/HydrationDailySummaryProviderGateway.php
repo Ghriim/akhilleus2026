@@ -16,4 +16,12 @@ interface HydrationDailySummaryProviderGateway
      * Summary on first read in that case.
      */
     public function findOneByPlayerAndDateWithEntries(PlayerDataModel $player, \DateTimeImmutable $date): ?HydrationDailySummaryDataModel;
+
+    /**
+     * Daily summaries whose `date` falls in `[from, to]` (inclusive), ordered by `date` ASC.
+     * Feeds the `HYDRATION_ML_DAILY` quest metric resolver (sum of `amountConsumedMl`).
+     *
+     * @return list<HydrationDailySummaryDataModel>
+     */
+    public function findAllByPlayerForRange(PlayerDataModel $player, \DateTimeImmutable $from, \DateTimeImmutable $to): array;
 }

@@ -10,6 +10,7 @@ use App\Domain\DTO\DataModel\User\PlayerDataModel;
 use App\Domain\Exception\ValidationException;
 use App\Domain\Gateway\Persister\User\PlayerPersisterGateway;
 use App\Domain\Security\LoggedPlayerResolverInterface;
+use App\Domain\Service\Questing\QuestProgressionEvaluator;
 use App\Domain\Validator\Player\Tracking\Hydration\AddHydrationEntryValidator;
 use App\Infrastructure\Persister\Tracking\Hydration\HydrationDailySummaryPersister;
 use App\Infrastructure\Persister\Tracking\Hydration\HydrationEntryPersister;
@@ -105,6 +106,8 @@ final class AddHydrationEntryUseCaseTest extends KernelTestCase
             new HydrationDailySummaryRepository($registry),
             $summaryPersister,
             new HydrationEntryPersister($em, $clock, $summaryPersister),
+            $container->get(QuestProgressionEvaluator::class),
+            $clock,
         );
     }
 

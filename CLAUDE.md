@@ -87,6 +87,18 @@ The conventions impose a strict **Domain / Infrastructure / UseCase** split:
 ### Theming note
 The player website is D&D-flavored / medieval-fantasy — colors **must** be CSS variables (per requirements + dev-plan §7). The admin (Phase 5) uses antd's light/dark algorithms via `ConfigProvider` and persists the choice to `localStorage`.
 
+### Quest auto-progression hooks (Phase 4.4 — keep this checklist in sync)
+Every write that changes a quest-measurable metric must call `QuestProgressionEvaluator::refreshFor($player, <metric>, $this->clock->now())` **after** the write succeeds, so automatic quests recompute and flip to `CLAIMABLE`. The evaluator + a `ClockInterface` are constructor-injected into each UseCase below (this is why their integration tests build them with two extra args from the container). When you add a new tracking metric or a new write path, wire the hook here too — and add a matching `QuestMetricRegistry` value + `MetricResolver`.
+
+| Metric (`QuestMetricRegistry`) | UseCases that must call `refreshFor` |
+| --- | --- |
+| `STEPS_DAILY` | `UpsertStepsForDayUseCase`, `DeleteStepsForDayUseCase` |
+| `HYDRATION_ML_DAILY` | `AddHydrationEntryUseCase`, `UpdateHydrationEntryUseCase`, `DeleteHydrationEntryUseCase` |
+| `SLEEP_DURATION_MINUTES` | `LogSleepUseCase`, `UpdateSleepUseCase`, `DeleteSleepUseCase` |
+| `WORKOUT_COUNT` + `WORKOUT_DURATION_MINUTES` | `FinishWorkoutUseCase` (calls `refreshFor` once per metric) |
+
+Weight has **no** quest metric → its UseCases are intentionally not hooked. Target-only writes (`Update*DailyTarget*`, `UpdatePlayer*Target`) and pure reads (`GetToday*`) don't change a measured metric → no hook. The metric value is recomputed for the **current** period (Europe/Paris) via `clock->now()`, so backfilling a past day does not retro-complete today's quest (and vice-versa).
+
 ## Commands
 
 PHP / Symfony:

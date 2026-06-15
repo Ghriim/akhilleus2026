@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Spinner } from '@/components/ui/Spinner';
+import { QuestWidget } from '@/components/quests/QuestWidget';
 import { TrackingWidget } from '@/components/tracking/TrackingWidget';
 import { WorkoutListItem } from '@/components/workout/WorkoutListItem';
 import { useStartEmptyWorkout, useUpcomingWorkouts } from '@/hooks/workout/useWorkouts';
@@ -34,6 +35,7 @@ export function DashboardPage() {
           </>
         }
       />
+      <QuestWidget />
       <TrackingWidget />
       {isLoading ? (
         <Spinner />

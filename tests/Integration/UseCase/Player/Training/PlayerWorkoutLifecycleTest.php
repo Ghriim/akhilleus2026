@@ -24,6 +24,7 @@ use App\Domain\Registry\Training\Workout\PersonalBestTypeRegistry;
 use App\Domain\Registry\Training\Workout\WorkoutStatusRegistry;
 use App\Domain\Security\LoggedPlayerResolverInterface;
 use App\Domain\Service\PersonalBestEvaluator;
+use App\Domain\Service\Questing\QuestProgressionEvaluator;
 use App\Domain\Validator\Player\Training\Exercise\AddMovementToWorkoutValidator;
 use App\Domain\Validator\Player\Training\ExerciseSet\AddExerciseSetValidator;
 use App\Domain\Validator\Player\Training\ExerciseSet\UpdateExerciseSetAchievedValidator;
@@ -223,6 +224,7 @@ final class PlayerWorkoutLifecycleTest extends KernelTestCase
                 new PersonalBestEvaluator($personalBestRepo),
                 $container->get(LevelingConfigProviderGateway::class),
                 new EarnedExperiencePersister($em, $clock),
+                $container->get(QuestProgressionEvaluator::class),
                 $clock,
             ),
             listHistory: new ListWorkoutHistoryUseCase(

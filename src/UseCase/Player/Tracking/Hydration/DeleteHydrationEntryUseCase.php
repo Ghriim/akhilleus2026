@@ -12,8 +12,11 @@ use App\Domain\DTO\DataOutput\Player\Tracking\Hydration\HydrationEntryDataOutput
 use App\Domain\Exception\EntityNotFoundException;
 use App\Domain\Gateway\Persister\Tracking\Hydration\HydrationEntryPersisterGateway;
 use App\Domain\Gateway\Provider\Tracking\Hydration\HydrationEntryProviderGateway;
+use App\Domain\Registry\Questing\Quest\QuestMetricRegistry;
 use App\Domain\Security\LoggedPlayerResolverInterface;
+use App\Domain\Service\Questing\QuestProgressionEvaluator;
 use App\UseCase\AbstractLoggedPlayerUseCase;
+use Psr\Clock\ClockInterface;
 
 final class DeleteHydrationEntryUseCase extends AbstractLoggedPlayerUseCase
 {
@@ -21,6 +24,8 @@ final class DeleteHydrationEntryUseCase extends AbstractLoggedPlayerUseCase
         private readonly LoggedPlayerResolverInterface $loggedPlayerResolver,
         private readonly HydrationEntryProviderGateway $entryProvider,
         private readonly HydrationEntryPersisterGateway $entryPersister,
+        private readonly QuestProgressionEvaluator $questProgressionEvaluator,
+        private readonly ClockInterface $clock,
     ) {
     }
 
@@ -41,6 +46,8 @@ final class DeleteHydrationEntryUseCase extends AbstractLoggedPlayerUseCase
 
         // The entry persister removes the entry from the summary's collection and recomputes
         // `amountConsumedMl` in place; the summary row itself survives (empty days read as 0).
+        $this->questProgressionEvaluator->refreshFor($player, QuestMetricRegistry::HYDRATION_ML_DAILY, $this->clock->now());
+
         return self::buildDayOutput($summary);
     }
 

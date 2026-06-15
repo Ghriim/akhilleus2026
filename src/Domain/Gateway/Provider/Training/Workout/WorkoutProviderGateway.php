@@ -21,6 +21,18 @@ interface WorkoutProviderGateway
     public function countCompletedByPlayer(PlayerDataModel $player): int;
 
     /**
+     * Completed workouts whose `dateEnd` falls in `[from, to]` (inclusive), ordered by `dateEnd`
+     * ASC. Feeds the `WORKOUT_COUNT` / `WORKOUT_DURATION_MINUTES` quest metric resolvers.
+     *
+     * @return list<WorkoutDataModel>
+     */
+    public function findCompletedByPlayerInRange(
+        PlayerDataModel $player,
+        \DateTimeImmutable $from,
+        \DateTimeImmutable $to,
+    ): array;
+
+    /**
      * @return list<WorkoutDataModel>
      */
     public function findPlannedOrInProgressByPlayer(PlayerDataModel $player): array;

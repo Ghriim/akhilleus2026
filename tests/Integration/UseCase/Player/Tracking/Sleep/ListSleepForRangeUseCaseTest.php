@@ -11,6 +11,7 @@ use App\Domain\DTO\DataModel\User\PlayerDataModel;
 use App\Domain\Exception\ValidationException;
 use App\Domain\Gateway\Persister\User\PlayerPersisterGateway;
 use App\Domain\Security\LoggedPlayerResolverInterface;
+use App\Domain\Service\Questing\QuestProgressionEvaluator;
 use App\Domain\Validator\Player\Tracking\Sleep\ListSleepForRangeValidator;
 use App\Domain\Validator\Player\Tracking\Sleep\LogSleepValidator;
 use App\Infrastructure\Persister\Tracking\Sleep\SleepDailyEntryPersister;
@@ -101,6 +102,8 @@ final class ListSleepForRangeUseCaseTest extends KernelTestCase
             new LogSleepValidator($resolver, $repo),
             $resolver,
             new SleepDailyEntryPersister($em, $clock),
+            $container->get(QuestProgressionEvaluator::class),
+            $clock,
         );
         $logUseCase->execute(new LogSleepDataInput(new \DateTimeImmutable($bedAt), new \DateTimeImmutable($wakeAt)));
     }

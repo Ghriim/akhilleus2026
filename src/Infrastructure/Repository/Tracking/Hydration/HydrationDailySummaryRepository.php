@@ -32,4 +32,20 @@ final class HydrationDailySummaryRepository extends ServiceEntityRepository impl
             ->getQuery()
             ->getOneOrNullResult();
     }
+
+    public function findAllByPlayerForRange(PlayerDataModel $player, \DateTimeImmutable $from, \DateTimeImmutable $to): array
+    {
+        /** @var list<HydrationDailySummaryDataModel> $result */
+        $result = $this->createQueryBuilder('s')
+            ->where('s.player = :player')
+            ->andWhere('s.date BETWEEN :from AND :to')
+            ->setParameter('player', $player)
+            ->setParameter('from', $from->setTime(0, 0, 0))
+            ->setParameter('to', $to->setTime(0, 0, 0))
+            ->orderBy('s.date', 'ASC')
+            ->getQuery()
+            ->getResult();
+
+        return $result;
+    }
 }

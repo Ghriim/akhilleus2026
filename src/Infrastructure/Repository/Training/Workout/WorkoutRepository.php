@@ -68,6 +68,24 @@ final class WorkoutRepository extends ServiceEntityRepository implements Workout
         return $result;
     }
 
+    public function findCompletedByPlayerInRange(PlayerDataModel $player, \DateTimeImmutable $from, \DateTimeImmutable $to): array
+    {
+        /** @var list<WorkoutDataModel> $result */
+        $result = $this->createQueryBuilder('w')
+            ->where('w.player = :player')
+            ->andWhere('w.status = :status')
+            ->andWhere('w.dateEnd BETWEEN :from AND :to')
+            ->setParameter('player', $player)
+            ->setParameter('status', WorkoutStatusRegistry::COMPLETED)
+            ->setParameter('from', $from)
+            ->setParameter('to', $to)
+            ->orderBy('w.dateEnd', 'ASC')
+            ->getQuery()
+            ->getResult();
+
+        return $result;
+    }
+
     public function countCompletedByPlayer(PlayerDataModel $player): int
     {
         $count = $this->createQueryBuilder('w')

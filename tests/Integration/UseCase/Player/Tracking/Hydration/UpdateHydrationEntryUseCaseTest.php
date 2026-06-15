@@ -13,6 +13,7 @@ use App\Domain\Exception\EntityNotFoundException;
 use App\Domain\Exception\ValidationException;
 use App\Domain\Gateway\Persister\User\PlayerPersisterGateway;
 use App\Domain\Security\LoggedPlayerResolverInterface;
+use App\Domain\Service\Questing\QuestProgressionEvaluator;
 use App\Domain\Validator\Player\Tracking\Hydration\UpdateHydrationEntryValidator;
 use App\Infrastructure\Persister\Tracking\Hydration\HydrationDailySummaryPersister;
 use App\Infrastructure\Persister\Tracking\Hydration\HydrationEntryPersister;
@@ -95,6 +96,8 @@ final class UpdateHydrationEntryUseCaseTest extends KernelTestCase
             $resolver,
             new HydrationEntryRepository($registry),
             new HydrationEntryPersister($em, $clock, $summaryPersister),
+            $container->get(QuestProgressionEvaluator::class),
+            $clock,
         );
     }
 

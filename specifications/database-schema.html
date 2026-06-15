@@ -18,6 +18,7 @@
             --lane-user: #eef2fb;
             --lane-tracking: #eaf6f0;
             --lane-leveling: #f6eefb;
+            --lane-questing: #fbf0e6;
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -86,6 +87,7 @@
         .schema-diagram .lane-user { fill: var(--lane-user); }
         .schema-diagram .lane-tracking { fill: var(--lane-tracking); }
         .schema-diagram .lane-leveling { fill: var(--lane-leveling); }
+        .schema-diagram .lane-questing { fill: var(--lane-questing); }
         .schema-diagram .lane-title {
             font-size: 12px;
             fill: var(--muted);
@@ -184,6 +186,8 @@
     <li><a href="#muscle"><code>muscle</code></a> — admin-managed reference (biceps, triceps, …)</li>
     <li><a href="#personal_best"><code>personal_best</code></a> — current best for a (player, movement, type) tuple</li>
     <li><a href="#player"><code>player</code></a> — player profile attached 1:1 to a user</li>
+    <li><a href="#quest"><code>quest</code></a> — admin-defined challenge (automatic metric-tracked or manual), with a reward and an active window</li>
+    <li><a href="#quest_progression"><code>quest_progression</code></a> — one player's progress on a quest for a given period (find-or-created lazily)</li>
     <li><a href="#sleep_daily_entry"><code>sleep_daily_entry</code></a> — one sleep record per player per night (wake-up date)</li>
     <li><a href="#steps_daily_entry"><code>steps_daily_entry</code></a> — one step count + goal per player per day</li>
     <li><a href="#user"><code>user</code></a> — accounts (auth credentials, roles)</li>
@@ -197,7 +201,7 @@
     <span class="swatch swatch-opt"></span> optional / nullable FK
     <span class="swatch swatch-mtm"></span> many-to-many (via join table)
 </p>
-<svg class="schema-diagram" viewBox="0 0 1100 880" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Akhilleus database schema diagram">
+<svg class="schema-diagram" viewBox="0 0 1100 1020" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Akhilleus database schema diagram">
     <defs>
         <marker id="arrow-fk" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
             <path d="M 0 0 L 9 3 L 0 6 z" class="arrow-fk" />
@@ -215,11 +219,13 @@
     <rect x="20" y="480" width="1060" height="100" rx="10" class="lane lane-user" />
     <rect x="20" y="600" width="1060" height="120" rx="10" class="lane lane-tracking" />
     <rect x="20" y="740" width="1060" height="120" rx="10" class="lane lane-leveling" />
+    <rect x="20" y="880" width="1060" height="120" rx="10" class="lane lane-questing" />
 
     <text x="40" y="32" class="lane-title">Training</text>
     <text x="40" y="472" class="lane-title">User</text>
     <text x="40" y="592" class="lane-title">Tracking</text>
     <text x="40" y="732" class="lane-title">Leveling</text>
+    <text x="40" y="872" class="lane-title">Questing</text>
 
     <!-- Training: row 1 - Equipment / Movement / Muscle -->
     <g class="entity">
@@ -314,6 +320,22 @@
         <text x="550" y="810" text-anchor="middle" class="entity-meta">singleton (no FK)</text>
     </g>
 
+    <!-- Questing zone: quest (admin-defined) + quest_progression (per player per period) -->
+    <g class="entity">
+        <rect x="250" y="905" width="190" height="60" rx="6" />
+        <text x="345" y="931" text-anchor="middle" class="entity-name">quest</text>
+        <text x="345" y="950" text-anchor="middle" class="entity-meta">reference (no FK)</text>
+    </g>
+    <g class="entity">
+        <rect x="660" y="905" width="190" height="60" rx="6" />
+        <text x="755" y="931" text-anchor="middle" class="entity-name">quest_progression</text>
+        <text x="755" y="950" text-anchor="middle" class="entity-meta">FKs: quest, player</text>
+    </g>
+
+    <!-- quest_progression -> quest (N:1) -->
+    <line x1="660" y1="935" x2="440" y2="935" class="rel-fk" marker-end="url(#arrow-fk)" />
+    <text x="550" y="928" class="rel-label" text-anchor="middle">N:1</text>
+
     <!-- hydration_entry -> hydration_daily_summary (FK on entry) -->
     <line x1="455" y1="655" x2="440" y2="655" class="rel-fk" marker-end="url(#arrow-fk)" />
 
@@ -364,7 +386,7 @@
     <text x="460" y="530" class="rel-label" text-anchor="middle">1:1</text>
 </svg>
 <p class="meta">
-    The <code>movement → personal_best</code> link (one PB per movement, per player, per type) is shown by the FK list inside the <code>personal_best</code> box rather than a separate arrow, to keep the diagram readable. Likewise, every <strong>Tracking</strong> entity is N:1 to <code>player</code> (one row per player per day, except <code>hydration_entry</code> which is N:1 to its <code>hydration_daily_summary</code>); these player FKs are noted inside each box instead of drawn as crossing arrows. In the <strong>Leveling</strong> lane, <code>earned_experience</code> is N:1 to <code>player</code> (FK noted in-box); <code>level_bracket</code> (the XP curve) and the <code>leveling_config</code> singleton carry no foreign keys.
+    The <code>movement → personal_best</code> link (one PB per movement, per player, per type) is shown by the FK list inside the <code>personal_best</code> box rather than a separate arrow, to keep the diagram readable. Likewise, every <strong>Tracking</strong> entity is N:1 to <code>player</code> (one row per player per day, except <code>hydration_entry</code> which is N:1 to its <code>hydration_daily_summary</code>); these player FKs are noted inside each box instead of drawn as crossing arrows. In the <strong>Leveling</strong> lane, <code>earned_experience</code> is N:1 to <code>player</code> (FK noted in-box); <code>level_bracket</code> (the XP curve) and the <code>leveling_config</code> singleton carry no foreign keys. In the <strong>Questing</strong> lane, <code>quest</code> is admin-defined reference data (no FK), and <code>quest_progression</code> is N:1 to both <code>quest</code> and <code>player</code> (the <code>player</code> FK is noted in-box; the <code>quest</code> link is drawn).
 </p>
 
 <h2>Tables</h2>
@@ -687,6 +709,54 @@
 </ul>
 <ul class="fks">
     <li><span class="badge badge-fk">FK</span> <code>user_id</code> → <code>user.id</code></li>
+</ul>
+
+<h3 id="quest">quest</h3>
+<p class="summary">An admin-defined challenge. <code>kind = AUTOMATIC</code> quests track a <code>metric</code> toward a <code>target_value</code> (both non-null — see <code>QuestMetricRegistry</code>); <code>kind = MANUAL</code> quests carry no metric/target and are claimable directly. <code>periodicity</code> (<code>UNIQUE</code> / <code>DAILY</code> / <code>WEEKLY</code> / <code>MONTHLY</code>) decides how often a fresh <code>quest_progression</code> is materialised per player. The quest is active for any instant in <code>[date_start, date_end]</code> (<code>date_end = NULL</code> = open-ended). The admin CRUD validators enforce the <code>kind ⇔ metric ⇔ target_value</code> coupling, <code>rewarded_xp &gt; 0</code>, and <code>date_end &gt; date_start</code>.</p>
+<table>
+    <thead><tr><th>Column</th><th>Type</th><th>Flags</th><th>Notes</th></tr></thead>
+    <tbody>
+        <tr class="pk"><td class="col">id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-pk">PK</span></td><td>ULID</td></tr>
+        <tr><td class="col">label</td><td class="type">VARCHAR(255)</td><td></td><td>e.g. <code>Hydrate 1.5 L today</code></td></tr>
+        <tr><td class="col">kind</td><td class="type">VARCHAR(20)</td><td></td><td><code>AUTOMATIC</code> | <code>MANUAL</code> — see <code>QuestKindRegistry</code></td></tr>
+        <tr><td class="col">metric</td><td class="type">VARCHAR(40)</td><td class="flags"><span class="badge badge-null">NULL</span></td><td>non-null iff <code>AUTOMATIC</code> — see <code>QuestMetricRegistry</code></td></tr>
+        <tr><td class="col">periodicity</td><td class="type">VARCHAR(20)</td><td></td><td><code>UNIQUE</code> | <code>DAILY</code> | <code>WEEKLY</code> | <code>MONTHLY</code></td></tr>
+        <tr><td class="col">target_value</td><td class="type">NUMERIC(12,4)</td><td class="flags"><span class="badge badge-null">NULL</span></td><td>non-null iff <code>AUTOMATIC</code>; numeric-string</td></tr>
+        <tr><td class="col">date_start</td><td class="type">DATETIME</td><td></td><td>start of the active window</td></tr>
+        <tr><td class="col">date_end</td><td class="type">DATETIME</td><td class="flags"><span class="badge badge-null">NULL</span></td><td><code>NULL</code> = open-ended</td></tr>
+        <tr><td class="col">rewarded_xp</td><td class="type">INT</td><td></td><td>XP granted on claim (&gt; 0)</td></tr>
+        <tr><td class="col">created_at</td><td class="type">DATETIME</td><td></td><td></td></tr>
+        <tr><td class="col">updated_at</td><td class="type">DATETIME</td><td></td><td></td></tr>
+    </tbody>
+</table>
+<p class="meta">Reference data (no foreign keys). Inverse side: 1:N to <code>quest_progression</code> (the FK lives on <code>quest_progression.quest_id</code>).</p>
+
+<h3 id="quest_progression">quest_progression</h3>
+<p class="summary">One player's progress on a <code>quest</code> for a given period, find-or-created lazily on the first read of the player quest listing (or first metric write that touches it). <code>start_date</code>/<code>end_date</code> bound the period (both <code>NULL</code> for <code>UNIQUE</code> quests); <code>current_value</code> is recomputed by <code>QuestProgressionEvaluator</code> after a tracking/workout write; <code>status</code> flips <code>IN_PROGRESS → CLAIMABLE → REWARDED</code> (see <code>QuestProgressionStatusRegistry</code>). <code>completion_date</code> is stamped when the target is met, <code>claimed_date</code> when the reward is claimed (which creates an <code>earned_experience</code> row).</p>
+<table>
+    <thead><tr><th>Column</th><th>Type</th><th>Flags</th><th>Notes</th></tr></thead>
+    <tbody>
+        <tr class="pk"><td class="col">id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-pk">PK</span></td><td>ULID</td></tr>
+        <tr class="fk"><td class="col">quest_id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-fk">FK</span></td><td>→ <code>quest.id</code></td></tr>
+        <tr class="fk"><td class="col">player_id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-fk">FK</span></td><td>→ <code>player.id</code></td></tr>
+        <tr><td class="col">start_date</td><td class="type">DATETIME</td><td class="flags"><span class="badge badge-null">NULL</span></td><td>period start (<code>NULL</code> for <code>UNIQUE</code>)</td></tr>
+        <tr><td class="col">end_date</td><td class="type">DATETIME</td><td class="flags"><span class="badge badge-null">NULL</span></td><td>period end (<code>NULL</code> for <code>UNIQUE</code>)</td></tr>
+        <tr><td class="col">completion_date</td><td class="type">DATETIME</td><td class="flags"><span class="badge badge-null">NULL</span></td><td>stamped when the target is reached</td></tr>
+        <tr><td class="col">claimed_date</td><td class="type">DATETIME</td><td class="flags"><span class="badge badge-null">NULL</span></td><td>stamped on reward claim</td></tr>
+        <tr><td class="col">current_value</td><td class="type">NUMERIC(12,4)</td><td class="flags"><span class="badge badge-null">NULL</span></td><td>auto-derived progress; numeric-string</td></tr>
+        <tr><td class="col">status</td><td class="type">VARCHAR(20)</td><td></td><td><code>IN_PROGRESS</code> | <code>CLAIMABLE</code> | <code>REWARDED</code></td></tr>
+        <tr><td class="col">created_at</td><td class="type">DATETIME</td><td></td><td></td></tr>
+        <tr><td class="col">updated_at</td><td class="type">DATETIME</td><td></td><td></td></tr>
+    </tbody>
+</table>
+<ul class="idx">
+    <li><span class="badge badge-uniq">UNIQUE</span> <code>uniq_quest_progression_quest_player_start (quest_id, player_id, start_date)</code></li>
+    <li><span class="badge badge-idx">IDX</span> <code>IDX_E2E2C584209E9EF4 (quest_id)</code></li>
+    <li><span class="badge badge-idx">IDX</span> <code>IDX_E2E2C58499E6F5DF (player_id)</code></li>
+</ul>
+<ul class="fks">
+    <li><span class="badge badge-fk">FK</span> <code>quest_id</code> → <code>quest.id</code></li>
+    <li><span class="badge badge-fk">FK</span> <code>player_id</code> → <code>player.id</code></li>
 </ul>
 
 <h3 id="sleep_daily_entry">sleep_daily_entry</h3>

@@ -10,8 +10,11 @@ use App\Domain\DTO\DataOutput\Player\Tracking\Sleep\DeleteSleepDataOutput;
 use App\Domain\Exception\EntityNotFoundException;
 use App\Domain\Gateway\Persister\Tracking\Sleep\SleepDailyEntryPersisterGateway;
 use App\Domain\Gateway\Provider\Tracking\Sleep\SleepDailyEntryProviderGateway;
+use App\Domain\Registry\Questing\Quest\QuestMetricRegistry;
 use App\Domain\Security\LoggedPlayerResolverInterface;
+use App\Domain\Service\Questing\QuestProgressionEvaluator;
 use App\UseCase\AbstractLoggedPlayerUseCase;
+use Psr\Clock\ClockInterface;
 
 final class DeleteSleepUseCase extends AbstractLoggedPlayerUseCase
 {
@@ -19,6 +22,8 @@ final class DeleteSleepUseCase extends AbstractLoggedPlayerUseCase
         private readonly LoggedPlayerResolverInterface $loggedPlayerResolver,
         private readonly SleepDailyEntryProviderGateway $sleepProvider,
         private readonly SleepDailyEntryPersisterGateway $sleepPersister,
+        private readonly QuestProgressionEvaluator $questProgressionEvaluator,
+        private readonly ClockInterface $clock,
     ) {
     }
 
@@ -35,6 +40,8 @@ final class DeleteSleepUseCase extends AbstractLoggedPlayerUseCase
         }
 
         $this->sleepPersister->delete($entry);
+
+        $this->questProgressionEvaluator->refreshFor($player, QuestMetricRegistry::SLEEP_DURATION_MINUTES, $this->clock->now());
 
         return new DeleteSleepDataOutput($input->id);
     }

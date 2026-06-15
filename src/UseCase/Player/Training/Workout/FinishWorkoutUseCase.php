@@ -18,9 +18,11 @@ use App\Domain\Gateway\Persister\Training\Workout\WorkoutPersisterGateway;
 use App\Domain\Gateway\Provider\Leveling\LevelingConfig\LevelingConfigProviderGateway;
 use App\Domain\Gateway\Provider\Training\Workout\WorkoutProviderGateway;
 use App\Domain\Registry\Leveling\EarnedExperience\EarnedExperienceSourceTypeRegistry;
+use App\Domain\Registry\Questing\Quest\QuestMetricRegistry;
 use App\Domain\Registry\Training\Workout\WorkoutStatusRegistry;
 use App\Domain\Security\LoggedPlayerResolverInterface;
 use App\Domain\Service\PersonalBestEvaluator;
+use App\Domain\Service\Questing\QuestProgressionEvaluator;
 use App\Domain\Validator\Player\Training\Workout\FinishWorkoutValidator;
 use App\UseCase\AbstractLoggedPlayerUseCase;
 use Psr\Clock\ClockInterface;
@@ -36,6 +38,7 @@ final class FinishWorkoutUseCase extends AbstractLoggedPlayerUseCase
         private readonly PersonalBestEvaluator $personalBestEvaluator,
         private readonly LevelingConfigProviderGateway $levelingConfigProvider,
         private readonly EarnedExperiencePersisterGateway $earnedExperiencePersister,
+        private readonly QuestProgressionEvaluator $questProgressionEvaluator,
         private readonly ClockInterface $clock,
     ) {
     }
@@ -58,6 +61,10 @@ final class FinishWorkoutUseCase extends AbstractLoggedPlayerUseCase
         $this->workoutPersister->update($workout);
 
         $earnedXp = $this->awardWorkoutExperience($workout);
+
+        $now = $this->clock->now();
+        $this->questProgressionEvaluator->refreshFor($player, QuestMetricRegistry::WORKOUT_COUNT, $now);
+        $this->questProgressionEvaluator->refreshFor($player, QuestMetricRegistry::WORKOUT_DURATION_MINUTES, $now);
 
         $newPersonalBestsOutput = [];
         foreach ($this->personalBestEvaluator->evaluate($workout) as $upsert) {

@@ -10,6 +10,7 @@ use App\Domain\DTO\DataModel\User\PlayerDataModel;
 use App\Domain\Exception\ValidationException;
 use App\Domain\Gateway\Persister\User\PlayerPersisterGateway;
 use App\Domain\Security\LoggedPlayerResolverInterface;
+use App\Domain\Service\Questing\QuestProgressionEvaluator;
 use App\Domain\Validator\Player\Tracking\Steps\UpsertStepsForDayValidator;
 use App\Infrastructure\Persister\Tracking\Steps\StepsDailyEntryPersister;
 use App\Infrastructure\Repository\Tracking\Steps\StepsDailyEntryRepository;
@@ -92,6 +93,8 @@ final class UpsertStepsForDayUseCaseTest extends KernelTestCase
             $resolver,
             new StepsDailyEntryRepository($registry),
             new StepsDailyEntryPersister($em, $clock),
+            $container->get(QuestProgressionEvaluator::class),
+            $clock,
         );
     }
 

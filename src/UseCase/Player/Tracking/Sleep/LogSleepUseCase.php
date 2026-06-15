@@ -9,9 +9,12 @@ use App\Domain\DTO\DataInput\Player\Tracking\Sleep\LogSleepDataInput;
 use App\Domain\DTO\DataModel\Tracking\Sleep\SleepDailyEntryDataModel;
 use App\Domain\DTO\DataOutput\Player\Tracking\Sleep\SleepDailyEntryDataOutput;
 use App\Domain\Gateway\Persister\Tracking\Sleep\SleepDailyEntryPersisterGateway;
+use App\Domain\Registry\Questing\Quest\QuestMetricRegistry;
 use App\Domain\Security\LoggedPlayerResolverInterface;
+use App\Domain\Service\Questing\QuestProgressionEvaluator;
 use App\Domain\Validator\Player\Tracking\Sleep\LogSleepValidator;
 use App\UseCase\AbstractLoggedPlayerUseCase;
+use Psr\Clock\ClockInterface;
 
 final class LogSleepUseCase extends AbstractLoggedPlayerUseCase
 {
@@ -19,6 +22,8 @@ final class LogSleepUseCase extends AbstractLoggedPlayerUseCase
         private readonly LogSleepValidator $validator,
         private readonly LoggedPlayerResolverInterface $loggedPlayerResolver,
         private readonly SleepDailyEntryPersisterGateway $sleepPersister,
+        private readonly QuestProgressionEvaluator $questProgressionEvaluator,
+        private readonly ClockInterface $clock,
     ) {
     }
 
@@ -39,6 +44,8 @@ final class LogSleepUseCase extends AbstractLoggedPlayerUseCase
         $entry->quality = $input->quality;
 
         $this->sleepPersister->create($entry);
+
+        $this->questProgressionEvaluator->refreshFor($player, QuestMetricRegistry::SLEEP_DURATION_MINUTES, $this->clock->now());
 
         return new SleepDailyEntryDataOutput(
             $entry->id,

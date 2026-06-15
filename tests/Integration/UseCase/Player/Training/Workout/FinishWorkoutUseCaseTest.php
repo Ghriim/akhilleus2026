@@ -24,6 +24,7 @@ use App\Domain\Registry\Training\Workout\PersonalBestTypeRegistry;
 use App\Domain\Registry\Training\Workout\WorkoutStatusRegistry;
 use App\Domain\Security\LoggedPlayerResolverInterface;
 use App\Domain\Service\PersonalBestEvaluator;
+use App\Domain\Service\Questing\QuestProgressionEvaluator;
 use App\Domain\Validator\Player\Training\Workout\FinishWorkoutValidator;
 use App\Infrastructure\Persister\Leveling\EarnedExperience\EarnedExperiencePersister;
 use App\Infrastructure\Persister\Training\Workout\ExercisePersister;
@@ -321,6 +322,7 @@ final class FinishWorkoutUseCaseTest extends KernelTestCase
             new PersonalBestEvaluator($pbRepo),
             $container->get(LevelingConfigProviderGateway::class),
             new EarnedExperiencePersister($em, $clock),
+            $container->get(QuestProgressionEvaluator::class),
             $clock,
         );
     }

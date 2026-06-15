@@ -11,6 +11,7 @@ use App\Domain\DTO\DataModel\User\PlayerDataModel;
 use App\Domain\Exception\ValidationException;
 use App\Domain\Gateway\Persister\User\PlayerPersisterGateway;
 use App\Domain\Security\LoggedPlayerResolverInterface;
+use App\Domain\Service\Questing\QuestProgressionEvaluator;
 use App\Domain\Validator\Player\Tracking\Steps\ListStepsForRangeValidator;
 use App\Domain\Validator\Player\Tracking\Steps\UpsertStepsForDayValidator;
 use App\Infrastructure\Persister\Tracking\Steps\StepsDailyEntryPersister;
@@ -42,6 +43,8 @@ final class ListStepsForRangeUseCaseTest extends KernelTestCase
             $resolver,
             $repo,
             $persister,
+            $container->get(QuestProgressionEvaluator::class),
+            $clock,
         );
         $upsert->execute(new UpsertStepsForDayDataInput(new \DateTimeImmutable('2026-05-08'), 8000));
         $upsert->execute(new UpsertStepsForDayDataInput(new \DateTimeImmutable('2026-05-05'), 5000));

@@ -12,6 +12,7 @@ use App\Domain\DTO\DataOutput\Player\Tracking\Sleep\SleepDailyEntryDataOutput;
 use App\Domain\Exception\EntityNotFoundException;
 use App\Domain\Gateway\Persister\User\PlayerPersisterGateway;
 use App\Domain\Security\LoggedPlayerResolverInterface;
+use App\Domain\Service\Questing\QuestProgressionEvaluator;
 use App\Domain\Validator\Player\Tracking\Sleep\LogSleepValidator;
 use App\Infrastructure\Persister\Tracking\Sleep\SleepDailyEntryPersister;
 use App\Infrastructure\Repository\Tracking\Sleep\SleepDailyEntryRepository;
@@ -78,6 +79,8 @@ final class DeleteSleepUseCaseTest extends KernelTestCase
             new LogSleepValidator($resolver, $repo),
             $resolver,
             new SleepDailyEntryPersister($em, $clock),
+            $container->get(QuestProgressionEvaluator::class),
+            $clock,
         );
 
         return $logUseCase->execute(new LogSleepDataInput(
@@ -98,6 +101,8 @@ final class DeleteSleepUseCaseTest extends KernelTestCase
             $resolver,
             new SleepDailyEntryRepository($registry),
             new SleepDailyEntryPersister($em, $clock),
+            $container->get(QuestProgressionEvaluator::class),
+            $clock,
         );
     }
 

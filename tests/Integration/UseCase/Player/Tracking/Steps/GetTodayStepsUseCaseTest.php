@@ -10,6 +10,7 @@ use App\Domain\DTO\DataInput\User\RegisterPlayerDataInput;
 use App\Domain\DTO\DataModel\User\PlayerDataModel;
 use App\Domain\Gateway\Persister\User\PlayerPersisterGateway;
 use App\Domain\Security\LoggedPlayerResolverInterface;
+use App\Domain\Service\Questing\QuestProgressionEvaluator;
 use App\Domain\Validator\Player\Tracking\Steps\UpsertStepsForDayValidator;
 use App\Infrastructure\Persister\Tracking\Steps\StepsDailyEntryPersister;
 use App\Infrastructure\Repository\Tracking\Steps\StepsDailyEntryRepository;
@@ -52,7 +53,7 @@ final class GetTodayStepsUseCaseTest extends KernelTestCase
         $repo = new StepsDailyEntryRepository($registry);
         $persister = new StepsDailyEntryPersister($em, $clock);
 
-        $upsert = new UpsertStepsForDayUseCase(new UpsertStepsForDayValidator($resolver), $resolver, $repo, $persister);
+        $upsert = new UpsertStepsForDayUseCase(new UpsertStepsForDayValidator($resolver), $resolver, $repo, $persister, $container->get(QuestProgressionEvaluator::class), $clock);
         $upsert->execute(new UpsertStepsForDayDataInput($clock->now(), 7200));
 
         $useCase = new GetTodayStepsUseCase($resolver, $repo, $persister, $clock);

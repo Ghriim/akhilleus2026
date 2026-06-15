@@ -12,9 +12,12 @@ use App\Domain\DTO\DataOutput\Player\Tracking\Hydration\HydrationEntryDataOutput
 use App\Domain\Exception\EntityNotFoundException;
 use App\Domain\Gateway\Persister\Tracking\Hydration\HydrationEntryPersisterGateway;
 use App\Domain\Gateway\Provider\Tracking\Hydration\HydrationEntryProviderGateway;
+use App\Domain\Registry\Questing\Quest\QuestMetricRegistry;
 use App\Domain\Security\LoggedPlayerResolverInterface;
+use App\Domain\Service\Questing\QuestProgressionEvaluator;
 use App\Domain\Validator\Player\Tracking\Hydration\UpdateHydrationEntryValidator;
 use App\UseCase\AbstractLoggedPlayerUseCase;
+use Psr\Clock\ClockInterface;
 
 final class UpdateHydrationEntryUseCase extends AbstractLoggedPlayerUseCase
 {
@@ -23,6 +26,8 @@ final class UpdateHydrationEntryUseCase extends AbstractLoggedPlayerUseCase
         private readonly LoggedPlayerResolverInterface $loggedPlayerResolver,
         private readonly HydrationEntryProviderGateway $entryProvider,
         private readonly HydrationEntryPersisterGateway $entryPersister,
+        private readonly QuestProgressionEvaluator $questProgressionEvaluator,
+        private readonly ClockInterface $clock,
     ) {
     }
 
@@ -46,6 +51,8 @@ final class UpdateHydrationEntryUseCase extends AbstractLoggedPlayerUseCase
         // The entry persister recomputes `amountConsumedMl` on the parent summary in place
         // (and initialises its entries collection while doing so), so the in-memory summary
         // already reflects the write.
+        $this->questProgressionEvaluator->refreshFor($player, QuestMetricRegistry::HYDRATION_ML_DAILY, $this->clock->now());
+
         return self::buildDayOutput($entry->summary);
     }
 

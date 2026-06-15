@@ -10,8 +10,11 @@ use App\Domain\DTO\DataOutput\Player\Tracking\Steps\DeleteStepsForDayDataOutput;
 use App\Domain\Exception\EntityNotFoundException;
 use App\Domain\Gateway\Persister\Tracking\Steps\StepsDailyEntryPersisterGateway;
 use App\Domain\Gateway\Provider\Tracking\Steps\StepsDailyEntryProviderGateway;
+use App\Domain\Registry\Questing\Quest\QuestMetricRegistry;
 use App\Domain\Security\LoggedPlayerResolverInterface;
+use App\Domain\Service\Questing\QuestProgressionEvaluator;
 use App\UseCase\AbstractLoggedPlayerUseCase;
+use Psr\Clock\ClockInterface;
 
 final class DeleteStepsForDayUseCase extends AbstractLoggedPlayerUseCase
 {
@@ -19,6 +22,8 @@ final class DeleteStepsForDayUseCase extends AbstractLoggedPlayerUseCase
         private readonly LoggedPlayerResolverInterface $loggedPlayerResolver,
         private readonly StepsDailyEntryProviderGateway $stepsProvider,
         private readonly StepsDailyEntryPersisterGateway $stepsPersister,
+        private readonly QuestProgressionEvaluator $questProgressionEvaluator,
+        private readonly ClockInterface $clock,
     ) {
     }
 
@@ -36,6 +41,8 @@ final class DeleteStepsForDayUseCase extends AbstractLoggedPlayerUseCase
         }
 
         $this->stepsPersister->delete($entry);
+
+        $this->questProgressionEvaluator->refreshFor($player, QuestMetricRegistry::STEPS_DAILY, $this->clock->now());
 
         return new DeleteStepsForDayDataOutput($date->format(\DateTimeInterface::ATOM));
     }

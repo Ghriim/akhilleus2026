@@ -246,3 +246,26 @@ export interface EarnedExperienceJournalDataOutput {
   perPage: number;
   totalCount: number;
 }
+
+// --- Questing sub-domain ---
+
+export interface QuestProgressionDataOutput {
+  id: string;
+  questId: string;
+  label: string;
+  kind: string;
+  metric: string | null;
+  periodicity: string;
+  currentValue: string | null;
+  targetValue: string | null;
+  rewardedXp: number;
+  status: string;
+  startDate: string | null;
+  endDate: string | null;
+}
+
+export interface ClaimQuestRewardDataOutput {
+  progressionId: string;
+  earnedExperienceId: string;
+  amount: number;
+}

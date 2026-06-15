@@ -14,6 +14,9 @@ import { MovementEditPage } from '@/features/movements/MovementEditPage';
 import { LevelBracketListPage } from '@/features/levelBrackets/LevelBracketListPage';
 import { LevelBracketCreatePage } from '@/features/levelBrackets/LevelBracketCreatePage';
 import { LevelBracketEditPage } from '@/features/levelBrackets/LevelBracketEditPage';
+import { QuestListPage } from '@/features/quests/QuestListPage';
+import { QuestCreatePage } from '@/features/quests/QuestCreatePage';
+import { QuestEditPage } from '@/features/quests/QuestEditPage';
 
 export const AppRouter = () => (
   <Routes>
@@ -46,6 +49,11 @@ export const AppRouter = () => (
         <Route index element={<LevelBracketListPage />} />
         <Route path="new" element={<LevelBracketCreatePage />} />
         <Route path=":id" element={<LevelBracketEditPage />} />
+      </Route>
+      <Route path="quests">
+        <Route index element={<QuestListPage />} />
+        <Route path="new" element={<QuestCreatePage />} />
+        <Route path=":id" element={<QuestEditPage />} />
       </Route>
     </Route>
     <Route path="*" element={<Navigate to="/" replace />} />

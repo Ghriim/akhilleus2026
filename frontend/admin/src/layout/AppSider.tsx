@@ -1,5 +1,5 @@
 import { Layout, Menu } from 'antd';
-import { ToolOutlined, ThunderboltOutlined, ApartmentOutlined, LineChartOutlined } from '@ant-design/icons';
+import { ToolOutlined, ThunderboltOutlined, ApartmentOutlined, LineChartOutlined, TrophyOutlined } from '@ant-design/icons';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 const { Sider } = Layout;
@@ -24,6 +24,11 @@ const items = [
     key: '/level-brackets',
     icon: <LineChartOutlined />,
     label: 'Level brackets',
+  },
+  {
+    key: '/quests',
+    icon: <TrophyOutlined />,
+    label: 'Quests',
   },
 ];
 

@@ -13,9 +13,12 @@ use App\Domain\DTO\DataOutput\Player\Tracking\Hydration\HydrationEntryDataOutput
 use App\Domain\Gateway\Persister\Tracking\Hydration\HydrationDailySummaryPersisterGateway;
 use App\Domain\Gateway\Persister\Tracking\Hydration\HydrationEntryPersisterGateway;
 use App\Domain\Gateway\Provider\Tracking\Hydration\HydrationDailySummaryProviderGateway;
+use App\Domain\Registry\Questing\Quest\QuestMetricRegistry;
 use App\Domain\Security\LoggedPlayerResolverInterface;
+use App\Domain\Service\Questing\QuestProgressionEvaluator;
 use App\Domain\Validator\Player\Tracking\Hydration\AddHydrationEntryValidator;
 use App\UseCase\AbstractLoggedPlayerUseCase;
+use Psr\Clock\ClockInterface;
 
 final class AddHydrationEntryUseCase extends AbstractLoggedPlayerUseCase
 {
@@ -25,6 +28,8 @@ final class AddHydrationEntryUseCase extends AbstractLoggedPlayerUseCase
         private readonly HydrationDailySummaryProviderGateway $summaryProvider,
         private readonly HydrationDailySummaryPersisterGateway $summaryPersister,
         private readonly HydrationEntryPersisterGateway $entryPersister,
+        private readonly QuestProgressionEvaluator $questProgressionEvaluator,
+        private readonly ClockInterface $clock,
     ) {
     }
 
@@ -49,6 +54,8 @@ final class AddHydrationEntryUseCase extends AbstractLoggedPlayerUseCase
 
         // The entry persister adds the new entry to the summary's collection and recomputes
         // `amountConsumedMl` in place, so the in-memory summary already reflects the write.
+        $this->questProgressionEvaluator->refreshFor($player, QuestMetricRegistry::HYDRATION_ML_DAILY, $this->clock->now());
+
         return self::buildDayOutput($summary);
     }
 
