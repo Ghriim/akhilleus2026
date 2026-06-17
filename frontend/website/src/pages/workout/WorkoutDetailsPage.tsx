@@ -9,6 +9,7 @@ import { Modal } from '@/components/ui/Modal';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Spinner } from '@/components/ui/Spinner';
 import { AddExerciseForm } from '@/components/workout/AddExerciseForm';
+import { DeleteWorkoutButton } from '@/components/workout/DeleteWorkoutButton';
 import { ExerciseCard } from '@/components/workout/ExerciseCard';
 import { WorkoutStatusBadge } from '@/components/workout/WorkoutStatusBadge';
 import {
@@ -78,6 +79,12 @@ export function WorkoutDetailsPage() {
                 Annuler
               </Button>
             )}
+            <DeleteWorkoutButton
+              workoutId={data.id}
+              plannedAt={data.plannedAt}
+              dateStart={data.dateStart}
+              dateEnd={data.dateEnd}
+            />
             <Button variant="ghost" onClick={() => navigate(-1)}>
               Retour
             </Button>

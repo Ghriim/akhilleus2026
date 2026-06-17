@@ -44,6 +44,16 @@ final class PersonalBestEvaluatorTest extends TestCase
         $this->evaluator->evaluate($workout);
     }
 
+    public function testItReturnsNoUpsertsForADeletedWorkout(): void
+    {
+        $movement = self::buildMovement('bench-press', tracksRepetitions: true, tracksWeight: true);
+        $workout = self::buildWorkout($this->player, WorkoutStatusRegistry::DELETED);
+        $exercise = self::attachExercise($workout, $movement);
+        self::attachSet($exercise, achievedReps: 10, achievedWeight: '50.00');
+
+        self::assertSame([], $this->evaluator->evaluate($workout));
+    }
+
     public function testItProducesEveryCategoryForAStrengthMovementWithoutExistingPBs(): void
     {
         $movement = self::buildMovement('bench-press', tracksRepetitions: true, tracksWeight: true);

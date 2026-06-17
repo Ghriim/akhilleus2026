@@ -65,6 +65,27 @@ final class ListWorkoutsByMonthUseCaseTest extends KernelTestCase
         self::assertNotContains($may->id, $ids);
     }
 
+    public function testItExcludesDeletedWorkouts(): void
+    {
+        self::bootKernel();
+        $container = self::getContainer();
+        $player = self::createTestPlayer($container, 'calendar-deleted');
+        $persister = self::buildWorkoutPersister($container);
+
+        $kept = new WorkoutDataModel($player, WorkoutStatusRegistry::PLANNED);
+        $kept->plannedAt = new \DateTimeImmutable('2026-04-15T10:00:00', new \DateTimeZone('UTC'));
+        $persister->create($kept);
+
+        $deleted = new WorkoutDataModel($player, WorkoutStatusRegistry::DELETED);
+        $deleted->plannedAt = new \DateTimeImmutable('2026-04-18T10:00:00', new \DateTimeZone('UTC'));
+        $persister->create($deleted);
+
+        $output = self::buildUseCase($container, $player)->execute(new ListWorkoutsByMonthDataInput(2026, 4));
+
+        self::assertCount(1, $output);
+        self::assertSame($kept->id, $output[0]->id);
+    }
+
     public function testItPicksTheMostAdvancedDateForOrdering(): void
     {
         self::bootKernel();

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Infrastructure\Controller\Player\Training;
 
 use App\Domain\DTO\DataInput\Player\Training\Workout\CancelWorkoutDataInput;
+use App\Domain\DTO\DataInput\Player\Training\Workout\DeleteWorkoutDataInput;
 use App\Domain\DTO\DataInput\Player\Training\Workout\FinishWorkoutDataInput;
 use App\Domain\DTO\DataInput\Player\Training\Workout\GetWorkoutDetailsDataInput;
 use App\Domain\DTO\DataInput\Player\Training\Workout\ListUpcomingWorkoutsDataInput;
@@ -15,6 +16,7 @@ use App\Domain\DTO\DataInput\Player\Training\Workout\StartEmptyWorkoutDataInput;
 use App\Domain\DTO\DataInput\Player\Training\Workout\StartPlannedWorkoutDataInput;
 use App\Domain\Exception\ValidationException;
 use App\UseCase\Player\Training\Workout\CancelWorkoutUseCase;
+use App\UseCase\Player\Training\Workout\DeleteWorkoutUseCase;
 use App\UseCase\Player\Training\Workout\FinishWorkoutUseCase;
 use App\UseCase\Player\Training\Workout\GetWorkoutDetailsUseCase;
 use App\UseCase\Player\Training\Workout\ListUpcomingWorkoutsUseCase;
@@ -103,5 +105,11 @@ final readonly class WorkoutPlayerController
     public function finish(string $id, FinishWorkoutUseCase $useCase): JsonResponse
     {
         return new JsonResponse($useCase->execute(new FinishWorkoutDataInput($id)));
+    }
+
+    #[Route(path: '/api/player/workouts/{id}', name: 'player_workout_delete', methods: ['DELETE'], requirements: ['id' => '[0-9A-HJKMNP-TV-Z]{26}'])]
+    public function delete(string $id, DeleteWorkoutUseCase $useCase): JsonResponse
+    {
+        return new JsonResponse($useCase->execute(new DeleteWorkoutDataInput($id)));
     }
 }

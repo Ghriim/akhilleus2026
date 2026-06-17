@@ -4,6 +4,8 @@ import type {
   PlanWorkoutInput,
   StartEmptyWorkoutInput,
 } from '@/api/endpoints/workouts';
+import { levelingKeys } from '@/hooks/leveling/keys';
+import { profileKeys } from '@/hooks/profile/keys';
 import { workoutKeys } from './keys';
 
 export function useUpcomingWorkouts() {
@@ -84,6 +86,20 @@ export function useCancelWorkout() {
     onSuccess: (_data, id) => {
       qc.invalidateQueries({ queryKey: workoutKeys.all });
       qc.invalidateQueries({ queryKey: workoutKeys.details(id) });
+    },
+  });
+}
+
+export function useDeleteWorkout() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => workoutsApi.remove(id),
+    onSuccess: (_data, id) => {
+      qc.invalidateQueries({ queryKey: workoutKeys.all });
+      qc.invalidateQueries({ queryKey: workoutKeys.details(id) });
+      // A hard delete also removes the workout's XP grant → refresh the journal + header badge.
+      qc.invalidateQueries({ queryKey: levelingKeys.all });
+      qc.invalidateQueries({ queryKey: profileKeys.all });
     },
   });
 }

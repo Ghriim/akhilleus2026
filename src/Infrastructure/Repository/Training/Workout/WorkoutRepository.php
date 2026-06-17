@@ -26,9 +26,11 @@ final class WorkoutRepository extends ServiceEntityRepository implements Workout
         return $this->createQueryBuilder('w')
             ->where('w.id = :id')
             ->andWhere('w.player = :player')
+            ->andWhere('w.status != :excludedStatus')
             ->leftJoin('w.exercises', 'e')->addSelect('e')
             ->setParameter('id', $id)
             ->setParameter('player', $player)
+            ->setParameter('excludedStatus', WorkoutStatusRegistry::DELETED)
             ->orderBy('e.position', 'ASC')
             ->getQuery()
             ->getOneOrNullResult();
@@ -43,8 +45,10 @@ final class WorkoutRepository extends ServiceEntityRepository implements Workout
             ->leftJoin('e.exerciseSets', 's')->addSelect('s')
             ->where('w.id = :id')
             ->andWhere('w.player = :player')
+            ->andWhere('w.status != :excludedStatus')
             ->setParameter('id', $id)
             ->setParameter('player', $player)
+            ->setParameter('excludedStatus', WorkoutStatusRegistry::DELETED)
             ->orderBy('e.position', 'ASC')
             ->addOrderBy('s.position', 'ASC')
             ->getQuery()
@@ -147,9 +151,11 @@ final class WorkoutRepository extends ServiceEntityRepository implements Workout
                 .' OR (w.dateEnd IS NULL AND w.dateStart >= :monthStart AND w.dateStart < :monthEnd)'
                 .' OR (w.dateEnd IS NULL AND w.dateStart IS NULL AND w.plannedAt >= :monthStart AND w.plannedAt < :monthEnd)',
             )
+            ->andWhere('w.status != :excludedStatus')
             ->setParameter('player', $player)
             ->setParameter('monthStart', $monthStart)
             ->setParameter('monthEnd', $monthEnd)
+            ->setParameter('excludedStatus', WorkoutStatusRegistry::DELETED)
             ->getQuery()
             ->getResult();
 

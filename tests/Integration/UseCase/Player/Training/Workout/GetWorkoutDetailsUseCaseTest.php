@@ -107,6 +107,24 @@ final class GetWorkoutDetailsUseCaseTest extends KernelTestCase
         self::buildUseCase($container, $playerA)->execute(new GetWorkoutDetailsDataInput($workout->id));
     }
 
+    public function testItThrowsNotFoundForADeletedWorkout(): void
+    {
+        self::bootKernel();
+        $container = self::getContainer();
+        $player = self::createTestPlayer($container, 'details-deleted');
+        $em = $container->get('doctrine.orm.entity_manager');
+        $clock = $container->get(ClockInterface::class);
+        $workoutPersister = new WorkoutPersister($em, $clock);
+
+        $workout = new WorkoutDataModel($player, WorkoutStatusRegistry::DELETED);
+        $workout->dateStart = $clock->now();
+        $workoutPersister->create($workout);
+
+        $this->expectException(EntityNotFoundException::class);
+
+        self::buildUseCase($container, $player)->execute(new GetWorkoutDetailsDataInput($workout->id));
+    }
+
     private static function createTestPlayer(ContainerInterface $container, string $emailSlug): PlayerDataModel
     {
         return $container->get(PlayerPersisterGateway::class)->create(new RegisterPlayerDataInput(

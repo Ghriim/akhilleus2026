@@ -38,6 +38,7 @@ use Doctrine\Persistence\ManagerRegistry;
 use Psr\Clock\ClockInterface;
 use Psr\Container\ContainerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\Clock\MockClock;
 
 final class FinishWorkoutUseCaseTest extends KernelTestCase
 {
@@ -169,6 +170,40 @@ final class FinishWorkoutUseCaseTest extends KernelTestCase
         self::assertNull($earned, 'A zero-minute workout must not create an EarnedExperience.');
     }
 
+    public function testItGrantsExperienceForAWorkoutThatStartedYesterdayButFinishedToday(): void
+    {
+        self::bootKernel();
+        $container = self::getContainer();
+        $player = self::createTestPlayer($container, 'finish-cross-midnight');
+        $movement = self::createTestMovement($container, 'finish-cross-midnight-mvt', tracksRepetitions: true, tracksWeight: true);
+
+        // The retro XP guard is keyed on dateEnd, not dateStart: a workout begun at 23:00 the previous
+        // calendar day but finished at 00:30 today still earns XP for its full duration. We pin "now" to
+        // 2026-06-17 00:30 Europe/Paris so finishing stamps dateEnd just past the day boundary, while
+        // dateStart sits on the previous day — proving the guard does not penalise a cross-midnight session.
+        $paris = new \DateTimeZone('Europe/Paris');
+        $clock = new MockClock(new \DateTimeImmutable('2026-06-17T00:30:00', $paris));
+        $workout = self::seedInProgressWorkoutWithSets(
+            $container,
+            $player,
+            $movement,
+            [['reps' => 10, 'weight' => '50.00']],
+            new \DateTimeImmutable('2026-06-16T23:00:00', $paris),
+        );
+
+        $output = self::buildUseCase($container, $player, $clock)->execute(new FinishWorkoutDataInput($workout->id));
+
+        // dateStart 23:00 → dateEnd 00:30 spans 90 min × 50 xpPerWorkoutMinute = 4500 XP. (The dev-plan's
+        // "30 minutes × 50 = 1500" was an arithmetic slip: 23:00→00:30 is 90 minutes, not 30.)
+        self::assertSame(4500, $output->earnedXp);
+
+        $earned = $container->get(EarnedExperienceProviderGateway::class)
+            ->findOneBySourceTypeAndId(EarnedExperienceSourceTypeRegistry::WORKOUT, $workout->id);
+        self::assertNotNull($earned, 'A workout finished today must earn XP even when it started yesterday.');
+        self::assertSame(4500, $earned->amount);
+        self::assertFalse($earned->isLocked);
+    }
+
     public function testItRejectsAWorkoutWithIncompleteSets(): void
     {
         self::bootKernel();
@@ -294,11 +329,11 @@ final class FinishWorkoutUseCaseTest extends KernelTestCase
         return [new WorkoutPersister($em, $clock), $clock];
     }
 
-    private static function buildUseCase(ContainerInterface $container, PlayerDataModel $player): FinishWorkoutUseCase
+    private static function buildUseCase(ContainerInterface $container, PlayerDataModel $player, ?ClockInterface $clock = null): FinishWorkoutUseCase
     {
         $em = $container->get('doctrine.orm.entity_manager');
         $registry = $container->get(ManagerRegistry::class);
-        $clock = $container->get(ClockInterface::class);
+        $clock ??= $container->get(ClockInterface::class);
 
         $resolver = new class ($player) implements LoggedPlayerResolverInterface {
             public function __construct(private PlayerDataModel $player)

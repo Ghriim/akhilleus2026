@@ -19,7 +19,8 @@ export const toQuestPayload = (values: QuestFormValues): QuestPayload => {
         : null,
     rewardedXp: values.rewardedXp,
     dateStart: values.dateStart.toISOString(),
-    dateEnd: values.dateEnd !== null ? values.dateEnd.toISOString() : null,
+    // antd leaves an untouched optional DatePicker as `undefined`, not `null`.
+    dateEnd: values.dateEnd != null ? values.dateEnd.toISOString() : null,
   };
 };
 

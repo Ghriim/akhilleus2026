@@ -10,6 +10,7 @@ use App\Domain\DTO\DataModel\Training\Workout\PersonalBestDataModel;
 use App\Domain\DTO\DataModel\Training\Workout\WorkoutDataModel;
 use App\Domain\Gateway\Provider\Training\PersonalBest\PersonalBestProviderGateway;
 use App\Domain\Registry\Training\Workout\PersonalBestTypeRegistry;
+use App\Domain\Registry\Training\Workout\WorkoutStatusRegistry;
 
 final readonly class PersonalBestEvaluator
 {
@@ -33,6 +34,11 @@ final readonly class PersonalBestEvaluator
      */
     public function evaluate(WorkoutDataModel $workout): array
     {
+        // Defence in depth: a deleted workout must never influence personal-best recomputes.
+        if (WorkoutStatusRegistry::DELETED === $workout->status) {
+            return [];
+        }
+
         if (null === $workout->dateEnd) {
             throw new \LogicException('Workout dateEnd must be set before evaluating personal bests.');
         }

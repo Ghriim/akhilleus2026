@@ -10,6 +10,7 @@ interface WorkoutStatusRegistry
     public const string IN_PROGRESS = 'IN_PROGRESS';
     public const string COMPLETED = 'COMPLETED';
     public const string CANCELED = 'CANCELED';
+    public const string DELETED = 'DELETED';
 
     /** @var list<string> */
     public const array ALL = [
@@ -17,6 +18,7 @@ interface WorkoutStatusRegistry
         self::IN_PROGRESS,
         self::COMPLETED,
         self::CANCELED,
+        self::DELETED,
     ];
 
     /** @var list<string> */

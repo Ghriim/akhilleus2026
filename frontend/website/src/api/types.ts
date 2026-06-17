@@ -123,6 +123,11 @@ export interface FinishWorkoutDataOutput {
   newPersonalBests: PersonalBestSummaryDataOutput[];
 }
 
+export interface DeleteWorkoutDataOutput {
+  deletedId: string;
+  mode: 'hard' | 'soft';
+}
+
 export interface MovementSummaryDataOutput {
   id: string;
   slug: string;

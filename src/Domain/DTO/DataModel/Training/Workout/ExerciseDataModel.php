@@ -27,7 +27,7 @@ class ExerciseDataModel implements DataModelInterface, OwnedByPlayerInterface
     public string $id;
 
     #[ORM\ManyToOne(targetEntity: WorkoutDataModel::class, inversedBy: 'exercises')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     public WorkoutDataModel $workout;
 
     #[ORM\ManyToOne(targetEntity: MovementDataModel::class)]

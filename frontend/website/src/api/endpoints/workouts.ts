@@ -1,5 +1,6 @@
 import { apiRequest } from '../client';
 import type {
+  DeleteWorkoutDataOutput,
   FinishWorkoutDataOutput,
   WorkoutDataOutput,
   WorkoutDetailsDataOutput,
@@ -58,4 +59,8 @@ export function finish(id: string): Promise<FinishWorkoutDataOutput> {
 
 export function cancel(id: string): Promise<WorkoutDataOutput> {
   return apiRequest<WorkoutDataOutput>(`/api/player/workouts/${id}/cancel`, { method: 'POST' });
+}
+
+export function remove(id: string): Promise<DeleteWorkoutDataOutput> {
+  return apiRequest<DeleteWorkoutDataOutput>(`/api/player/workouts/${id}`, { method: 'DELETE' });
 }

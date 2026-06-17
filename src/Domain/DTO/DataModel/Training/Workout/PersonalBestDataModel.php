@@ -40,11 +40,11 @@ class PersonalBestDataModel implements DataModelInterface, OwnedByPlayerInterfac
     public \DateTimeImmutable $achievedAt;
 
     #[ORM\ManyToOne(targetEntity: WorkoutDataModel::class)]
-    #[ORM\JoinColumn(nullable: true)]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
     public ?WorkoutDataModel $workout = null;
 
     #[ORM\ManyToOne(targetEntity: ExerciseSetDataModel::class)]
-    #[ORM\JoinColumn(nullable: true)]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
     public ?ExerciseSetDataModel $exerciseSet = null;
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]

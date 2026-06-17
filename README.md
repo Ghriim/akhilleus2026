@@ -120,6 +120,32 @@ docker compose exec -T frontend-admin   sh -c "npm run typecheck && npm run lint
 docker compose exec -T frontend-website sh -c "npm run typecheck && npm run lint && npm run build"
 ```
 
+## Scheduled jobs (cron)
+
+The nightly **leveling lock** folds each player's still-unlocked XP grants (workout completions,
+claimed quest rewards) earned before today into their level/XP, then locks those grants so they are
+never counted twice:
+
+```bash
+php bin/console app:leveling:lock-yesterday
+# --cutoff=2026-06-17T00:00:00+02:00   # debug/testing override; defaults to today 00:00 Europe/Paris
+```
+
+It is idempotent (a second run finds nothing left to lock) and timezone-anchored to Europe/Paris.
+
+**Production wiring** — Symfony Scheduler is *not* installed (a single nightly job doesn't warrant
+Messenger + a worker process). Schedule it from the host crontab at 01:00 local time (a 1-hour buffer
+past midnight for clock skew):
+
+```cron
+# /etc/cron.d/akhilleus  (or `crontab -e` for the deploy user)
+0 1 * * * www-data cd /var/www/akhilleus && /usr/bin/php bin/console app:leveling:lock-yesterday --env=prod >> var/log/cron.log 2>&1
+```
+
+Ensure the host timezone is `Europe/Paris` (or pass `TZ=Europe/Paris` in the crontab line) so `0 1`
+fires at 01:00 Paris. If a future deploy adopts a different orchestrator (systemd timer, Kubernetes
+CronJob, supervisor), point it at the same command — the command owns all the logic and the timezone.
+
 ## Architecture overview
 
 The strict layering is enforced by `specifications/conventions.md`:

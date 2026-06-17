@@ -460,7 +460,7 @@
     <thead><tr><th>Column</th><th>Type</th><th>Flags</th><th>Notes</th></tr></thead>
     <tbody>
         <tr class="pk"><td class="col">id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-pk">PK</span></td><td>ULID</td></tr>
-        <tr class="fk"><td class="col">workout_id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-fk">FK</span></td><td>→ <code>workout.id</code></td></tr>
+        <tr class="fk"><td class="col">workout_id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-fk">FK</span></td><td>→ <code>workout.id</code> ON DELETE CASCADE</td></tr>
         <tr class="fk"><td class="col">movement_id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-fk">FK</span></td><td>→ <code>movement.id</code></td></tr>
         <tr><td class="col">rest_duration_seconds</td><td class="type">INT</td><td></td><td></td></tr>
         <tr><td class="col">position</td><td class="type">INT</td><td></td><td>order within workout</td></tr>
@@ -473,7 +473,7 @@
     <li><span class="badge badge-idx">IDX</span> <code>IDX_AEDAD51C229E70A7 (movement_id)</code></li>
 </ul>
 <ul class="fks">
-    <li><span class="badge badge-fk">FK</span> <code>workout_id</code> → <code>workout.id</code></li>
+    <li><span class="badge badge-fk">FK</span> <code>workout_id</code> → <code>workout.id</code> ON DELETE CASCADE</li>
     <li><span class="badge badge-fk">FK</span> <code>movement_id</code> → <code>movement.id</code></li>
 </ul>
 
@@ -483,7 +483,7 @@
     <thead><tr><th>Column</th><th>Type</th><th>Flags</th><th>Notes</th></tr></thead>
     <tbody>
         <tr class="pk"><td class="col">id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-pk">PK</span></td><td>ULID</td></tr>
-        <tr class="fk"><td class="col">exercise_id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-fk">FK</span></td><td>→ <code>exercise.id</code></td></tr>
+        <tr class="fk"><td class="col">exercise_id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-fk">FK</span></td><td>→ <code>exercise.id</code> ON DELETE CASCADE</td></tr>
         <tr><td class="col">position</td><td class="type">INT</td><td></td><td>order within exercise</td></tr>
         <tr><td class="col">planned_reps</td><td class="type">INT</td><td class="flags"><span class="badge badge-null">NULL</span></td><td></td></tr>
         <tr><td class="col">achieved_reps</td><td class="type">INT</td><td class="flags"><span class="badge badge-null">NULL</span></td><td></td></tr>
@@ -506,7 +506,7 @@
     <li><span class="badge badge-idx">IDX</span> <code>IDX_704B80A0E934951A (exercise_id)</code></li>
 </ul>
 <ul class="fks">
-    <li><span class="badge badge-fk">FK</span> <code>exercise_id</code> → <code>exercise.id</code></li>
+    <li><span class="badge badge-fk">FK</span> <code>exercise_id</code> → <code>exercise.id</code> ON DELETE CASCADE</li>
 </ul>
 
 <h3 id="hydration_daily_summary">hydration_daily_summary</h3>
@@ -667,8 +667,8 @@
         <tr><td class="col">type</td><td class="type">VARCHAR(50)</td><td></td><td><code>PersonalBestTypeRegistry</code></td></tr>
         <tr><td class="col">value</td><td class="type">NUMERIC(15,4)</td><td></td><td>numeric-string; unit depends on type</td></tr>
         <tr><td class="col">achieved_at</td><td class="type">DATETIME</td><td></td><td>moment the PB was set</td></tr>
-        <tr class="fk"><td class="col">workout_id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-fk">FK</span><span class="badge badge-null">NULL</span></td><td>→ <code>workout.id</code> (provenance)</td></tr>
-        <tr class="fk"><td class="col">exercise_set_id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-fk">FK</span><span class="badge badge-null">NULL</span></td><td>→ <code>exercise_set.id</code> (provenance)</td></tr>
+        <tr class="fk"><td class="col">workout_id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-fk">FK</span><span class="badge badge-null">NULL</span></td><td>→ <code>workout.id</code> (provenance) ON DELETE SET NULL</td></tr>
+        <tr class="fk"><td class="col">exercise_set_id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-fk">FK</span><span class="badge badge-null">NULL</span></td><td>→ <code>exercise_set.id</code> (provenance) ON DELETE SET NULL</td></tr>
         <tr><td class="col">created_at</td><td class="type">DATETIME</td><td></td><td></td></tr>
         <tr><td class="col">updated_at</td><td class="type">DATETIME</td><td></td><td></td></tr>
     </tbody>
@@ -683,8 +683,8 @@
 <ul class="fks">
     <li><span class="badge badge-fk">FK</span> <code>player_id</code> → <code>player.id</code></li>
     <li><span class="badge badge-fk">FK</span> <code>movement_id</code> → <code>movement.id</code></li>
-    <li><span class="badge badge-fk">FK</span> <code>workout_id</code> → <code>workout.id</code> (nullable)</li>
-    <li><span class="badge badge-fk">FK</span> <code>exercise_set_id</code> → <code>exercise_set.id</code> (nullable)</li>
+    <li><span class="badge badge-fk">FK</span> <code>workout_id</code> → <code>workout.id</code> (nullable) ON DELETE SET NULL</li>
+    <li><span class="badge badge-fk">FK</span> <code>exercise_set_id</code> → <code>exercise_set.id</code> (nullable) ON DELETE SET NULL</li>
 </ul>
 
 <h3 id="player">player</h3>
