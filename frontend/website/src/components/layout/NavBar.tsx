@@ -10,6 +10,7 @@ const LINKS: { to: string; label: string; end: boolean }[] = [
   { to: '/history', label: 'Historique', end: false },
   { to: '/movements', label: 'Mouvements', end: false },
   { to: '/achievements', label: 'Records', end: false },
+  { to: '/statistics', label: 'Statistiques', end: false },
   { to: '/quests/unique', label: 'Quêtes uniques', end: false },
   { to: '/leveling/journal', label: 'Journal XP', end: false },
 ];

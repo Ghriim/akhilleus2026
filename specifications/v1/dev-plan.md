@@ -203,6 +203,9 @@ Added on user request (2026-06-13): a daily step **goal**, replicating the hydra
 - **Planned "unit tests" consolidated into a single real-DB integration test.** The plan listed `LockYesterdayCommandTest` under *unit* tests with cases "already-locked skipped" and "earned-today skipped" — but those are properties of the `findUnlockedBefore` SQL filter (`isLocked = false AND earnedAt < :cutoff`), not of the command's orchestration. A mock-based unit test (which controls what the finder returns) cannot meaningfully exercise the skip, and `LevelingCalculator` is `final` so it can't be PHPUnit-mocked either. The command is pure orchestration over gateways, so a real-DB `CommandTester` integration test is both more faithful and matches the codebase's integration-first convention (no command/use-case unit tests exist anywhere). All five plan-listed scenarios are covered there; the skip-cases are verified against the actual query (earned-today via a same-day seed, already-locked via a second idempotent run). Coverage check 7.1 only mandates unit tests for stateful Domain *services* — a command is neither, so no unit-test debt is incurred.
 - **Output assertions normalise whitespace** (`preg_replace('/\s+/', ' ', $display)`) before substring-matching the summary line, because `SymfonyStyle::success` boxes/word-wraps the text at terminal width — collapsing runs of whitespace makes the assertion width-independent.
 
+### Statistiques placeholder path (6.1)
+- **Page placed under `pages/statistics/` not `features/statistics/`.** The plan's path `frontend/website/src/features/statistics/StatisticsPage.tsx` predates the website's actual layout — the website has **no `features/` folder** (that's an admin-frontend convention); every player page lives under `pages/{domain}/`. Followed the on-disk convention: `pages/statistics/StatisticsPage.tsx`. The page reuses the shared `<PageHeader>` + `<EmptyState>` UI primitives rather than bespoke markup. Nav entry added to the flat `LINKS` array in `NavBar.tsx` (no "Training ▾" dropdown exists on the website — that wording in the plan was aspirational).
+
 ## Tracking (checkbox convention)
 
 - The dev-plan uses `[x]` / `[ ]` checkboxes on every subsection header **and** every leaf bullet. Tick items off as soon as the step closes. This is the source of truth for "what's done."
@@ -609,11 +612,11 @@ This phase closes the locking story. Every constraint here flows from the lockin
 
 ## Phase 6 — Statistiques placeholder
 
-### [ ] 6.1 Player frontend menu + empty page
-- [ ] Add "Statistiques" entry to the header nav (top level next to "Dashboard" and "Training ▾"). No dropdown.
-- [ ] `frontend/website/src/features/statistics/StatisticsPage.tsx` — empty placeholder with copy: "Cette section accueillera bientôt les graphiques de votre activité. Reviens vite !" (or English equivalent if the user prefers — match existing copy).
-- [ ] Route `/statistics` (or `/statistiques` to match the menu — pick one and stay consistent with the rest of the routes; v0 uses English routes throughout, so default to `/statistics`).
-- [ ] No backend, no DataModel, no migration.
+### [x] 6.1 Player frontend menu + empty page
+- [x] Add "Statistiques" entry to the header nav (flat `LINKS` array in `NavBar.tsx`, between "Records" and "Quêtes uniques"). No dropdown — the website nav has no dropdowns.
+- [x] `frontend/website/src/pages/statistics/StatisticsPage.tsx` — empty placeholder reusing `<PageHeader>` + `<EmptyState>`, copy: "Cette section accueillera bientôt les graphiques de votre activité. Reviens vite !".
+- [x] Route `/statistics` (registered in `App.tsx` inside the `AppLayout` protected group).
+- [x] No backend, no DataModel, no migration.
 
 ---
 
