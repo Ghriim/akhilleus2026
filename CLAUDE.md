@@ -2,7 +2,29 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-The MVP/v0 plan that produced the current codebase has been executed and is archived at `@specifications/v0/dev-plan.md` (paired with `specifications/v0/initial-requirements.md`). **v1 is the active scope going forward** — its plan will live at `specifications/v1/dev-plan.md` (to be generated from `specifications/v1/initial-requirements.md`). When v1's dev-plan exists, it becomes the source of truth for "what's done" and "what's next."
+The MVP/v0 plan that produced the original codebase has been executed and is archived at `@specifications/v0/dev-plan.md` (paired with `specifications/v0/initial-requirements.md`). **v1 has now also been executed** — its plan at `specifications/v1/dev-plan.md` (generated from `specifications/v1/initial-requirements.md`) is the **source of truth for "what's done" and "what's next"**; always start a session by reading it for the `[x]`/`[ ]`/`[~]` state. The v0 close-out below is retained for historical context only.
+
+## v1 state (close-out)
+
+All of v1's functional scope is shipped — **Phases 0 → 6 are `[x]`**; only Phase 7 (Hardening) docs remain in flight. v1 added four things on top of v0: the **Movement video/gif links**, the **Tracking sub-domain**, the **Leveling sub-domain**, and the **Questing sub-domain**, plus a nightly leveling cron and a Statistiques placeholder page.
+
+- **Phase 1 — Movement evolutions**: `videoLink` + `gifLink` on `MovementDataModel`, surfaced through admin CRUD and rendered on the player workout view.
+- **Phase 2 — Tracking sub-domain**: per-day metrics (steps, hydration, sleep, weight) with their own DataModels, Gateways/Repositories/Persisters, player UseCases, REST controllers, and the dashboard tracking widget. Aggregate/derivation services live under `Domain/Service/` (e.g. hydration daily total, sleep duration).
+- **Phase 3 — Leveling sub-domain**: `LevelBracket` (the XP curve), the `LevelingConfig` **singleton** (`xpPerWorkoutMinute`, seeded by migration `Version20260613130000` + a direct-persist fixture — its persister exposes **only `update`**, no create/delete), `EarnedExperience` (the XP journal), and `Player.level`/`Player.currentXp`/`Player.xpIntoLevel` columns. `Domain/Service/LevelingCalculator` (`final`, unmockable) folds earned amounts into level/XP; `LevelCurveEvaluator` computes the curve. Admin LevelBracket CRUD enforces **contiguity / no-overlap / single-open-ended / `fromLevel=1` / positive-marginal-cost** (error code `LEVEL_BRACKET_VALIDATION_FAILED` with named sub-codes). Players get a baseline bracket at registration. Header progress bar via `GET /api/player/profile`; XP journal via `GET /api/player/leveling/journal`.
+- **Phase 4 — Questing sub-domain**: `Quest` + `QuestProgression` (lazily materialized per player/period). Daily/weekly/monthly/unique player list UCs + `ClaimQuestRewardUseCase` (CLAIMABLE → REWARDED, mints an unlocked `EarnedExperience`). Admin Quest CRUD. AUTOMATIC quests auto-progress via the **`QuestProgressionEvaluator::refreshFor` hook checklist** (see the dedicated section below — keep it in sync on every new tracking-metric write path).
+- **Phase 5 — Cron Leveling + workout-side locking**: `EarnedExperience.isLocked` write-once guard (the persister rejects mutating an already-locked grant, reading the **prior** persisted state); workout `DELETED` status with read-gateway filtering; **same-day workout delete = hard delete + DB cascade**, **past-day = soft-delete** (XP grant left intact); retroactive-creation earns no XP (guard keyed on `dateEnd`, not `dateStart`); the nightly `app:leveling:lock-yesterday` command (the only console command — thin command + **host crontab** `0 1 * * *` Europe/Paris, **Symfony Scheduler deliberately not installed**).
+- **Phase 6 — Statistiques placeholder**: a frontend-only empty `/statistics` page (`frontend/website/src/pages/statistics/StatisticsPage.tsx`, reusing `<PageHeader>` + `<EmptyState>`) with a nav entry. No backend.
+
+**Key invariants (all detailed in their own sections below — read those before touching the relevant code):**
+- **Quest auto-progression hooks** — every write to a quest-measurable metric must call `QuestProgressionEvaluator::refreshFor(...)` after the write. See the table.
+- **`EarnedExperience.amount` is write-once per workout** — computed once at `FinishWorkoutUseCase`, never recomputed in v1.
+- **`EarnedExperience.isLocked` is a one-way latch** — the cron locks grants once folded into level/XP; locked grants can never be mutated or deleted.
+- **Soft vs hard workout delete** is keyed on whether the workout is dated today (Europe/Paris).
+- **Retroactive XP rule** — XP is keyed on `dateEnd ≥ startOfToday`, so a cross-midnight finish still earns; a back-dated finish does not.
+
+New Domain services worth knowing: `LevelingCalculator`, `LevelCurveEvaluator`, `QuestProgressionEvaluator`, `QuestProgressionFactory`, the `MetricResolver/*` family (+ `MetricResolverInterface`), and the Tracking aggregate/derivation services. All v1 deviations from `conventions.md` are catalogued in `specifications/v1/dev-plan.md`'s "Decisions / deviations" block — **read it before designing anything new.**
+
+`composer qa` last known green (v1 close-out): cs ✅, stan ✅ (566 files), phpunit ✅ — **503 tests / 1081 assertions** (run the suite in-container, see "Tests pattern" / the dev-plan resume pointer). Both frontends `typecheck`/`lint`/`build` green.
 
 ## v0 / MVP state (the codebase you'll inherit when starting v1)
 

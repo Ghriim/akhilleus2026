@@ -10,9 +10,10 @@ The full product spec, the architectural conventions, and the implementation roa
 
 | Document                                                       | What it is                                                                                          |
 |----------------------------------------------------------------|------------------------------------------------------------------------------------------------------|
-| [`specifications/initial-requirements.md`](specifications/v0/initial-requirements.md) | Frozen product spec (do not edit). Defines the domain entities, the muscle seed list, the player flows. |
-| [`specifications/conventions.md`](specifications/conventions.md)                   | Non-negotiable coding rules (final classes, strict types, Yoda, suffix rules, DTO categories, Repository/Persister pattern, UseCase contract, boolean naming). |
-| [`specifications/dev-plan.md`](specifications/v0/dev-plan.md)                         | Executable roadmap with `[x]` / `[ ]` / `[~]` checkboxes. Source of truth for "what's done" / "what's next". |
+| [`specifications/conventions.md`](specifications/conventions.md)                   | Non-negotiable coding rules (final classes, strict types, Yoda, suffix rules, DTO categories, Repository/Persister pattern, UseCase contract, boolean naming). Version-agnostic. |
+| [`specifications/v1/dev-plan.md`](specifications/v1/dev-plan.md)                   | **Active roadmap** with `[x]` / `[ ]` / `[~]` checkboxes + a "Decisions / deviations" block. Source of truth for "what's done" / "what's next". |
+| [`specifications/v1/initial-requirements.md`](specifications/v1/initial-requirements.md) | Frozen v1 product spec (do not edit). |
+| [`specifications/v0/`](specifications/v0/)                                          | Archived MVP requirements + dev-plan — historical context for the inherited codebase. |
 
 ## Setup
 
@@ -40,7 +41,8 @@ composer setup:test-db
 php bin/console doctrine:migrations:migrate --no-interaction
 APP_ENV=test php bin/console doctrine:migrations:migrate --no-interaction
 
-# 6. Load the dev fixtures (admin + player accounts, muscles, equipments, movements).
+# 6. Load the dev fixtures (admin + player accounts, muscles, equipments, movements,
+#    the LevelingConfig singleton, the level-curve brackets, and the quest seeds).
 php bin/console doctrine:fixtures:load --no-interaction
 
 # 7. Start the API (HTTPS, https://127.0.0.1:8000).
@@ -68,6 +70,8 @@ Seeded credentials:
 |---------------|--------------------------|----------------|
 | `ROLE_ADMIN`  | `admin@akhilleus.test`   | `AdminAdmin1!` |
 | `ROLE_PLAYER` | `player@akhilleus.test`  | `PlayerHero1!` |
+
+Beyond the two accounts, the fixtures seed the muscle / equipment / movement catalogue plus the v1 data: the **`LevelingConfig` singleton** (`xpPerWorkoutMinute`), the **`LevelBracket` rows** that define the XP curve, and the **quest seeds**. The `LevelingConfig` row and the level brackets are also created by migrations (`Version20260613130000` and the bracket data migration), so a migrated-but-unseeded DB still has a usable leveling baseline.
 
 ### Frontends
 
@@ -153,6 +157,12 @@ The strict layering is enforced by `specifications/conventions.md`:
 - **`src/Domain/`** — pure business code (DTOs, gateways, registries, validators, services, exceptions). Cannot import anything outside `Domain` except a small whitelist (`Doctrine\ORM\Mapping`, `Doctrine\DBAL\Types\Types`, `Doctrine\Common\Collections`, `Symfony\Component\Security` only inside `UserDataModel`, `\Exception` only in `Domain/Exception`).
 - **`src/Infrastructure/`** — adapters: Doctrine repositories implementing the `*ProviderGateway` interfaces, Persisters implementing the `*PersisterGateway` interfaces, Symfony controllers, security wiring, fixtures.
 - **`src/UseCase/`** — `final` classes implementing `UseCaseInterface`. Single `execute(DataInputInterface): DataOutputInterface|list<DataOutputInterface>`. Three abstract bases: `AbstractPublicUseCase` (no auth), `AbstractLoggedAdminUseCase` (admin), `AbstractLoggedPlayerUseCase` (player). Only Controllers and Commands may reference `UseCase`.
+
+The domain is organised into sub-domains under each layer. Beyond the v0 core (Training: movements, workouts, exercises, sets, personal bests), v1 added:
+
+- **Tracking** — per-day player metrics (steps, hydration, sleep, weight) with their own DataModels, gateways, player UseCases, REST endpoints, and a dashboard widget.
+- **Leveling** — the XP economy: `LevelBracket` (the curve, admin-managed), the `LevelingConfig` singleton (`xpPerWorkoutMinute`), and `EarnedExperience` (the per-player XP journal). Workout completions and claimed quest rewards mint `EarnedExperience`; the nightly cron (see [Scheduled jobs](#scheduled-jobs-cron)) folds unlocked grants into the player's level/XP and locks them.
+- **Questing** — admin-authored `Quest`s (daily / weekly / monthly / unique, AUTOMATIC or MANUAL) and per-player `QuestProgression`. AUTOMATIC quests auto-progress off tracking metrics and become claimable for an `EarnedExperience` reward.
 
 Every UseCase has its own integration test under `tests/Integration/UseCase/...`; every Validator has its own unit test under `tests/Unit/Domain/Validator/...`.
 
