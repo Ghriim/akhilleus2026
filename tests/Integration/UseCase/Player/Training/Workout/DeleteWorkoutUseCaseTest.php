@@ -40,6 +40,7 @@ use Doctrine\Persistence\ManagerRegistry;
 use Psr\Clock\ClockInterface;
 use Psr\Container\ContainerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class DeleteWorkoutUseCaseTest extends KernelTestCase
 {
@@ -57,10 +58,7 @@ final class DeleteWorkoutUseCaseTest extends KernelTestCase
         $setIds = array_map(static fn (ExerciseSetDataModel $set): string => $set->id, $exercise->exerciseSets->toArray());
         self::assertCount(2, $setIds);
 
-        $output = self::buildUseCase($container, $player)->execute(new DeleteWorkoutDataInput($workout->id));
-
-        self::assertSame($workout->id, $output->deletedId);
-        self::assertSame(DeleteWorkoutUseCase::MODE_HARD, $output->mode);
+        self::buildUseCase($container, $player)->execute(new DeleteWorkoutDataInput($workout->id));
 
         $em = $container->get('doctrine.orm.entity_manager');
         $em->clear();
@@ -86,8 +84,7 @@ final class DeleteWorkoutUseCaseTest extends KernelTestCase
         $earnedProvider = $container->get(EarnedExperienceProviderGateway::class);
         self::assertNotNull($earnedProvider->findOneBySourceTypeAndId(EarnedExperienceSourceTypeRegistry::WORKOUT, $workout->id));
 
-        $output = self::buildUseCase($container, $player)->execute(new DeleteWorkoutDataInput($workout->id));
-        self::assertSame(DeleteWorkoutUseCase::MODE_HARD, $output->mode);
+        self::buildUseCase($container, $player)->execute(new DeleteWorkoutDataInput($workout->id));
 
         $em = $container->get('doctrine.orm.entity_manager');
         $em->clear();
@@ -124,10 +121,7 @@ final class DeleteWorkoutUseCaseTest extends KernelTestCase
         $locked->isLocked = true;
         $earnedPersister->create($locked);
 
-        $output = self::buildUseCase($container, $player)->execute(new DeleteWorkoutDataInput($workout->id));
-
-        self::assertSame($workout->id, $output->deletedId);
-        self::assertSame(DeleteWorkoutUseCase::MODE_SOFT, $output->mode);
+        self::buildUseCase($container, $player)->execute(new DeleteWorkoutDataInput($workout->id));
 
         $em->clear();
         $reloaded = $em->find(WorkoutDataModel::class, $workout->id);
@@ -269,6 +263,7 @@ final class DeleteWorkoutUseCaseTest extends KernelTestCase
             new EarnedExperiencePersister($em, $clock),
             $container->get(QuestProgressionEvaluator::class),
             $clock,
+            self::getContainer()->get(ObjectMapperInterface::class),
         );
     }
 

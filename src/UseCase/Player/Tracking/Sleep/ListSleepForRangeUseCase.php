@@ -12,6 +12,7 @@ use App\Domain\Gateway\Provider\Tracking\Sleep\SleepDailyEntryProviderGateway;
 use App\Domain\Security\LoggedPlayerResolverInterface;
 use App\Domain\Validator\Player\Tracking\Sleep\ListSleepForRangeValidator;
 use App\UseCase\AbstractLoggedPlayerUseCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class ListSleepForRangeUseCase extends AbstractLoggedPlayerUseCase
 {
@@ -19,6 +20,7 @@ final class ListSleepForRangeUseCase extends AbstractLoggedPlayerUseCase
         private readonly ListSleepForRangeValidator $validator,
         private readonly LoggedPlayerResolverInterface $loggedPlayerResolver,
         private readonly SleepDailyEntryProviderGateway $sleepProvider,
+        private readonly ObjectMapperInterface $mapper,
     ) {
     }
 
@@ -40,14 +42,7 @@ final class ListSleepForRangeUseCase extends AbstractLoggedPlayerUseCase
         );
 
         return array_map(
-            static fn (SleepDailyEntryDataModel $entry) => new SleepDailyEntryDataOutput(
-                $entry->id,
-                $entry->date->format(\DateTimeInterface::ATOM),
-                $entry->bedAt->format(\DateTimeInterface::ATOM),
-                $entry->wakeAt->format(\DateTimeInterface::ATOM),
-                $entry->durationMinutes,
-                $entry->quality,
-            ),
+            fn (SleepDailyEntryDataModel $entry): SleepDailyEntryDataOutput => $this->mapper->map($entry, SleepDailyEntryDataOutput::class),
             $entries,
         );
     }

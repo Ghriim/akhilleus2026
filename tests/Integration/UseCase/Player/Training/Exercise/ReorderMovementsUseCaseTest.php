@@ -27,6 +27,7 @@ use Doctrine\Persistence\ManagerRegistry;
 use Psr\Clock\ClockInterface;
 use Psr\Container\ContainerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class ReorderMovementsUseCaseTest extends KernelTestCase
 {
@@ -153,6 +154,7 @@ final class ReorderMovementsUseCaseTest extends KernelTestCase
             new WorkoutRepository($registry),
             new ExerciseRepository($registry),
             new ExercisePersister($em, $clock),
+            self::getContainer()->get(ObjectMapperInterface::class),
         );
     }
 }

@@ -21,6 +21,7 @@ use Doctrine\Persistence\ManagerRegistry;
 use Psr\Clock\ClockInterface;
 use Psr\Container\ContainerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class StartPlannedWorkoutUseCaseTest extends KernelTestCase
 {
@@ -48,6 +49,7 @@ final class StartPlannedWorkoutUseCaseTest extends KernelTestCase
             $workoutRepository,
             $workoutPersister,
             $clock,
+            self::getContainer()->get(ObjectMapperInterface::class),
         );
 
         $output = $useCase->execute(new StartPlannedWorkoutDataInput($planned->id));
@@ -81,6 +83,7 @@ final class StartPlannedWorkoutUseCaseTest extends KernelTestCase
             $workoutRepository,
             $workoutPersister,
             $clock,
+            self::getContainer()->get(ObjectMapperInterface::class),
         );
 
         $this->expectException(EntityNotFoundException::class);
@@ -112,6 +115,7 @@ final class StartPlannedWorkoutUseCaseTest extends KernelTestCase
             $workoutRepository,
             $workoutPersister,
             $clock,
+            self::getContainer()->get(ObjectMapperInterface::class),
         );
 
         try {

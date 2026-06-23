@@ -14,6 +14,7 @@ use App\Domain\Gateway\Provider\Training\Workout\ExerciseProviderGateway;
 use App\Domain\Security\LoggedPlayerResolverInterface;
 use App\Domain\Validator\Player\Training\Exercise\UpdateMovementRestDurationValidator;
 use App\UseCase\AbstractLoggedPlayerUseCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class UpdateMovementRestDurationUseCase extends AbstractLoggedPlayerUseCase
 {
@@ -22,6 +23,7 @@ final class UpdateMovementRestDurationUseCase extends AbstractLoggedPlayerUseCas
         private readonly LoggedPlayerResolverInterface $loggedPlayerResolver,
         private readonly ExerciseProviderGateway $exerciseProvider,
         private readonly ExercisePersisterGateway $exercisePersister,
+        private readonly ObjectMapperInterface $mapper,
     ) {
     }
 
@@ -41,26 +43,12 @@ final class UpdateMovementRestDurationUseCase extends AbstractLoggedPlayerUseCas
         $exercise->restDurationSeconds = $input->restDurationSeconds;
         $this->exercisePersister->update($exercise);
 
-        $movement = $exercise->movement;
-
         return new ExerciseDataOutput(
             $exercise->id,
             $exercise->workout->id,
             $exercise->position,
             $exercise->restDurationSeconds,
-            new ExerciseMovementDataOutput(
-                $movement->id,
-                $movement->slug,
-                $movement->label,
-                $movement->tracksRepetitions,
-                $movement->tracksWeight,
-                $movement->tracksDuration,
-                $movement->tracksDistance,
-                $movement->tracksInclinePercent,
-                $movement->tracksInclineMeters,
-                $movement->videoLink,
-                $movement->gifLink,
-            ),
+            $this->mapper->map($exercise->movement, ExerciseMovementDataOutput::class),
         );
     }
 }

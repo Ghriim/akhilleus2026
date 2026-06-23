@@ -16,6 +16,7 @@ use App\Domain\Gateway\Provider\Training\Equipment\EquipmentProviderGateway;
 use App\Domain\Gateway\Provider\Training\Muscle\MuscleProviderGateway;
 use App\Domain\Validator\Admin\Training\Movement\CreateMovementValidator;
 use App\UseCase\AbstractLoggedAdminUseCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class CreateMovementUseCase extends AbstractLoggedAdminUseCase
 {
@@ -24,6 +25,7 @@ final class CreateMovementUseCase extends AbstractLoggedAdminUseCase
         private readonly MovementPersisterGateway $movementPersister,
         private readonly MuscleProviderGateway $muscleProvider,
         private readonly EquipmentProviderGateway $equipmentProvider,
+        private readonly ObjectMapperInterface $mapper,
     ) {
     }
 
@@ -70,18 +72,18 @@ final class CreateMovementUseCase extends AbstractLoggedAdminUseCase
     {
         $secondary = [];
         foreach ($movement->secondaryMuscles as $muscle) {
-            $secondary[] = new MuscleListItemDataOutput($muscle->id, $muscle->slug, $muscle->label);
+            $secondary[] = $this->mapper->map($muscle, MuscleListItemDataOutput::class);
         }
         $equipments = [];
         foreach ($movement->equipments as $equipment) {
-            $equipments[] = new EquipmentListItemDataOutput($equipment->id, $equipment->slug, $equipment->label);
+            $equipments[] = $this->mapper->map($equipment, EquipmentListItemDataOutput::class);
         }
 
         return new MovementDataOutput(
             $movement->id,
             $movement->slug,
             $movement->label,
-            new MuscleListItemDataOutput($movement->mainMuscle->id, $movement->mainMuscle->slug, $movement->mainMuscle->label),
+            $this->mapper->map($movement->mainMuscle, MuscleListItemDataOutput::class),
             $secondary,
             $equipments,
             $movement->tracksRepetitions,

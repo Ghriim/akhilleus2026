@@ -68,7 +68,9 @@ final readonly class StepsPlayerController
     #[Route(path: '/api/player/tracking/steps/{date}', name: 'player_tracking_steps_delete', methods: ['DELETE'], requirements: ['date' => self::DATE_REQUIREMENT])]
     public function delete(string $date, DeleteStepsForDayUseCase $useCase): JsonResponse
     {
-        return new JsonResponse($useCase->execute(new DeleteStepsForDayDataInput(self::parseDate($date, 'date'))));
+        $useCase->execute(new DeleteStepsForDayDataInput(self::parseDate($date, 'date')));
+
+        return new JsonResponse(null, 204);
     }
 
     #[Route(path: '/api/player/tracking/steps', name: 'player_tracking_steps_list', methods: ['GET'])]

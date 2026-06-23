@@ -51,7 +51,9 @@ final readonly class WeightPlayerController
     #[Route(path: '/api/player/tracking/weight/{id}', name: 'player_tracking_weight_delete', methods: ['DELETE'])]
     public function delete(string $id, DeleteWeightUseCase $useCase): JsonResponse
     {
-        return new JsonResponse($useCase->execute(new DeleteWeightDataInput($id)));
+        $useCase->execute(new DeleteWeightDataInput($id));
+
+        return new JsonResponse(null, 204);
     }
 
     #[Route(path: '/api/player/tracking/weight', name: 'player_tracking_weight_list', methods: ['GET'])]

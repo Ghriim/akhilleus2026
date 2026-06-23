@@ -6,7 +6,6 @@ namespace App\UseCase\Admin\Questing\Quest;
 
 use App\Domain\DTO\DataInput\Admin\Questing\Quest\DeleteQuestDataInput;
 use App\Domain\DTO\DataInput\DataInputInterface;
-use App\Domain\DTO\DataOutput\Admin\Questing\Quest\DeleteQuestDataOutput;
 use App\Domain\Exception\EntityNotFoundException;
 use App\Domain\Gateway\Persister\Questing\Quest\QuestPersisterGateway;
 use App\Domain\Gateway\Provider\Questing\Quest\QuestProviderGateway;
@@ -23,7 +22,7 @@ final class DeleteQuestUseCase extends AbstractLoggedAdminUseCase
     /**
      * @param DeleteQuestDataInput $input
      */
-    public function execute(DataInputInterface $input): DeleteQuestDataOutput
+    public function execute(DataInputInterface $input): null
     {
         $quest = $this->questProvider->findOneByIdForAdminAction($input->id);
         if (null === $quest) {
@@ -32,6 +31,6 @@ final class DeleteQuestUseCase extends AbstractLoggedAdminUseCase
 
         $this->questPersister->delete($quest);
 
-        return new DeleteQuestDataOutput($input->id);
+        return null;
     }
 }

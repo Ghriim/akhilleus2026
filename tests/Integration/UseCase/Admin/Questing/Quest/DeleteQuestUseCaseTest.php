@@ -29,9 +29,8 @@ final class DeleteQuestUseCaseTest extends KernelTestCase
         ));
 
         $useCase = $container->get(DeleteQuestUseCase::class);
-        $output = $useCase->execute(new DeleteQuestDataInput($quest->id));
+        $useCase->execute(new DeleteQuestDataInput($quest->id));
 
-        self::assertSame($quest->id, $output->deletedId);
         self::assertNull($container->get(QuestProviderGateway::class)->findOneByIdForAdminAction($quest->id));
     }
 

@@ -21,6 +21,7 @@ use Doctrine\Persistence\ManagerRegistry;
 use Psr\Clock\ClockInterface;
 use Psr\Container\ContainerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class DeleteWeightUseCaseTest extends KernelTestCase
 {
@@ -32,9 +33,7 @@ final class DeleteWeightUseCaseTest extends KernelTestCase
         $player = self::createTestPlayer($container, 'delete-weight-happy');
         $logged = self::logWeight($container, $player, '2026-05-07T08:00:00Z', 82000);
 
-        $output = self::buildUseCase($container, $player)->execute(new DeleteWeightDataInput($logged->id));
-
-        self::assertSame($logged->id, $output->deletedId);
+        self::buildUseCase($container, $player)->execute(new DeleteWeightDataInput($logged->id));
 
         $repo = new WeightEntryRepository($container->get(ManagerRegistry::class));
         self::assertNull($repo->findOneByPlayerAndDate($player, new \DateTimeImmutable('2026-05-07')));
@@ -78,6 +77,7 @@ final class DeleteWeightUseCaseTest extends KernelTestCase
             new LogWeightValidator($resolver, $repo),
             $resolver,
             new WeightEntryPersister($em, $clock),
+            self::getContainer()->get(ObjectMapperInterface::class),
         );
 
         return $logUseCase->execute(new LogWeightDataInput(new \DateTimeImmutable($loggedAt), $valueGrams));

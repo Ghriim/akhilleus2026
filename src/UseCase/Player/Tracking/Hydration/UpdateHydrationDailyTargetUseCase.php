@@ -15,6 +15,7 @@ use App\Domain\Security\LoggedPlayerResolverInterface;
 use App\Domain\Validator\Player\Tracking\Hydration\UpdateHydrationDailyTargetValidator;
 use App\UseCase\AbstractLoggedPlayerUseCase;
 use Psr\Clock\ClockInterface;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class UpdateHydrationDailyTargetUseCase extends AbstractLoggedPlayerUseCase
 {
@@ -24,6 +25,7 @@ final class UpdateHydrationDailyTargetUseCase extends AbstractLoggedPlayerUseCas
         private readonly HydrationDailySummaryProviderGateway $summaryProvider,
         private readonly HydrationDailySummaryPersisterGateway $summaryPersister,
         private readonly ClockInterface $clock,
+        private readonly ObjectMapperInterface $mapper,
     ) {
     }
 
@@ -46,18 +48,14 @@ final class UpdateHydrationDailyTargetUseCase extends AbstractLoggedPlayerUseCas
             $this->summaryPersister->update($summary);
         }
 
-        return self::buildDayOutput($summary);
+        return $this->buildDayOutput($summary);
     }
 
-    private static function buildDayOutput(HydrationDailySummaryDataModel $summary): HydrationDayDataOutput
+    private function buildDayOutput(HydrationDailySummaryDataModel $summary): HydrationDayDataOutput
     {
         $entries = [];
         foreach ($summary->entries as $entry) {
-            $entries[] = new HydrationEntryDataOutput(
-                $entry->id,
-                $entry->loggedAt->format(\DateTimeInterface::ATOM),
-                $entry->valueMl,
-            );
+            $entries[] = $this->mapper->map($entry, HydrationEntryDataOutput::class);
         }
 
         return new HydrationDayDataOutput(

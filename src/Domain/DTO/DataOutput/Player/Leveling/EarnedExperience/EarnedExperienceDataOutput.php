@@ -4,18 +4,18 @@ declare(strict_types=1);
 
 namespace App\Domain\DTO\DataOutput\Player\Leveling\EarnedExperience;
 
+use App\Domain\DataTransformer\DateDataTransformer;
 use App\Domain\DTO\DataOutput\DataOutputInterface;
+use Symfony\Component\ObjectMapper\Attribute\Map;
 
-final readonly class EarnedExperienceDataOutput implements DataOutputInterface
+final class EarnedExperienceDataOutput implements DataOutputInterface
 {
-    public function __construct(
-        public string $id,
-        public string $label,
-        public int $amount,
-        public ?string $earnedAt,
-        public string $sourceType,
-        public string $sourceId,
-        public bool $isLocked,
-    ) {
-    }
+    public string $id;
+    public string $label;
+    public int $amount;
+    #[Map(transform: [DateDataTransformer::class, 'toAtom'])]
+    public ?string $earnedAt;
+    public string $sourceType;
+    public string $sourceId;
+    public bool $isLocked;
 }

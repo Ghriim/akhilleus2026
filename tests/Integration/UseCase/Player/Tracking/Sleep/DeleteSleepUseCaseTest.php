@@ -22,6 +22,7 @@ use Doctrine\Persistence\ManagerRegistry;
 use Psr\Clock\ClockInterface;
 use Psr\Container\ContainerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class DeleteSleepUseCaseTest extends KernelTestCase
 {
@@ -33,9 +34,7 @@ final class DeleteSleepUseCaseTest extends KernelTestCase
         $player = self::createTestPlayer($container, 'delete-sleep-happy');
         $logged = self::logSleep($container, $player, '2026-05-06T23:00:00Z', '2026-05-07T07:00:00Z', 3);
 
-        $output = self::buildUseCase($container, $player)->execute(new DeleteSleepDataInput($logged->id));
-
-        self::assertSame($logged->id, $output->deletedId);
+        self::buildUseCase($container, $player)->execute(new DeleteSleepDataInput($logged->id));
 
         $repo = new SleepDailyEntryRepository($container->get(ManagerRegistry::class));
         self::assertNull($repo->findOneByPlayerAndDate($player, new \DateTimeImmutable('2026-05-07')));
@@ -81,6 +80,7 @@ final class DeleteSleepUseCaseTest extends KernelTestCase
             new SleepDailyEntryPersister($em, $clock),
             $container->get(QuestProgressionEvaluator::class),
             $clock,
+            self::getContainer()->get(ObjectMapperInterface::class),
         );
 
         return $logUseCase->execute(new LogSleepDataInput(

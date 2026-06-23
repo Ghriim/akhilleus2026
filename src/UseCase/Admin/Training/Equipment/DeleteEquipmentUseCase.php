@@ -6,7 +6,6 @@ namespace App\UseCase\Admin\Training\Equipment;
 
 use App\Domain\DTO\DataInput\Admin\Training\Equipment\DeleteEquipmentDataInput;
 use App\Domain\DTO\DataInput\DataInputInterface;
-use App\Domain\DTO\DataOutput\Admin\Training\Equipment\DeleteEquipmentDataOutput;
 use App\Domain\Exception\EntityNotFoundException;
 use App\Domain\Gateway\Persister\Training\Equipment\EquipmentPersisterGateway;
 use App\Domain\Gateway\Provider\Training\Equipment\EquipmentProviderGateway;
@@ -23,7 +22,7 @@ final class DeleteEquipmentUseCase extends AbstractLoggedAdminUseCase
     /**
      * @param DeleteEquipmentDataInput $input
      */
-    public function execute(DataInputInterface $input): DeleteEquipmentDataOutput
+    public function execute(DataInputInterface $input): null
     {
         $equipment = $this->equipmentProvider->findOneForAdminDetails($input->id);
         if (null === $equipment) {
@@ -32,6 +31,6 @@ final class DeleteEquipmentUseCase extends AbstractLoggedAdminUseCase
 
         $this->equipmentPersister->delete($equipment);
 
-        return new DeleteEquipmentDataOutput($input->id);
+        return null;
     }
 }

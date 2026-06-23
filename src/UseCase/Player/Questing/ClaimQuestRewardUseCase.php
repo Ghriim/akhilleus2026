@@ -18,6 +18,7 @@ use App\Domain\Security\LoggedPlayerResolverInterface;
 use App\Domain\Validator\Player\Questing\ClaimQuestRewardValidator;
 use App\UseCase\AbstractLoggedPlayerUseCase;
 use Psr\Clock\ClockInterface;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class ClaimQuestRewardUseCase extends AbstractLoggedPlayerUseCase
 {
@@ -28,6 +29,7 @@ final class ClaimQuestRewardUseCase extends AbstractLoggedPlayerUseCase
         private readonly QuestProgressionPersisterGateway $progressionPersister,
         private readonly EarnedExperiencePersisterGateway $earnedExperiencePersister,
         private readonly ClockInterface $clock,
+        private readonly ObjectMapperInterface $mapper,
     ) {
     }
 
@@ -60,6 +62,6 @@ final class ClaimQuestRewardUseCase extends AbstractLoggedPlayerUseCase
         );
         $this->earnedExperiencePersister->create($earned);
 
-        return new ClaimQuestRewardDataOutput($progression->id, $earned->id, $earned->amount);
+        return $this->mapper->map($earned, ClaimQuestRewardDataOutput::class);
     }
 }

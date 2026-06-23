@@ -9,11 +9,13 @@ use App\Domain\DTO\DataInput\Player\Profile\GetPlayerProfileDataInput;
 use App\Domain\DTO\DataOutput\Player\Profile\PlayerProfileDataOutput;
 use App\Domain\Security\LoggedPlayerResolverInterface;
 use App\UseCase\AbstractLoggedPlayerUseCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class GetPlayerProfileUseCase extends AbstractLoggedPlayerUseCase
 {
     public function __construct(
         private readonly LoggedPlayerResolverInterface $loggedPlayerResolver,
+        private readonly ObjectMapperInterface $mapper,
     ) {
     }
 
@@ -24,12 +26,6 @@ final class GetPlayerProfileUseCase extends AbstractLoggedPlayerUseCase
     {
         $player = $this->loggedPlayerResolver->getLoggedPlayer();
 
-        return new PlayerProfileDataOutput(
-            $player->id,
-            $player->displayName,
-            $player->level,
-            $player->currentXp,
-            $player->xpToNextLevel,
-        );
+        return $this->mapper->map($player, PlayerProfileDataOutput::class);
     }
 }

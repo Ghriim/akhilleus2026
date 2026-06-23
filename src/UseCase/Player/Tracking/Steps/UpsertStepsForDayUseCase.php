@@ -16,6 +16,7 @@ use App\Domain\Service\Questing\QuestProgressionEvaluator;
 use App\Domain\Validator\Player\Tracking\Steps\UpsertStepsForDayValidator;
 use App\UseCase\AbstractLoggedPlayerUseCase;
 use Psr\Clock\ClockInterface;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class UpsertStepsForDayUseCase extends AbstractLoggedPlayerUseCase
 {
@@ -26,6 +27,7 @@ final class UpsertStepsForDayUseCase extends AbstractLoggedPlayerUseCase
         private readonly StepsDailyEntryPersisterGateway $stepsPersister,
         private readonly QuestProgressionEvaluator $questProgressionEvaluator,
         private readonly ClockInterface $clock,
+        private readonly ObjectMapperInterface $mapper,
     ) {
     }
 
@@ -50,11 +52,6 @@ final class UpsertStepsForDayUseCase extends AbstractLoggedPlayerUseCase
 
         $this->questProgressionEvaluator->refreshFor($player, QuestMetricRegistry::STEPS_DAILY, $this->clock->now());
 
-        return new StepsDailyEntryDataOutput(
-            $entry->id,
-            $entry->date->format(\DateTimeInterface::ATOM),
-            $entry->count,
-            $entry->target,
-        );
+        return $this->mapper->map($entry, StepsDailyEntryDataOutput::class);
     }
 }

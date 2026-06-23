@@ -21,6 +21,7 @@ use Doctrine\Persistence\ManagerRegistry;
 use Psr\Clock\ClockInterface;
 use Psr\Container\ContainerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class ListWeightForRangeUseCaseTest extends KernelTestCase
 {
@@ -110,6 +111,7 @@ final class ListWeightForRangeUseCaseTest extends KernelTestCase
             new LogWeightValidator($resolver, $repo),
             $resolver,
             new WeightEntryPersister($em, $clock),
+            self::getContainer()->get(ObjectMapperInterface::class),
         );
         $logUseCase->execute(new LogWeightDataInput(new \DateTimeImmutable($loggedAt), $valueGrams));
     }
@@ -123,6 +125,7 @@ final class ListWeightForRangeUseCaseTest extends KernelTestCase
             new ListWeightForRangeValidator(),
             $resolver,
             new WeightEntryRepository($registry),
+            self::getContainer()->get(ObjectMapperInterface::class),
         );
     }
 

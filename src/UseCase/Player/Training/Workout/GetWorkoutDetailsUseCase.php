@@ -15,12 +15,14 @@ use App\Domain\Exception\EntityNotFoundException;
 use App\Domain\Gateway\Provider\Training\Workout\WorkoutProviderGateway;
 use App\Domain\Security\LoggedPlayerResolverInterface;
 use App\UseCase\AbstractLoggedPlayerUseCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class GetWorkoutDetailsUseCase extends AbstractLoggedPlayerUseCase
 {
     public function __construct(
         private readonly LoggedPlayerResolverInterface $loggedPlayerResolver,
         private readonly WorkoutProviderGateway $workoutProvider,
+        private readonly ObjectMapperInterface $mapper,
     ) {
     }
 
@@ -37,7 +39,7 @@ final class GetWorkoutDetailsUseCase extends AbstractLoggedPlayerUseCase
 
         $exercises = [];
         foreach ($workout->exercises as $exercise) {
-            $exercises[] = self::buildExerciseOutput($exercise);
+            $exercises[] = $this->buildExerciseOutput($exercise);
         }
 
         return new WorkoutDetailsDataOutput(
@@ -55,48 +57,18 @@ final class GetWorkoutDetailsUseCase extends AbstractLoggedPlayerUseCase
         );
     }
 
-    private static function buildExerciseOutput(ExerciseDataModel $exercise): ExerciseDetailsDataOutput
+    private function buildExerciseOutput(ExerciseDataModel $exercise): ExerciseDetailsDataOutput
     {
-        $movement = $exercise->movement;
         $sets = [];
         foreach ($exercise->exerciseSets as $set) {
-            $sets[] = new ExerciseSetDataOutput(
-                $set->id,
-                $exercise->id,
-                $set->position,
-                $set->plannedReps,
-                $set->achievedReps,
-                $set->plannedWeight,
-                $set->achievedWeight,
-                $set->plannedDurationSeconds,
-                $set->achievedDurationSeconds,
-                $set->plannedDistanceMeters,
-                $set->achievedDistanceMeters,
-                $set->plannedInclinePercent,
-                $set->achievedInclinePercent,
-                $set->plannedInclineMeters,
-                $set->achievedInclineMeters,
-                $set->isComplete,
-            );
+            $sets[] = $this->mapper->map($set, ExerciseSetDataOutput::class);
         }
 
         return new ExerciseDetailsDataOutput(
             $exercise->id,
             $exercise->position,
             $exercise->restDurationSeconds,
-            new ExerciseMovementDataOutput(
-                $movement->id,
-                $movement->slug,
-                $movement->label,
-                $movement->tracksRepetitions,
-                $movement->tracksWeight,
-                $movement->tracksDuration,
-                $movement->tracksDistance,
-                $movement->tracksInclinePercent,
-                $movement->tracksInclineMeters,
-                $movement->videoLink,
-                $movement->gifLink,
-            ),
+            $this->mapper->map($exercise->movement, ExerciseMovementDataOutput::class),
             $sets,
         );
     }

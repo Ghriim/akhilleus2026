@@ -11,12 +11,14 @@ use App\Domain\DTO\DataOutput\Admin\Training\Muscle\MuscleDataOutput;
 use App\Domain\Gateway\Persister\Training\Muscle\MusclePersisterGateway;
 use App\Domain\Validator\Admin\Training\Muscle\CreateMuscleValidator;
 use App\UseCase\AbstractLoggedAdminUseCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class CreateMuscleUseCase extends AbstractLoggedAdminUseCase
 {
     public function __construct(
         private readonly CreateMuscleValidator $createMuscleValidator,
         private readonly MusclePersisterGateway $musclePersister,
+        private readonly ObjectMapperInterface $mapper,
     ) {
     }
 
@@ -29,6 +31,6 @@ final class CreateMuscleUseCase extends AbstractLoggedAdminUseCase
 
         $muscle = $this->musclePersister->create(new MuscleDataModel($input->label));
 
-        return new MuscleDataOutput($muscle->id, $muscle->slug, $muscle->label);
+        return $this->mapper->map($muscle, MuscleDataOutput::class);
     }
 }

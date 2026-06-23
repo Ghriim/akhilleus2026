@@ -20,9 +20,8 @@ final class DeleteLevelBracketUseCaseTest extends KernelTestCase
         // Delete the open-ended tail of the seeded curve.
         $last = $provider->findAllOrderedAsc()[2];
 
-        $output = $container->get(DeleteLevelBracketUseCase::class)->execute(new DeleteLevelBracketDataInput($last->id));
+        $container->get(DeleteLevelBracketUseCase::class)->execute(new DeleteLevelBracketDataInput($last->id));
 
-        self::assertSame($last->id, $output->deletedId);
         self::assertNull($provider->findOneByIdForAdminAction($last->id));
     }
 

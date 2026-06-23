@@ -6,14 +6,17 @@ namespace App\UseCase\Admin\Leveling\LevelBracket;
 
 use App\Domain\DTO\DataInput\Admin\Leveling\LevelBracket\ListLevelBracketsDataInput;
 use App\Domain\DTO\DataInput\DataInputInterface;
+use App\Domain\DTO\DataModel\Leveling\LevelBracket\LevelBracketDataModel;
 use App\Domain\DTO\DataOutput\Admin\Leveling\LevelBracket\LevelBracketListItemDataOutput;
 use App\Domain\Gateway\Provider\Leveling\LevelBracket\LevelBracketProviderGateway;
 use App\UseCase\AbstractPublicUseCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
-final class ListLevelBracketsUseCase extends AbstractPublicUseCase
+final readonly class ListLevelBracketsUseCase extends AbstractPublicUseCase
 {
     public function __construct(
-        private readonly LevelBracketProviderGateway $levelBracketProvider,
+        private LevelBracketProviderGateway $levelBracketProvider,
+        private ObjectMapperInterface $mapper,
     ) {
     }
 
@@ -25,14 +28,7 @@ final class ListLevelBracketsUseCase extends AbstractPublicUseCase
     public function execute(DataInputInterface $input): array
     {
         return array_map(
-            static fn ($bracket) => new LevelBracketListItemDataOutput(
-                $bracket->id,
-                $bracket->fromLevel,
-                $bracket->toLevel,
-                $bracket->coefficientA,
-                $bracket->exponentK,
-                $bracket->offsetB,
-            ),
+            fn (LevelBracketDataModel $bracket): LevelBracketListItemDataOutput => $this->mapper->map($bracket, LevelBracketListItemDataOutput::class),
             $this->levelBracketProvider->findAllOrderedAsc(),
         );
     }

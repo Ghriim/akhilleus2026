@@ -39,9 +39,8 @@ final class DeleteMovementUseCaseTest extends KernelTestCase
             false,
         ));
 
-        $output = $deleteMovement->execute(new DeleteMovementDataInput($created->id));
+        $deleteMovement->execute(new DeleteMovementDataInput($created->id));
 
-        self::assertSame($created->id, $output->deletedId);
         self::assertNull($movementProvider->findOneForAdminDetails($created->id));
     }
 

@@ -24,9 +24,8 @@ final class DeleteEquipmentUseCaseTest extends KernelTestCase
 
         $created = $createUseCase->execute(new CreateEquipmentDataInput('Delete Test'));
 
-        $output = $deleteUseCase->execute(new DeleteEquipmentDataInput($created->id));
+        $deleteUseCase->execute(new DeleteEquipmentDataInput($created->id));
 
-        self::assertSame($created->id, $output->deletedId);
         self::assertNull($providerGateway->findOneForAdminDetails($created->id));
     }
 

@@ -14,6 +14,7 @@ use App\Domain\Gateway\Provider\Tracking\Hydration\HydrationDailySummaryProvider
 use App\Domain\Security\LoggedPlayerResolverInterface;
 use App\UseCase\AbstractLoggedPlayerUseCase;
 use Psr\Clock\ClockInterface;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class GetTodayHydrationUseCase extends AbstractLoggedPlayerUseCase
 {
@@ -22,6 +23,7 @@ final class GetTodayHydrationUseCase extends AbstractLoggedPlayerUseCase
         private readonly HydrationDailySummaryProviderGateway $summaryProvider,
         private readonly HydrationDailySummaryPersisterGateway $summaryPersister,
         private readonly ClockInterface $clock,
+        private readonly ObjectMapperInterface $mapper,
     ) {
     }
 
@@ -39,18 +41,14 @@ final class GetTodayHydrationUseCase extends AbstractLoggedPlayerUseCase
             $this->summaryPersister->create($summary);
         }
 
-        return self::buildDayOutput($summary);
+        return $this->buildDayOutput($summary);
     }
 
-    private static function buildDayOutput(HydrationDailySummaryDataModel $summary): HydrationDayDataOutput
+    private function buildDayOutput(HydrationDailySummaryDataModel $summary): HydrationDayDataOutput
     {
         $entries = [];
         foreach ($summary->entries as $entry) {
-            $entries[] = new HydrationEntryDataOutput(
-                $entry->id,
-                $entry->loggedAt->format(\DateTimeInterface::ATOM),
-                $entry->valueMl,
-            );
+            $entries[] = $this->mapper->map($entry, HydrationEntryDataOutput::class);
         }
 
         return new HydrationDayDataOutput(

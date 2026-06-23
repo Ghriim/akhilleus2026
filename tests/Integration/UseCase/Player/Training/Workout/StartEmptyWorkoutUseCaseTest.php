@@ -17,6 +17,7 @@ use App\UseCase\Player\Training\Workout\StartEmptyWorkoutUseCase;
 use Doctrine\Persistence\ManagerRegistry;
 use Psr\Clock\ClockInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class StartEmptyWorkoutUseCaseTest extends KernelTestCase
 {
@@ -44,6 +45,7 @@ final class StartEmptyWorkoutUseCaseTest extends KernelTestCase
             $resolver,
             $workoutPersister,
             $clock,
+            self::getContainer()->get(ObjectMapperInterface::class),
         );
 
         $output = $useCase->execute(new StartEmptyWorkoutDataInput());

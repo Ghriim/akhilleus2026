@@ -10,12 +10,14 @@ use App\Domain\DTO\DataOutput\User\RegisterPlayerDataOutput;
 use App\Domain\Gateway\Persister\User\PlayerPersisterGateway;
 use App\Domain\Validator\User\RegisterPlayerValidator;
 use App\UseCase\AbstractPublicUseCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
-final class RegisterPlayerUseCase extends AbstractPublicUseCase
+final readonly class RegisterPlayerUseCase extends AbstractPublicUseCase
 {
     public function __construct(
-        private readonly RegisterPlayerValidator $registerPlayerValidator,
-        private readonly PlayerPersisterGateway $playerPersister,
+        private RegisterPlayerValidator $registerPlayerValidator,
+        private PlayerPersisterGateway $playerPersister,
+        private ObjectMapperInterface $mapper,
     ) {
     }
 
@@ -28,10 +30,6 @@ final class RegisterPlayerUseCase extends AbstractPublicUseCase
 
         $player = $this->playerPersister->create($input);
 
-        return new RegisterPlayerDataOutput(
-            $player->id,
-            $player->user->email,
-            $player->displayName,
-        );
+        return $this->mapper->map($player, RegisterPlayerDataOutput::class);
     }
 }

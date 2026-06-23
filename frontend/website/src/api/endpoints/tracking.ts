@@ -1,8 +1,5 @@
 import { apiRequest } from '../client';
 import type {
-  DeleteSleepDataOutput,
-  DeleteStepsForDayDataOutput,
-  DeleteWeightDataOutput,
   HydrationDayDataOutput,
   PlayerHydrationTargetDataOutput,
   PlayerStepsTargetDataOutput,
@@ -38,8 +35,8 @@ export function updatePlayerStepsTarget(target: number): Promise<PlayerStepsTarg
   });
 }
 
-export function deleteSteps(date: string): Promise<DeleteStepsForDayDataOutput> {
-  return apiRequest<DeleteStepsForDayDataOutput>(`/api/player/tracking/steps/${date}`, {
+export function deleteSteps(date: string): Promise<void> {
+  return apiRequest<void>(`/api/player/tracking/steps/${date}`, {
     method: 'DELETE',
   });
 }
@@ -114,8 +111,8 @@ export function updateSleep(id: string, input: SleepInput): Promise<SleepDailyEn
   });
 }
 
-export function deleteSleep(id: string): Promise<DeleteSleepDataOutput> {
-  return apiRequest<DeleteSleepDataOutput>(`/api/player/tracking/sleep/${id}`, { method: 'DELETE' });
+export function deleteSleep(id: string): Promise<void> {
+  return apiRequest<void>(`/api/player/tracking/sleep/${id}`, { method: 'DELETE' });
 }
 
 export function listSleep(from: string, to: string): Promise<SleepDailyEntryDataOutput[]> {
@@ -144,8 +141,8 @@ export function updateWeight(
   });
 }
 
-export function deleteWeight(id: string): Promise<DeleteWeightDataOutput> {
-  return apiRequest<DeleteWeightDataOutput>(`/api/player/tracking/weight/${id}`, {
+export function deleteWeight(id: string): Promise<void> {
+  return apiRequest<void>(`/api/player/tracking/weight/${id}`, {
     method: 'DELETE',
   });
 }

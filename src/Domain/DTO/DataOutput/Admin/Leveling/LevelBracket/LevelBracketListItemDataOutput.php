@@ -6,15 +6,12 @@ namespace App\Domain\DTO\DataOutput\Admin\Leveling\LevelBracket;
 
 use App\Domain\DTO\DataOutput\DataOutputInterface;
 
-final readonly class LevelBracketListItemDataOutput implements DataOutputInterface
+final class LevelBracketListItemDataOutput implements DataOutputInterface
 {
-    public function __construct(
-        public string $id,
-        public int $fromLevel,
-        public ?int $toLevel,
-        public int $coefficientA,
-        public int $exponentK,
-        public int $offsetB,
-    ) {
-    }
+    public string $id;
+    public int $fromLevel;
+    public ?int $toLevel;
+    public int $coefficientA;
+    public int $exponentK;
+    public int $offsetB;
 }

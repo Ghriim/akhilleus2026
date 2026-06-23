@@ -6,7 +6,6 @@ namespace App\UseCase\Player\Tracking\Weight;
 
 use App\Domain\DTO\DataInput\DataInputInterface;
 use App\Domain\DTO\DataInput\Player\Tracking\Weight\DeleteWeightDataInput;
-use App\Domain\DTO\DataOutput\Player\Tracking\Weight\DeleteWeightDataOutput;
 use App\Domain\Exception\EntityNotFoundException;
 use App\Domain\Gateway\Persister\Tracking\Weight\WeightEntryPersisterGateway;
 use App\Domain\Gateway\Provider\Tracking\Weight\WeightEntryProviderGateway;
@@ -25,7 +24,7 @@ final class DeleteWeightUseCase extends AbstractLoggedPlayerUseCase
     /**
      * @param DeleteWeightDataInput $input
      */
-    public function execute(DataInputInterface $input): DeleteWeightDataOutput
+    public function execute(DataInputInterface $input): null
     {
         $player = $this->loggedPlayerResolver->getLoggedPlayer();
 
@@ -36,6 +35,6 @@ final class DeleteWeightUseCase extends AbstractLoggedPlayerUseCase
 
         $this->weightPersister->delete($entry);
 
-        return new DeleteWeightDataOutput($input->id);
+        return null;
     }
 }

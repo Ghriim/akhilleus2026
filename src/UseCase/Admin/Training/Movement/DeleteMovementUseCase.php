@@ -6,7 +6,6 @@ namespace App\UseCase\Admin\Training\Movement;
 
 use App\Domain\DTO\DataInput\Admin\Training\Movement\DeleteMovementDataInput;
 use App\Domain\DTO\DataInput\DataInputInterface;
-use App\Domain\DTO\DataOutput\Admin\Training\Movement\DeleteMovementDataOutput;
 use App\Domain\Exception\EntityNotFoundException;
 use App\Domain\Gateway\Persister\Training\Movement\MovementPersisterGateway;
 use App\Domain\Gateway\Provider\Training\Movement\MovementProviderGateway;
@@ -23,7 +22,7 @@ final class DeleteMovementUseCase extends AbstractLoggedAdminUseCase
     /**
      * @param DeleteMovementDataInput $input
      */
-    public function execute(DataInputInterface $input): DeleteMovementDataOutput
+    public function execute(DataInputInterface $input): null
     {
         $movement = $this->movementProvider->findOneForAdminDetails($input->id);
         if (null === $movement) {
@@ -32,6 +31,6 @@ final class DeleteMovementUseCase extends AbstractLoggedAdminUseCase
 
         $this->movementPersister->delete($movement);
 
-        return new DeleteMovementDataOutput($input->id);
+        return null;
     }
 }

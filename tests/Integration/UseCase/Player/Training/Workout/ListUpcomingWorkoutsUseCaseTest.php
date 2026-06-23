@@ -18,6 +18,7 @@ use Doctrine\Persistence\ManagerRegistry;
 use Psr\Clock\ClockInterface;
 use Psr\Container\ContainerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class ListUpcomingWorkoutsUseCaseTest extends KernelTestCase
 {
@@ -113,6 +114,6 @@ final class ListUpcomingWorkoutsUseCaseTest extends KernelTestCase
             }
         };
 
-        return new ListUpcomingWorkoutsUseCase($resolver, new WorkoutRepository($registry));
+        return new ListUpcomingWorkoutsUseCase($resolver, new WorkoutRepository($registry), self::getContainer()->get(ObjectMapperInterface::class));
     }
 }

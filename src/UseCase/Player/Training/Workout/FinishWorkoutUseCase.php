@@ -26,6 +26,7 @@ use App\Domain\Service\Questing\QuestProgressionEvaluator;
 use App\Domain\Validator\Player\Training\Workout\FinishWorkoutValidator;
 use App\UseCase\AbstractLoggedPlayerUseCase;
 use Psr\Clock\ClockInterface;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class FinishWorkoutUseCase extends AbstractLoggedPlayerUseCase
 {
@@ -40,6 +41,7 @@ final class FinishWorkoutUseCase extends AbstractLoggedPlayerUseCase
         private readonly EarnedExperiencePersisterGateway $earnedExperiencePersister,
         private readonly QuestProgressionEvaluator $questProgressionEvaluator,
         private readonly ClockInterface $clock,
+        private readonly ObjectMapperInterface $mapper,
     ) {
     }
 
@@ -72,30 +74,11 @@ final class FinishWorkoutUseCase extends AbstractLoggedPlayerUseCase
                 ? $this->personalBestPersister->create($upsert->personalBest)
                 : $this->personalBestPersister->update($upsert->personalBest);
 
-            $newPersonalBestsOutput[] = new PersonalBestSummaryDataOutput(
-                $persisted->movement->id,
-                $persisted->movement->slug,
-                $persisted->movement->label,
-                $persisted->type,
-                $persisted->value,
-                $persisted->achievedAt->format(\DateTimeInterface::ATOM),
-                $persisted->exerciseSet?->id,
-            );
+            $newPersonalBestsOutput[] = $this->mapper->map($persisted, PersonalBestSummaryDataOutput::class);
         }
 
         return new FinishWorkoutDataOutput(
-            new WorkoutDataOutput(
-                $workout->id,
-                $workout->name,
-                $workout->status,
-                $workout->plannedAt?->format(\DateTimeInterface::ATOM),
-                $workout->dateStart?->format(\DateTimeInterface::ATOM),
-                $workout->dateEnd->format(\DateTimeInterface::ATOM),
-                $workout->duration,
-                $workout->volume,
-                $workout->distance,
-                $workout->inclineMeters,
-            ),
+            $this->mapper->map($workout, WorkoutDataOutput::class),
             $newPersonalBestsOutput,
             $earnedXp,
         );

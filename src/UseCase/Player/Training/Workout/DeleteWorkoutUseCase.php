@@ -7,7 +7,6 @@ namespace App\UseCase\Player\Training\Workout;
 use App\Domain\DTO\DataInput\DataInputInterface;
 use App\Domain\DTO\DataInput\Player\Training\Workout\DeleteWorkoutDataInput;
 use App\Domain\DTO\DataModel\Training\Workout\WorkoutDataModel;
-use App\Domain\DTO\DataOutput\Player\Training\Workout\DeleteWorkoutDataOutput;
 use App\Domain\Exception\EntityNotFoundException;
 use App\Domain\Gateway\Persister\Leveling\EarnedExperience\EarnedExperiencePersisterGateway;
 use App\Domain\Gateway\Persister\Training\Workout\WorkoutPersisterGateway;
@@ -21,9 +20,6 @@ use Psr\Clock\ClockInterface;
 
 final class DeleteWorkoutUseCase extends AbstractLoggedPlayerUseCase
 {
-    public const string MODE_HARD = 'hard';
-    public const string MODE_SOFT = 'soft';
-
     public function __construct(
         private readonly LoggedPlayerResolverInterface $loggedPlayerResolver,
         private readonly WorkoutProviderGateway $workoutProvider,
@@ -37,7 +33,7 @@ final class DeleteWorkoutUseCase extends AbstractLoggedPlayerUseCase
     /**
      * @param DeleteWorkoutDataInput $input
      */
-    public function execute(DataInputInterface $input): DeleteWorkoutDataOutput
+    public function execute(DataInputInterface $input): null
     {
         $player = $this->loggedPlayerResolver->getLoggedPlayer();
         // The provider is player-scoped and already excludes DELETED workouts (5.2), so an
@@ -47,11 +43,13 @@ final class DeleteWorkoutUseCase extends AbstractLoggedPlayerUseCase
             throw new EntityNotFoundException(sprintf('Workout "%s" not found.', $input->id));
         }
 
-        $deletedId = $workout->id;
+        if ($this->isDatedToday($workout)) {
+            $this->hardDelete($workout);
+        } else {
+            $this->softDelete($workout);
+        }
 
-        return $this->isDatedToday($workout)
-            ? $this->hardDelete($workout, $deletedId)
-            : $this->softDelete($workout, $deletedId);
+        return null;
     }
 
     /**
@@ -60,7 +58,7 @@ final class DeleteWorkoutUseCase extends AbstractLoggedPlayerUseCase
      * XP grant is always still unlocked (the nightly cron only locks entries earned before today),
      * so it is removed too — the unlocked guard is defensive.
      */
-    private function hardDelete(WorkoutDataModel $workout, string $deletedId): DeleteWorkoutDataOutput
+    private function hardDelete(WorkoutDataModel $workout): void
     {
         $earned = $this->earnedExperienceProvider->findOneBySourceTypeAndId(
             EarnedExperienceSourceTypeRegistry::WORKOUT,
@@ -71,20 +69,16 @@ final class DeleteWorkoutUseCase extends AbstractLoggedPlayerUseCase
         }
 
         $this->workoutPersister->delete($workout);
-
-        return new DeleteWorkoutDataOutput($deletedId, self::MODE_HARD);
     }
 
     /**
      * Other-day delete: keep the row but transition it to DELETED so it drops out of every player
      * read (5.2). Any earned XP — possibly already locked by the cron — is preserved untouched.
      */
-    private function softDelete(WorkoutDataModel $workout, string $deletedId): DeleteWorkoutDataOutput
+    private function softDelete(WorkoutDataModel $workout): void
     {
         $workout->status = WorkoutStatusRegistry::DELETED;
         $this->workoutPersister->update($workout);
-
-        return new DeleteWorkoutDataOutput($deletedId, self::MODE_SOFT);
     }
 
     /**

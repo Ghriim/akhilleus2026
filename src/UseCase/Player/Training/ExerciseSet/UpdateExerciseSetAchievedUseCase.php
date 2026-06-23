@@ -6,7 +6,6 @@ namespace App\UseCase\Player\Training\ExerciseSet;
 
 use App\Domain\DTO\DataInput\DataInputInterface;
 use App\Domain\DTO\DataInput\Player\Training\ExerciseSet\UpdateExerciseSetAchievedDataInput;
-use App\Domain\DTO\DataModel\Training\Workout\ExerciseSetDataModel;
 use App\Domain\DTO\DataOutput\Player\Training\ExerciseSet\ExerciseSetDataOutput;
 use App\Domain\Exception\EntityNotFoundException;
 use App\Domain\Gateway\Persister\Training\Workout\ExerciseSetPersisterGateway;
@@ -15,6 +14,7 @@ use App\Domain\Security\LoggedPlayerResolverInterface;
 use App\Domain\Service\ExerciseSetCompletionEvaluator;
 use App\Domain\Validator\Player\Training\ExerciseSet\UpdateExerciseSetAchievedValidator;
 use App\UseCase\AbstractLoggedPlayerUseCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class UpdateExerciseSetAchievedUseCase extends AbstractLoggedPlayerUseCase
 {
@@ -23,6 +23,7 @@ final class UpdateExerciseSetAchievedUseCase extends AbstractLoggedPlayerUseCase
         private readonly LoggedPlayerResolverInterface $loggedPlayerResolver,
         private readonly ExerciseSetProviderGateway $exerciseSetProvider,
         private readonly ExerciseSetPersisterGateway $exerciseSetPersister,
+        private readonly ObjectMapperInterface $mapper,
     ) {
     }
 
@@ -49,28 +50,6 @@ final class UpdateExerciseSetAchievedUseCase extends AbstractLoggedPlayerUseCase
 
         $this->exerciseSetPersister->update($set);
 
-        return self::buildOutput($set);
-    }
-
-    private static function buildOutput(ExerciseSetDataModel $set): ExerciseSetDataOutput
-    {
-        return new ExerciseSetDataOutput(
-            $set->id,
-            $set->exercise->id,
-            $set->position,
-            $set->plannedReps,
-            $set->achievedReps,
-            $set->plannedWeight,
-            $set->achievedWeight,
-            $set->plannedDurationSeconds,
-            $set->achievedDurationSeconds,
-            $set->plannedDistanceMeters,
-            $set->achievedDistanceMeters,
-            $set->plannedInclinePercent,
-            $set->achievedInclinePercent,
-            $set->plannedInclineMeters,
-            $set->achievedInclineMeters,
-            $set->isComplete,
-        );
+        return $this->mapper->map($set, ExerciseSetDataOutput::class);
     }
 }

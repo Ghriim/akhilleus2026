@@ -11,12 +11,14 @@ use App\Domain\DTO\DataOutput\Admin\Leveling\LevelBracket\LevelBracketDataOutput
 use App\Domain\Gateway\Persister\Leveling\LevelBracket\LevelBracketPersisterGateway;
 use App\Domain\Validator\Admin\Leveling\LevelBracket\CreateLevelBracketValidator;
 use App\UseCase\AbstractLoggedAdminUseCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class CreateLevelBracketUseCase extends AbstractLoggedAdminUseCase
 {
     public function __construct(
         private readonly CreateLevelBracketValidator $createLevelBracketValidator,
         private readonly LevelBracketPersisterGateway $levelBracketPersister,
+        private readonly ObjectMapperInterface $mapper,
     ) {
     }
 
@@ -35,13 +37,6 @@ final class CreateLevelBracketUseCase extends AbstractLoggedAdminUseCase
             $input->offsetB,
         ));
 
-        return new LevelBracketDataOutput(
-            $bracket->id,
-            $bracket->fromLevel,
-            $bracket->toLevel,
-            $bracket->coefficientA,
-            $bracket->exponentK,
-            $bracket->offsetB,
-        );
+        return $this->mapper->map($bracket, LevelBracketDataOutput::class);
     }
 }

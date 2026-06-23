@@ -1,5 +1,5 @@
 import { apiRequest } from '../client';
-import type { ExerciseSetDataOutput, RemoveExerciseSetDataOutput } from '../types';
+import type { ExerciseSetDataOutput } from '../types';
 
 export interface AddSetInput {
   plannedReps?: number | null;
@@ -55,6 +55,6 @@ export function updateAchieved(id: string, input: UpdateAchievedSetInput): Promi
   });
 }
 
-export function remove(id: string): Promise<RemoveExerciseSetDataOutput> {
-  return apiRequest<RemoveExerciseSetDataOutput>(`/api/player/sets/${id}`, { method: 'DELETE' });
+export function remove(id: string): Promise<void> {
+  return apiRequest<void>(`/api/player/sets/${id}`, { method: 'DELETE' });
 }

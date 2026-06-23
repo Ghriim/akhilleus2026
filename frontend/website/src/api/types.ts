@@ -123,11 +123,6 @@ export interface FinishWorkoutDataOutput {
   newPersonalBests: PersonalBestSummaryDataOutput[];
 }
 
-export interface DeleteWorkoutDataOutput {
-  deletedId: string;
-  mode: 'hard' | 'soft';
-}
-
 export interface MovementSummaryDataOutput {
   id: string;
   slug: string;
@@ -169,14 +164,6 @@ export interface ExerciseDataOutput {
   movement: ExerciseMovementDataOutput;
 }
 
-export interface RemoveExerciseDataOutput {
-  exerciseId: string;
-}
-
-export interface RemoveExerciseSetDataOutput {
-  exerciseSetId: string;
-}
-
 // --- Tracking sub-domain ---
 
 export interface StepsDailyEntryDataOutput {
@@ -184,10 +171,6 @@ export interface StepsDailyEntryDataOutput {
   date: string;
   count: number;
   target: number;
-}
-
-export interface DeleteStepsForDayDataOutput {
-  deletedDate: string;
 }
 
 export interface PlayerStepsTargetDataOutput {
@@ -220,19 +203,11 @@ export interface SleepDailyEntryDataOutput {
   quality: number | null;
 }
 
-export interface DeleteSleepDataOutput {
-  deletedId: string;
-}
-
 export interface WeightEntryDataOutput {
   id: string;
   date: string;
   loggedAt: string;
   valueGrams: number;
-}
-
-export interface DeleteWeightDataOutput {
-  deletedId: string;
 }
 
 export interface EarnedExperienceDataOutput {

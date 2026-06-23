@@ -11,6 +11,7 @@ use App\Domain\Gateway\Persister\Leveling\LevelingConfig\LevelingConfigPersister
 use App\Domain\Gateway\Provider\Leveling\LevelingConfig\LevelingConfigProviderGateway;
 use App\Domain\Validator\Admin\Leveling\LevelingConfig\UpdateLevelingConfigValidator;
 use App\UseCase\AbstractLoggedAdminUseCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class UpdateLevelingConfigUseCase extends AbstractLoggedAdminUseCase
 {
@@ -18,6 +19,7 @@ final class UpdateLevelingConfigUseCase extends AbstractLoggedAdminUseCase
         private readonly UpdateLevelingConfigValidator $updateLevelingConfigValidator,
         private readonly LevelingConfigProviderGateway $levelingConfigProvider,
         private readonly LevelingConfigPersisterGateway $levelingConfigPersister,
+        private readonly ObjectMapperInterface $mapper,
     ) {
     }
 
@@ -32,6 +34,6 @@ final class UpdateLevelingConfigUseCase extends AbstractLoggedAdminUseCase
         $config->xpPerWorkoutMinute = $input->xpPerWorkoutMinute;
         $this->levelingConfigPersister->update($config);
 
-        return new LevelingConfigDataOutput($config->id, $config->xpPerWorkoutMinute);
+        return $this->mapper->map($config, LevelingConfigDataOutput::class);
     }
 }

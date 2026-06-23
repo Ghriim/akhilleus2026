@@ -16,6 +16,7 @@ use App\Domain\Gateway\Provider\Training\Workout\WorkoutProviderGateway;
 use App\Domain\Security\LoggedPlayerResolverInterface;
 use App\Domain\Validator\Player\Training\Exercise\ReorderMovementsValidator;
 use App\UseCase\AbstractLoggedPlayerUseCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class ReorderMovementsUseCase extends AbstractLoggedPlayerUseCase
 {
@@ -27,6 +28,7 @@ final class ReorderMovementsUseCase extends AbstractLoggedPlayerUseCase
         private readonly WorkoutProviderGateway $workoutProvider,
         private readonly ExerciseProviderGateway $exerciseProvider,
         private readonly ExercisePersisterGateway $exercisePersister,
+        private readonly ObjectMapperInterface $mapper,
     ) {
     }
 
@@ -74,19 +76,7 @@ final class ReorderMovementsUseCase extends AbstractLoggedPlayerUseCase
                 $workout->id,
                 $exercise->position,
                 $exercise->restDurationSeconds,
-                new ExerciseMovementDataOutput(
-                    $exercise->movement->id,
-                    $exercise->movement->slug,
-                    $exercise->movement->label,
-                    $exercise->movement->tracksRepetitions,
-                    $exercise->movement->tracksWeight,
-                    $exercise->movement->tracksDuration,
-                    $exercise->movement->tracksDistance,
-                    $exercise->movement->tracksInclinePercent,
-                    $exercise->movement->tracksInclineMeters,
-                    $exercise->movement->videoLink,
-                    $exercise->movement->gifLink,
-                ),
+                $this->mapper->map($exercise->movement, ExerciseMovementDataOutput::class),
             ),
             $reordered,
         );

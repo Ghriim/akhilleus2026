@@ -18,6 +18,7 @@ use Doctrine\Persistence\ManagerRegistry;
 use Psr\Clock\ClockInterface;
 use Psr\Container\ContainerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class LogWeightUseCaseTest extends KernelTestCase
 {
@@ -90,6 +91,7 @@ final class LogWeightUseCaseTest extends KernelTestCase
             new LogWeightValidator($resolver, $repo),
             $resolver,
             new WeightEntryPersister($em, $clock),
+            self::getContainer()->get(ObjectMapperInterface::class),
         );
     }
 

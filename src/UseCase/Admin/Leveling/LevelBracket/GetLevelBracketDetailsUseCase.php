@@ -10,11 +10,13 @@ use App\Domain\DTO\DataOutput\Admin\Leveling\LevelBracket\LevelBracketDataOutput
 use App\Domain\Exception\EntityNotFoundException;
 use App\Domain\Gateway\Provider\Leveling\LevelBracket\LevelBracketProviderGateway;
 use App\UseCase\AbstractPublicUseCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
-final class GetLevelBracketDetailsUseCase extends AbstractPublicUseCase
+final readonly class GetLevelBracketDetailsUseCase extends AbstractPublicUseCase
 {
     public function __construct(
-        private readonly LevelBracketProviderGateway $levelBracketProvider,
+        private LevelBracketProviderGateway $levelBracketProvider,
+        private ObjectMapperInterface $mapper,
     ) {
     }
 
@@ -28,13 +30,6 @@ final class GetLevelBracketDetailsUseCase extends AbstractPublicUseCase
             throw new EntityNotFoundException(sprintf('Level bracket "%s" not found.', $input->id));
         }
 
-        return new LevelBracketDataOutput(
-            $bracket->id,
-            $bracket->fromLevel,
-            $bracket->toLevel,
-            $bracket->coefficientA,
-            $bracket->exponentK,
-            $bracket->offsetB,
-        );
+        return $this->mapper->map($bracket, LevelBracketDataOutput::class);
     }
 }

@@ -13,6 +13,7 @@ use App\Domain\Gateway\Provider\Tracking\Weight\WeightEntryProviderGateway;
 use App\Domain\Security\LoggedPlayerResolverInterface;
 use App\Domain\Validator\Player\Tracking\Weight\UpdateWeightValidator;
 use App\UseCase\AbstractLoggedPlayerUseCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class UpdateWeightUseCase extends AbstractLoggedPlayerUseCase
 {
@@ -21,6 +22,7 @@ final class UpdateWeightUseCase extends AbstractLoggedPlayerUseCase
         private readonly LoggedPlayerResolverInterface $loggedPlayerResolver,
         private readonly WeightEntryProviderGateway $weightProvider,
         private readonly WeightEntryPersisterGateway $weightPersister,
+        private readonly ObjectMapperInterface $mapper,
     ) {
     }
 
@@ -43,11 +45,6 @@ final class UpdateWeightUseCase extends AbstractLoggedPlayerUseCase
 
         $this->weightPersister->update($entry);
 
-        return new WeightEntryDataOutput(
-            $entry->id,
-            $entry->date->format(\DateTimeInterface::ATOM),
-            $entry->loggedAt->format(\DateTimeInterface::ATOM),
-            $entry->valueGrams,
-        );
+        return $this->mapper->map($entry, WeightEntryDataOutput::class);
     }
 }

@@ -1,5 +1,5 @@
 import { apiRequest } from '../client';
-import type { ExerciseDataOutput, RemoveExerciseDataOutput } from '../types';
+import type { ExerciseDataOutput } from '../types';
 
 export interface AddExerciseInput {
   movementId: string;
@@ -21,8 +21,8 @@ export function add(workoutId: string, input: AddExerciseInput): Promise<Exercis
   });
 }
 
-export function remove(id: string): Promise<RemoveExerciseDataOutput> {
-  return apiRequest<RemoveExerciseDataOutput>(`/api/player/exercises/${id}`, { method: 'DELETE' });
+export function remove(id: string): Promise<void> {
+  return apiRequest<void>(`/api/player/exercises/${id}`, { method: 'DELETE' });
 }
 
 export function reorder(workoutId: string, input: ReorderExercisesInput): Promise<void> {

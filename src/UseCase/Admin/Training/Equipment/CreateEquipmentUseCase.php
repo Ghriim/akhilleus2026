@@ -11,12 +11,14 @@ use App\Domain\DTO\DataOutput\Admin\Training\Equipment\EquipmentDataOutput;
 use App\Domain\Gateway\Persister\Training\Equipment\EquipmentPersisterGateway;
 use App\Domain\Validator\Admin\Training\Equipment\CreateEquipmentValidator;
 use App\UseCase\AbstractLoggedAdminUseCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class CreateEquipmentUseCase extends AbstractLoggedAdminUseCase
 {
     public function __construct(
         private readonly CreateEquipmentValidator $createEquipmentValidator,
         private readonly EquipmentPersisterGateway $equipmentPersister,
+        private readonly ObjectMapperInterface $mapper,
     ) {
     }
 
@@ -29,6 +31,6 @@ final class CreateEquipmentUseCase extends AbstractLoggedAdminUseCase
 
         $equipment = $this->equipmentPersister->create(new EquipmentDataModel($input->label));
 
-        return new EquipmentDataOutput($equipment->id, $equipment->slug, $equipment->label);
+        return $this->mapper->map($equipment, EquipmentDataOutput::class);
     }
 }

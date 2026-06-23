@@ -6,12 +6,14 @@ namespace App\UseCase\Player\Training\Workout;
 
 use App\Domain\DTO\DataInput\DataInputInterface;
 use App\Domain\DTO\DataInput\Player\Training\Workout\ListWorkoutHistoryDataInput;
+use App\Domain\DTO\DataModel\Training\Workout\WorkoutDataModel;
 use App\Domain\DTO\DataOutput\Player\Training\Workout\WorkoutDataOutput;
 use App\Domain\DTO\DataOutput\Player\Training\Workout\WorkoutHistoryDataOutput;
 use App\Domain\Gateway\Provider\Training\Workout\WorkoutProviderGateway;
 use App\Domain\Security\LoggedPlayerResolverInterface;
 use App\Domain\Validator\Player\Training\Workout\ListWorkoutHistoryValidator;
 use App\UseCase\AbstractLoggedPlayerUseCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class ListWorkoutHistoryUseCase extends AbstractLoggedPlayerUseCase
 {
@@ -19,6 +21,7 @@ final class ListWorkoutHistoryUseCase extends AbstractLoggedPlayerUseCase
         private readonly ListWorkoutHistoryValidator $listWorkoutHistoryValidator,
         private readonly LoggedPlayerResolverInterface $loggedPlayerResolver,
         private readonly WorkoutProviderGateway $workoutProvider,
+        private readonly ObjectMapperInterface $mapper,
     ) {
     }
 
@@ -34,18 +37,7 @@ final class ListWorkoutHistoryUseCase extends AbstractLoggedPlayerUseCase
         $totalCount = $this->workoutProvider->countCompletedByPlayer($player);
 
         $items = array_map(
-            static fn ($workout) => new WorkoutDataOutput(
-                $workout->id,
-                $workout->name,
-                $workout->status,
-                $workout->plannedAt?->format(\DateTimeInterface::ATOM),
-                $workout->dateStart?->format(\DateTimeInterface::ATOM),
-                $workout->dateEnd?->format(\DateTimeInterface::ATOM),
-                $workout->duration,
-                $workout->volume,
-                $workout->distance,
-                $workout->inclineMeters,
-            ),
+            fn (WorkoutDataModel $workout): WorkoutDataOutput => $this->mapper->map($workout, WorkoutDataOutput::class),
             $workouts,
         );
 

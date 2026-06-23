@@ -14,6 +14,7 @@ use App\Domain\Validator\Player\Tracking\Hydration\UpdatePlayerDailyHydrationTar
 use App\UseCase\Player\Tracking\Hydration\UpdatePlayerDailyHydrationTargetUseCase;
 use Psr\Container\ContainerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class UpdatePlayerDailyHydrationTargetUseCaseTest extends KernelTestCase
 {
@@ -56,6 +57,7 @@ final class UpdatePlayerDailyHydrationTargetUseCaseTest extends KernelTestCase
             new UpdatePlayerDailyHydrationTargetValidator($resolver),
             $resolver,
             $container->get(PlayerPersisterGateway::class),
+            self::getContainer()->get(ObjectMapperInterface::class),
         );
     }
 

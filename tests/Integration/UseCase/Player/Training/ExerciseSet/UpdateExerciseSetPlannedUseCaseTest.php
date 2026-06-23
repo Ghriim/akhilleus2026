@@ -15,6 +15,7 @@ use App\UseCase\Player\Training\ExerciseSet\UpdateExerciseSetPlannedUseCase;
 use Doctrine\Persistence\ManagerRegistry;
 use Psr\Clock\ClockInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class UpdateExerciseSetPlannedUseCaseTest extends KernelTestCase
 {
@@ -76,6 +77,7 @@ final class UpdateExerciseSetPlannedUseCaseTest extends KernelTestCase
             $resolver,
             new ExerciseSetRepository($registry),
             new ExerciseSetPersister($em, $clock),
+            self::getContainer()->get(ObjectMapperInterface::class),
         );
     }
 }

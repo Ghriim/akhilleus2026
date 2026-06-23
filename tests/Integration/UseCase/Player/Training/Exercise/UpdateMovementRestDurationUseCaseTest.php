@@ -27,6 +27,7 @@ use Doctrine\Persistence\ManagerRegistry;
 use Psr\Clock\ClockInterface;
 use Psr\Container\ContainerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class UpdateMovementRestDurationUseCaseTest extends KernelTestCase
 {
@@ -131,6 +132,7 @@ final class UpdateMovementRestDurationUseCaseTest extends KernelTestCase
             $resolver,
             new ExerciseRepository($registry),
             new ExercisePersister($em, $clock),
+            self::getContainer()->get(ObjectMapperInterface::class),
         );
     }
 }

@@ -13,6 +13,7 @@ use App\Domain\Gateway\Provider\Leveling\EarnedExperience\EarnedExperienceProvid
 use App\Domain\Security\LoggedPlayerResolverInterface;
 use App\Domain\Validator\Player\Leveling\EarnedExperience\ListEarnedExperienceValidator;
 use App\UseCase\AbstractLoggedPlayerUseCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class ListEarnedExperienceUseCase extends AbstractLoggedPlayerUseCase
 {
@@ -20,6 +21,7 @@ final class ListEarnedExperienceUseCase extends AbstractLoggedPlayerUseCase
         private readonly ListEarnedExperienceValidator $listEarnedExperienceValidator,
         private readonly LoggedPlayerResolverInterface $loggedPlayerResolver,
         private readonly EarnedExperienceProviderGateway $earnedExperienceProvider,
+        private readonly ObjectMapperInterface $mapper,
     ) {
     }
 
@@ -35,15 +37,7 @@ final class ListEarnedExperienceUseCase extends AbstractLoggedPlayerUseCase
         $totalCount = $this->earnedExperienceProvider->countByPlayerForJournal($player);
 
         $items = array_map(
-            static fn (EarnedExperienceDataModel $entry): EarnedExperienceDataOutput => new EarnedExperienceDataOutput(
-                $entry->id,
-                $entry->label,
-                $entry->amount,
-                $entry->earnedAt->format(\DateTimeInterface::ATOM),
-                $entry->sourceType,
-                $entry->sourceId,
-                $entry->isLocked,
-            ),
+            fn (EarnedExperienceDataModel $entry): EarnedExperienceDataOutput => $this->mapper->map($entry, EarnedExperienceDataOutput::class),
             $entries,
         );
 

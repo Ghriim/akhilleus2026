@@ -39,9 +39,7 @@ final class RemoveMovementFromWorkoutUseCaseTest extends KernelTestCase
         $exercise = self::createTestExercise($container, $player, WorkoutStatusRegistry::IN_PROGRESS);
         $useCase = self::buildUseCase($container, $player);
 
-        $output = $useCase->execute(new RemoveMovementFromWorkoutDataInput($exercise->id));
-
-        self::assertSame($exercise->id, $output->deletedId);
+        $useCase->execute(new RemoveMovementFromWorkoutDataInput($exercise->id));
 
         $em = $container->get('doctrine.orm.entity_manager');
         self::assertNull($em->getRepository(ExerciseDataModel::class)->find($exercise->id));

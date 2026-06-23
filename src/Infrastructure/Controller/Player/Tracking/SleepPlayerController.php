@@ -53,7 +53,9 @@ final readonly class SleepPlayerController
     #[Route(path: '/api/player/tracking/sleep/{id}', name: 'player_tracking_sleep_delete', methods: ['DELETE'])]
     public function delete(string $id, DeleteSleepUseCase $useCase): JsonResponse
     {
-        return new JsonResponse($useCase->execute(new DeleteSleepDataInput($id)));
+        $useCase->execute(new DeleteSleepDataInput($id));
+
+        return new JsonResponse(null, 204);
     }
 
     #[Route(path: '/api/player/tracking/sleep', name: 'player_tracking_sleep_list', methods: ['GET'])]

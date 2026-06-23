@@ -6,7 +6,6 @@ namespace App\UseCase\Admin\Training\Muscle;
 
 use App\Domain\DTO\DataInput\Admin\Training\Muscle\DeleteMuscleDataInput;
 use App\Domain\DTO\DataInput\DataInputInterface;
-use App\Domain\DTO\DataOutput\Admin\Training\Muscle\DeleteMuscleDataOutput;
 use App\Domain\Exception\EntityNotFoundException;
 use App\Domain\Gateway\Persister\Training\Muscle\MusclePersisterGateway;
 use App\Domain\Gateway\Provider\Training\Muscle\MuscleProviderGateway;
@@ -23,7 +22,7 @@ final class DeleteMuscleUseCase extends AbstractLoggedAdminUseCase
     /**
      * @param DeleteMuscleDataInput $input
      */
-    public function execute(DataInputInterface $input): DeleteMuscleDataOutput
+    public function execute(DataInputInterface $input): null
     {
         $muscle = $this->muscleProvider->findOneForAdminDetails($input->id);
         if (null === $muscle) {
@@ -32,6 +31,6 @@ final class DeleteMuscleUseCase extends AbstractLoggedAdminUseCase
 
         $this->musclePersister->delete($muscle);
 
-        return new DeleteMuscleDataOutput($input->id);
+        return null;
     }
 }

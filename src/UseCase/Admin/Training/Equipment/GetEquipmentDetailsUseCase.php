@@ -10,11 +10,13 @@ use App\Domain\DTO\DataOutput\Admin\Training\Equipment\EquipmentDataOutput;
 use App\Domain\Exception\EntityNotFoundException;
 use App\Domain\Gateway\Provider\Training\Equipment\EquipmentProviderGateway;
 use App\UseCase\AbstractPublicUseCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
-final class GetEquipmentDetailsUseCase extends AbstractPublicUseCase
+final readonly class GetEquipmentDetailsUseCase extends AbstractPublicUseCase
 {
     public function __construct(
-        private readonly EquipmentProviderGateway $equipmentProvider,
+        private EquipmentProviderGateway $equipmentProvider,
+        private ObjectMapperInterface $mapper,
     ) {
     }
 
@@ -28,6 +30,6 @@ final class GetEquipmentDetailsUseCase extends AbstractPublicUseCase
             throw new EntityNotFoundException(sprintf('Equipment "%s" not found.', $input->id));
         }
 
-        return new EquipmentDataOutput($equipment->id, $equipment->slug, $equipment->label);
+        return $this->mapper->map($equipment, EquipmentDataOutput::class);
     }
 }

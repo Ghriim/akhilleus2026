@@ -14,6 +14,7 @@ use App\Domain\Security\LoggedPlayerResolverInterface;
 use App\Domain\Validator\Player\Tracking\Steps\UpdateStepsDailyTargetValidator;
 use App\UseCase\AbstractLoggedPlayerUseCase;
 use Psr\Clock\ClockInterface;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class UpdateStepsDailyTargetUseCase extends AbstractLoggedPlayerUseCase
 {
@@ -23,6 +24,7 @@ final class UpdateStepsDailyTargetUseCase extends AbstractLoggedPlayerUseCase
         private readonly StepsDailyEntryProviderGateway $stepsProvider,
         private readonly StepsDailyEntryPersisterGateway $stepsPersister,
         private readonly ClockInterface $clock,
+        private readonly ObjectMapperInterface $mapper,
     ) {
     }
 
@@ -45,11 +47,6 @@ final class UpdateStepsDailyTargetUseCase extends AbstractLoggedPlayerUseCase
             $this->stepsPersister->update($entry);
         }
 
-        return new StepsDailyEntryDataOutput(
-            $entry->id,
-            $entry->date->format(\DateTimeInterface::ATOM),
-            $entry->count,
-            $entry->target,
-        );
+        return $this->mapper->map($entry, StepsDailyEntryDataOutput::class);
     }
 }

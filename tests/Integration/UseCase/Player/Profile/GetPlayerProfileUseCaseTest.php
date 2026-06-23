@@ -12,6 +12,7 @@ use App\Domain\Security\LoggedPlayerResolverInterface;
 use App\UseCase\Player\Profile\GetPlayerProfileUseCase;
 use Psr\Container\ContainerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class GetPlayerProfileUseCaseTest extends KernelTestCase
 {
@@ -52,6 +53,6 @@ final class GetPlayerProfileUseCaseTest extends KernelTestCase
             }
         };
 
-        return new GetPlayerProfileUseCase($resolver);
+        return new GetPlayerProfileUseCase($resolver, self::getContainer()->get(ObjectMapperInterface::class));
     }
 }

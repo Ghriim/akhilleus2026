@@ -6,7 +6,6 @@ namespace App\UseCase\Player\Training\Exercise;
 
 use App\Domain\DTO\DataInput\DataInputInterface;
 use App\Domain\DTO\DataInput\Player\Training\Exercise\RemoveMovementFromWorkoutDataInput;
-use App\Domain\DTO\DataOutput\Player\Training\Exercise\RemoveExerciseDataOutput;
 use App\Domain\Exception\EntityNotFoundException;
 use App\Domain\Gateway\Persister\Training\Workout\ExercisePersisterGateway;
 use App\Domain\Gateway\Provider\Training\Workout\ExerciseProviderGateway;
@@ -27,7 +26,7 @@ final class RemoveMovementFromWorkoutUseCase extends AbstractLoggedPlayerUseCase
     /**
      * @param RemoveMovementFromWorkoutDataInput $input
      */
-    public function execute(DataInputInterface $input): RemoveExerciseDataOutput
+    public function execute(DataInputInterface $input): null
     {
         $player = $this->loggedPlayerResolver->getLoggedPlayer();
         $exercise = $this->exerciseProvider->findOneByIdForPlayerAction($input->exerciseId, $player);
@@ -39,6 +38,6 @@ final class RemoveMovementFromWorkoutUseCase extends AbstractLoggedPlayerUseCase
 
         $this->exercisePersister->delete($exercise);
 
-        return new RemoveExerciseDataOutput($input->exerciseId);
+        return null;
     }
 }

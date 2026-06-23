@@ -24,9 +24,8 @@ final class DeleteMuscleUseCaseTest extends KernelTestCase
 
         $created = $createUseCase->execute(new CreateMuscleDataInput('Delete Test'));
 
-        $output = $deleteUseCase->execute(new DeleteMuscleDataInput($created->id));
+        $deleteUseCase->execute(new DeleteMuscleDataInput($created->id));
 
-        self::assertSame($created->id, $output->deletedId);
         self::assertNull($providerGateway->findOneForAdminDetails($created->id));
     }
 

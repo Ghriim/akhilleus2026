@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace App\Domain\DTO\DataOutput\Player\Questing;
 
 use App\Domain\DTO\DataOutput\DataOutputInterface;
+use Symfony\Component\ObjectMapper\Attribute\Map;
 
-final readonly class ClaimQuestRewardDataOutput implements DataOutputInterface
+final class ClaimQuestRewardDataOutput implements DataOutputInterface
 {
-    public function __construct(
-        public string $progressionId,
-        public string $earnedExperienceId,
-        public int $amount,
-    ) {
-    }
+    /** Mapped from the minted EarnedExperience, whose `sourceId` is the claimed progression's id. */
+    #[Map(source: 'sourceId')]
+    public string $progressionId;
+    #[Map(source: 'id')]
+    public string $earnedExperienceId;
+    public int $amount;
 }

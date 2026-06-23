@@ -6,7 +6,6 @@ namespace App\UseCase\Player\Tracking\Steps;
 
 use App\Domain\DTO\DataInput\DataInputInterface;
 use App\Domain\DTO\DataInput\Player\Tracking\Steps\DeleteStepsForDayDataInput;
-use App\Domain\DTO\DataOutput\Player\Tracking\Steps\DeleteStepsForDayDataOutput;
 use App\Domain\Exception\EntityNotFoundException;
 use App\Domain\Gateway\Persister\Tracking\Steps\StepsDailyEntryPersisterGateway;
 use App\Domain\Gateway\Provider\Tracking\Steps\StepsDailyEntryProviderGateway;
@@ -30,7 +29,7 @@ final class DeleteStepsForDayUseCase extends AbstractLoggedPlayerUseCase
     /**
      * @param DeleteStepsForDayDataInput $input
      */
-    public function execute(DataInputInterface $input): DeleteStepsForDayDataOutput
+    public function execute(DataInputInterface $input): null
     {
         $player = $this->loggedPlayerResolver->getLoggedPlayer();
         $date = $input->date->setTime(0, 0, 0);
@@ -44,6 +43,6 @@ final class DeleteStepsForDayUseCase extends AbstractLoggedPlayerUseCase
 
         $this->questProgressionEvaluator->refreshFor($player, QuestMetricRegistry::STEPS_DAILY, $this->clock->now());
 
-        return new DeleteStepsForDayDataOutput($date->format(\DateTimeInterface::ATOM));
+        return null;
     }
 }
