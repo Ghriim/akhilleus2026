@@ -10,11 +10,13 @@ use App\Domain\DTO\DataOutput\Admin\Training\Muscle\MuscleDataOutput;
 use App\Domain\Exception\EntityNotFoundException;
 use App\Domain\Gateway\Provider\Training\Muscle\MuscleProviderGateway;
 use App\UseCase\AbstractPublicUseCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
-final class GetMuscleDetailsUseCase extends AbstractPublicUseCase
+final readonly class GetMuscleDetailsUseCase extends AbstractPublicUseCase
 {
     public function __construct(
-        private readonly MuscleProviderGateway $muscleProvider,
+        private MuscleProviderGateway $muscleProvider,
+        private ObjectMapperInterface $mapper,
     ) {
     }
 
@@ -28,6 +30,6 @@ final class GetMuscleDetailsUseCase extends AbstractPublicUseCase
             throw new EntityNotFoundException(sprintf('Muscle "%s" not found.', $input->id));
         }
 
-        return new MuscleDataOutput($muscle->id, $muscle->slug, $muscle->label);
+        return $this->mapper->map($muscle, MuscleDataOutput::class);
     }
 }

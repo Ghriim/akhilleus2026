@@ -19,6 +19,7 @@ use Doctrine\Persistence\ManagerRegistry;
 use Psr\Clock\ClockInterface;
 use Psr\Container\ContainerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class UpsertStepsForDayUseCaseTest extends KernelTestCase
 {
@@ -95,6 +96,7 @@ final class UpsertStepsForDayUseCaseTest extends KernelTestCase
             new StepsDailyEntryPersister($em, $clock),
             $container->get(QuestProgressionEvaluator::class),
             $clock,
+            self::getContainer()->get(ObjectMapperInterface::class),
         );
     }
 

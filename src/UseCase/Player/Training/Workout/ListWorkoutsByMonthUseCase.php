@@ -12,6 +12,7 @@ use App\Domain\Gateway\Provider\Training\Workout\WorkoutProviderGateway;
 use App\Domain\Security\LoggedPlayerResolverInterface;
 use App\Domain\Validator\Player\Training\Workout\ListWorkoutsByMonthValidator;
 use App\UseCase\AbstractLoggedPlayerUseCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class ListWorkoutsByMonthUseCase extends AbstractLoggedPlayerUseCase
 {
@@ -19,6 +20,7 @@ final class ListWorkoutsByMonthUseCase extends AbstractLoggedPlayerUseCase
         private readonly ListWorkoutsByMonthValidator $validator,
         private readonly LoggedPlayerResolverInterface $loggedPlayerResolver,
         private readonly WorkoutProviderGateway $workoutProvider,
+        private readonly ObjectMapperInterface $mapper,
     ) {
     }
 
@@ -47,18 +49,7 @@ final class ListWorkoutsByMonthUseCase extends AbstractLoggedPlayerUseCase
         );
 
         return array_map(
-            static fn ($workout) => new WorkoutDataOutput(
-                $workout->id,
-                $workout->name,
-                $workout->status,
-                $workout->plannedAt?->format(\DateTimeInterface::ATOM),
-                $workout->dateStart?->format(\DateTimeInterface::ATOM),
-                $workout->dateEnd?->format(\DateTimeInterface::ATOM),
-                $workout->duration,
-                $workout->volume,
-                $workout->distance,
-                $workout->inclineMeters,
-            ),
+            fn (WorkoutDataModel $workout): WorkoutDataOutput => $this->mapper->map($workout, WorkoutDataOutput::class),
             $workouts,
         );
     }

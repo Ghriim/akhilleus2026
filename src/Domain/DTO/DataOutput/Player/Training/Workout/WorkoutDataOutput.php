@@ -4,26 +4,26 @@ declare(strict_types=1);
 
 namespace App\Domain\DTO\DataOutput\Player\Training\Workout;
 
+use App\Domain\DataTransformer\DateDataTransformer;
 use App\Domain\DTO\DataOutput\DataOutputInterface;
+use Symfony\Component\ObjectMapper\Attribute\Map;
 
-final readonly class WorkoutDataOutput implements DataOutputInterface
+final class WorkoutDataOutput implements DataOutputInterface
 {
-    /**
-     * @param numeric-string|null $volume
-     * @param numeric-string|null $distance
-     * @param numeric-string|null $inclineMeters
-     */
-    public function __construct(
-        public string $id,
-        public string $name,
-        public string $status,
-        public ?string $plannedAt,
-        public ?string $dateStart,
-        public ?string $dateEnd,
-        public ?int $duration = null,
-        public ?string $volume = null,
-        public ?string $distance = null,
-        public ?string $inclineMeters = null,
-    ) {
-    }
+    public string $id;
+    public string $name;
+    public string $status;
+    #[Map(transform: [DateDataTransformer::class, 'toAtom'])]
+    public ?string $plannedAt;
+    #[Map(transform: [DateDataTransformer::class, 'toAtom'])]
+    public ?string $dateStart;
+    #[Map(transform: [DateDataTransformer::class, 'toAtom'])]
+    public ?string $dateEnd;
+    public ?int $duration;
+    /** @var numeric-string|null */
+    public ?string $volume;
+    /** @var numeric-string|null */
+    public ?string $distance;
+    /** @var numeric-string|null */
+    public ?string $inclineMeters;
 }

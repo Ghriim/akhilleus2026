@@ -21,6 +21,7 @@ use Doctrine\Persistence\ManagerRegistry;
 use Psr\Clock\ClockInterface;
 use Psr\Container\ContainerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class DeleteStepsForDayUseCaseTest extends KernelTestCase
 {
@@ -44,16 +45,13 @@ final class DeleteStepsForDayUseCaseTest extends KernelTestCase
             $persister,
             $container->get(QuestProgressionEvaluator::class),
             $clock,
+            self::getContainer()->get(ObjectMapperInterface::class),
         );
         $upsert->execute(new UpsertStepsForDayDataInput(new \DateTimeImmutable('2026-05-07'), 5000));
 
         $delete = new DeleteStepsForDayUseCase($resolver, $repo, $persister, $container->get(QuestProgressionEvaluator::class), $clock);
-        $output = $delete->execute(new DeleteStepsForDayDataInput(new \DateTimeImmutable('2026-05-07')));
+        $delete->execute(new DeleteStepsForDayDataInput(new \DateTimeImmutable('2026-05-07')));
 
-        self::assertSame(
-            (new \DateTimeImmutable('2026-05-07'))->setTime(0, 0, 0)->format(\DateTimeInterface::ATOM),
-            $output->deletedDate,
-        );
         self::assertNull($repo->findOneByPlayerAndDate($player, new \DateTimeImmutable('2026-05-07')));
     }
 

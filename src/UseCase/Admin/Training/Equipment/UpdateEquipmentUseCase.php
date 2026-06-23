@@ -12,6 +12,7 @@ use App\Domain\Gateway\Persister\Training\Equipment\EquipmentPersisterGateway;
 use App\Domain\Gateway\Provider\Training\Equipment\EquipmentProviderGateway;
 use App\Domain\Validator\Admin\Training\Equipment\UpdateEquipmentValidator;
 use App\UseCase\AbstractLoggedAdminUseCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class UpdateEquipmentUseCase extends AbstractLoggedAdminUseCase
 {
@@ -19,6 +20,7 @@ final class UpdateEquipmentUseCase extends AbstractLoggedAdminUseCase
         private readonly UpdateEquipmentValidator $updateEquipmentValidator,
         private readonly EquipmentProviderGateway $equipmentProvider,
         private readonly EquipmentPersisterGateway $equipmentPersister,
+        private readonly ObjectMapperInterface $mapper,
     ) {
     }
 
@@ -37,6 +39,6 @@ final class UpdateEquipmentUseCase extends AbstractLoggedAdminUseCase
         $equipment->label = $input->label;
         $this->equipmentPersister->update($equipment);
 
-        return new EquipmentDataOutput($equipment->id, $equipment->slug, $equipment->label);
+        return $this->mapper->map($equipment, EquipmentDataOutput::class);
     }
 }

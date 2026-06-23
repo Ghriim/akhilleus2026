@@ -14,6 +14,7 @@ use App\Domain\Registry\Training\Workout\WorkoutStatusRegistry;
 use App\Domain\Security\LoggedPlayerResolverInterface;
 use App\Domain\Validator\Player\Training\Workout\CancelWorkoutValidator;
 use App\UseCase\AbstractLoggedPlayerUseCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class CancelWorkoutUseCase extends AbstractLoggedPlayerUseCase
 {
@@ -22,6 +23,7 @@ final class CancelWorkoutUseCase extends AbstractLoggedPlayerUseCase
         private readonly LoggedPlayerResolverInterface $loggedPlayerResolver,
         private readonly WorkoutProviderGateway $workoutProvider,
         private readonly WorkoutPersisterGateway $workoutPersister,
+        private readonly ObjectMapperInterface $mapper,
     ) {
     }
 
@@ -42,13 +44,6 @@ final class CancelWorkoutUseCase extends AbstractLoggedPlayerUseCase
 
         $this->workoutPersister->update($workout);
 
-        return new WorkoutDataOutput(
-            $workout->id,
-            $workout->name,
-            $workout->status,
-            $workout->plannedAt?->format(\DateTimeInterface::ATOM),
-            $workout->dateStart?->format(\DateTimeInterface::ATOM),
-            $workout->dateEnd?->format(\DateTimeInterface::ATOM),
-        );
+        return $this->mapper->map($workout, WorkoutDataOutput::class);
     }
 }

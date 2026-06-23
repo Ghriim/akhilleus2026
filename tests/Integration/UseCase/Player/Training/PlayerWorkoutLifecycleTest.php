@@ -53,6 +53,7 @@ use Doctrine\Persistence\ManagerRegistry;
 use Psr\Clock\ClockInterface;
 use Psr\Container\ContainerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 /**
  * End-to-end smoke test that walks the entire player workout lifecycle through the use cases:
@@ -194,6 +195,7 @@ final class PlayerWorkoutLifecycleTest extends KernelTestCase
                 $resolver,
                 $workoutPersister,
                 $clock,
+                self::getContainer()->get(ObjectMapperInterface::class),
             ),
             addMovement: new AddMovementToWorkoutUseCase(
                 new AddMovementToWorkoutValidator($resolver),
@@ -201,6 +203,7 @@ final class PlayerWorkoutLifecycleTest extends KernelTestCase
                 $workoutRepo,
                 $movementRepo,
                 $exercisePersister,
+                self::getContainer()->get(ObjectMapperInterface::class),
             ),
             addSet: new AddExerciseSetUseCase(
                 new AddExerciseSetValidator($resolver),
@@ -208,12 +211,14 @@ final class PlayerWorkoutLifecycleTest extends KernelTestCase
                 $exerciseRepo,
                 $exerciseSetRepo,
                 $exerciseSetPersister,
+                self::getContainer()->get(ObjectMapperInterface::class),
             ),
             updateAchieved: new UpdateExerciseSetAchievedUseCase(
                 new UpdateExerciseSetAchievedValidator($resolver),
                 $resolver,
                 $exerciseSetRepo,
                 $exerciseSetPersister,
+                self::getContainer()->get(ObjectMapperInterface::class),
             ),
             finish: new FinishWorkoutUseCase(
                 new FinishWorkoutValidator($resolver),
@@ -226,14 +231,16 @@ final class PlayerWorkoutLifecycleTest extends KernelTestCase
                 new EarnedExperiencePersister($em, $clock),
                 $container->get(QuestProgressionEvaluator::class),
                 $clock,
+                self::getContainer()->get(ObjectMapperInterface::class),
             ),
             listHistory: new ListWorkoutHistoryUseCase(
                 new ListWorkoutHistoryValidator(),
                 $resolver,
                 $workoutRepo,
+                self::getContainer()->get(ObjectMapperInterface::class),
             ),
-            getDetails: new GetWorkoutDetailsUseCase($resolver, $workoutRepo),
-            listPersonalBests: new ListPersonalBestsUseCase($resolver, $personalBestRepo),
+            getDetails: new GetWorkoutDetailsUseCase($resolver, $workoutRepo, self::getContainer()->get(ObjectMapperInterface::class)),
+            listPersonalBests: new ListPersonalBestsUseCase($resolver, $personalBestRepo, self::getContainer()->get(ObjectMapperInterface::class)),
         );
     }
 }

@@ -6,11 +6,13 @@ namespace App\UseCase\Player\Tracking\Steps;
 
 use App\Domain\DTO\DataInput\DataInputInterface;
 use App\Domain\DTO\DataInput\Player\Tracking\Steps\ListStepsForRangeDataInput;
+use App\Domain\DTO\DataModel\Tracking\Steps\StepsDailyEntryDataModel;
 use App\Domain\DTO\DataOutput\Player\Tracking\Steps\StepsDailyEntryDataOutput;
 use App\Domain\Gateway\Provider\Tracking\Steps\StepsDailyEntryProviderGateway;
 use App\Domain\Security\LoggedPlayerResolverInterface;
 use App\Domain\Validator\Player\Tracking\Steps\ListStepsForRangeValidator;
 use App\UseCase\AbstractLoggedPlayerUseCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class ListStepsForRangeUseCase extends AbstractLoggedPlayerUseCase
 {
@@ -18,6 +20,7 @@ final class ListStepsForRangeUseCase extends AbstractLoggedPlayerUseCase
         private readonly ListStepsForRangeValidator $validator,
         private readonly LoggedPlayerResolverInterface $loggedPlayerResolver,
         private readonly StepsDailyEntryProviderGateway $stepsProvider,
+        private readonly ObjectMapperInterface $mapper,
     ) {
     }
 
@@ -39,12 +42,7 @@ final class ListStepsForRangeUseCase extends AbstractLoggedPlayerUseCase
         );
 
         return array_map(
-            static fn ($entry) => new StepsDailyEntryDataOutput(
-                $entry->id,
-                $entry->date->format(\DateTimeInterface::ATOM),
-                $entry->count,
-                $entry->target,
-            ),
+            fn (StepsDailyEntryDataModel $entry): StepsDailyEntryDataOutput => $this->mapper->map($entry, StepsDailyEntryDataOutput::class),
             $entries,
         );
     }

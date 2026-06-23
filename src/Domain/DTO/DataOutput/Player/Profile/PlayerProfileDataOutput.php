@@ -6,14 +6,11 @@ namespace App\Domain\DTO\DataOutput\Player\Profile;
 
 use App\Domain\DTO\DataOutput\DataOutputInterface;
 
-final readonly class PlayerProfileDataOutput implements DataOutputInterface
+final class PlayerProfileDataOutput implements DataOutputInterface
 {
-    public function __construct(
-        public string $id,
-        public string $displayName,
-        public int $level,
-        public int $currentXp,
-        public int $xpToNextLevel,
-    ) {
-    }
+    public string $id;
+    public string $displayName;
+    public int $level;
+    public int $currentXp;
+    public int $xpToNextLevel;
 }

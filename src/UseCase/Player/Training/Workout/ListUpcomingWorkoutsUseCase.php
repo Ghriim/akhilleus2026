@@ -6,16 +6,19 @@ namespace App\UseCase\Player\Training\Workout;
 
 use App\Domain\DTO\DataInput\DataInputInterface;
 use App\Domain\DTO\DataInput\Player\Training\Workout\ListUpcomingWorkoutsDataInput;
+use App\Domain\DTO\DataModel\Training\Workout\WorkoutDataModel;
 use App\Domain\DTO\DataOutput\Player\Training\Workout\WorkoutDataOutput;
 use App\Domain\Gateway\Provider\Training\Workout\WorkoutProviderGateway;
 use App\Domain\Security\LoggedPlayerResolverInterface;
 use App\UseCase\AbstractLoggedPlayerUseCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class ListUpcomingWorkoutsUseCase extends AbstractLoggedPlayerUseCase
 {
     public function __construct(
         private readonly LoggedPlayerResolverInterface $loggedPlayerResolver,
         private readonly WorkoutProviderGateway $workoutProvider,
+        private readonly ObjectMapperInterface $mapper,
     ) {
     }
 
@@ -30,14 +33,7 @@ final class ListUpcomingWorkoutsUseCase extends AbstractLoggedPlayerUseCase
         $workouts = $this->workoutProvider->findPlannedOrInProgressByPlayer($player);
 
         return array_map(
-            static fn ($workout) => new WorkoutDataOutput(
-                $workout->id,
-                $workout->name,
-                $workout->status,
-                $workout->plannedAt?->format(\DateTimeInterface::ATOM),
-                $workout->dateStart?->format(\DateTimeInterface::ATOM),
-                $workout->dateEnd?->format(\DateTimeInterface::ATOM),
-            ),
+            fn (WorkoutDataModel $workout): WorkoutDataOutput => $this->mapper->map($workout, WorkoutDataOutput::class),
             $workouts,
         );
     }

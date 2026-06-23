@@ -110,6 +110,8 @@ final readonly class WorkoutPlayerController
     #[Route(path: '/api/player/workouts/{id}', name: 'player_workout_delete', methods: ['DELETE'], requirements: ['id' => '[0-9A-HJKMNP-TV-Z]{26}'])]
     public function delete(string $id, DeleteWorkoutUseCase $useCase): JsonResponse
     {
-        return new JsonResponse($useCase->execute(new DeleteWorkoutDataInput($id)));
+        $useCase->execute(new DeleteWorkoutDataInput($id));
+
+        return new JsonResponse(null, 204);
     }
 }

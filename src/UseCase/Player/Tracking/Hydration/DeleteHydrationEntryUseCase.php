@@ -17,6 +17,7 @@ use App\Domain\Security\LoggedPlayerResolverInterface;
 use App\Domain\Service\Questing\QuestProgressionEvaluator;
 use App\UseCase\AbstractLoggedPlayerUseCase;
 use Psr\Clock\ClockInterface;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class DeleteHydrationEntryUseCase extends AbstractLoggedPlayerUseCase
 {
@@ -26,6 +27,7 @@ final class DeleteHydrationEntryUseCase extends AbstractLoggedPlayerUseCase
         private readonly HydrationEntryPersisterGateway $entryPersister,
         private readonly QuestProgressionEvaluator $questProgressionEvaluator,
         private readonly ClockInterface $clock,
+        private readonly ObjectMapperInterface $mapper,
     ) {
     }
 
@@ -48,18 +50,14 @@ final class DeleteHydrationEntryUseCase extends AbstractLoggedPlayerUseCase
         // `amountConsumedMl` in place; the summary row itself survives (empty days read as 0).
         $this->questProgressionEvaluator->refreshFor($player, QuestMetricRegistry::HYDRATION_ML_DAILY, $this->clock->now());
 
-        return self::buildDayOutput($summary);
+        return $this->buildDayOutput($summary);
     }
 
-    private static function buildDayOutput(HydrationDailySummaryDataModel $summary): HydrationDayDataOutput
+    private function buildDayOutput(HydrationDailySummaryDataModel $summary): HydrationDayDataOutput
     {
         $entries = [];
         foreach ($summary->entries as $entry) {
-            $entries[] = new HydrationEntryDataOutput(
-                $entry->id,
-                $entry->loggedAt->format(\DateTimeInterface::ATOM),
-                $entry->valueMl,
-            );
+            $entries[] = $this->mapper->map($entry, HydrationEntryDataOutput::class);
         }
 
         return new HydrationDayDataOutput(

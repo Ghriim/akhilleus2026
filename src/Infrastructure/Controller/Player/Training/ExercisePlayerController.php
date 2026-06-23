@@ -36,7 +36,9 @@ final readonly class ExercisePlayerController
     #[Route(path: '/api/player/exercises/{id}', name: 'player_exercise_remove', methods: ['DELETE'])]
     public function remove(string $id, RemoveMovementFromWorkoutUseCase $useCase): JsonResponse
     {
-        return new JsonResponse($useCase->execute(new RemoveMovementFromWorkoutDataInput($id)));
+        $useCase->execute(new RemoveMovementFromWorkoutDataInput($id));
+
+        return new JsonResponse(null, 204);
     }
 
     #[Route(path: '/api/player/exercises/{id}/rest-duration', name: 'player_exercise_update_rest', methods: ['PUT'])]

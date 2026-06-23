@@ -5,14 +5,13 @@ declare(strict_types=1);
 namespace App\Domain\DTO\DataOutput\Admin\Training\Movement;
 
 use App\Domain\DTO\DataOutput\DataOutputInterface;
+use Symfony\Component\ObjectMapper\Attribute\Map;
 
-final readonly class MovementListItemDataOutput implements DataOutputInterface
+final class MovementListItemDataOutput implements DataOutputInterface
 {
-    public function __construct(
-        public string $id,
-        public string $slug,
-        public string $label,
-        public string $mainMuscleSlug,
-    ) {
-    }
+    public string $id;
+    public string $slug;
+    public string $label;
+    #[Map(source: 'mainMuscle.slug')]
+    public string $mainMuscleSlug;
 }

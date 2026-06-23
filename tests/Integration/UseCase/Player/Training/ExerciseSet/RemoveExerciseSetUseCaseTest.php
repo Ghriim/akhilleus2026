@@ -27,9 +27,7 @@ final class RemoveExerciseSetUseCaseTest extends KernelTestCase
         [, $set] = self::createTestExerciseWithSet($container, $player);
 
         $useCase = self::buildUseCase($container, $player);
-        $output = $useCase->execute(new RemoveExerciseSetDataInput($set->id));
-
-        self::assertSame($set->id, $output->deletedId);
+        $useCase->execute(new RemoveExerciseSetDataInput($set->id));
 
         $em = $container->get('doctrine.orm.entity_manager');
         self::assertNull($em->getRepository(ExerciseSetDataModel::class)->find($set->id));

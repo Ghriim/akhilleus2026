@@ -32,6 +32,7 @@ use Doctrine\Persistence\ManagerRegistry;
 use Psr\Clock\ClockInterface;
 use Psr\Container\ContainerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 /**
  * End-to-end: an AUTOMATIC daily hydration quest auto-progresses as the player logs hydration
@@ -72,6 +73,7 @@ final class AutomaticQuestLifecycleTest extends KernelTestCase
             $container->get(QuestProviderGateway::class),
             $container->get(QuestProgressionFactory::class),
             $clock,
+            self::getContainer()->get(ObjectMapperInterface::class),
         );
         $items = $listDaily->execute(new ListQuestsDataInput());
 
@@ -93,6 +95,7 @@ final class AutomaticQuestLifecycleTest extends KernelTestCase
             $container->get(QuestProgressionPersisterGateway::class),
             $container->get(EarnedExperiencePersisterGateway::class),
             $clock,
+            self::getContainer()->get(ObjectMapperInterface::class),
         );
         $claimOutput = $claim->execute(new ClaimQuestRewardDataInput($progressionId));
 
@@ -129,6 +132,7 @@ final class AutomaticQuestLifecycleTest extends KernelTestCase
             new HydrationEntryPersister($em, $clock, $summaryPersister),
             $container->get(QuestProgressionEvaluator::class),
             $clock,
+            self::getContainer()->get(ObjectMapperInterface::class),
         );
     }
 }

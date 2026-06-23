@@ -20,6 +20,7 @@ use Doctrine\Persistence\ManagerRegistry;
 use Psr\Clock\ClockInterface;
 use Psr\Container\ContainerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class AddHydrationEntryUseCaseTest extends KernelTestCase
 {
@@ -108,6 +109,7 @@ final class AddHydrationEntryUseCaseTest extends KernelTestCase
             new HydrationEntryPersister($em, $clock, $summaryPersister),
             $container->get(QuestProgressionEvaluator::class),
             $clock,
+            self::getContainer()->get(ObjectMapperInterface::class),
         );
     }
 

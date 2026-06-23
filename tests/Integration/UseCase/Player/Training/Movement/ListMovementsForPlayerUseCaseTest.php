@@ -13,6 +13,7 @@ use App\Infrastructure\Repository\Training\Movement\MovementRepository;
 use App\UseCase\Player\Training\Movement\ListMovementsForPlayerUseCase;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class ListMovementsForPlayerUseCaseTest extends KernelTestCase
 {
@@ -29,6 +30,7 @@ final class ListMovementsForPlayerUseCaseTest extends KernelTestCase
 
         $useCase = new ListMovementsForPlayerUseCase(
             new MovementRepository($container->get(ManagerRegistry::class)),
+            self::getContainer()->get(ObjectMapperInterface::class),
         );
 
         $output = $useCase->execute(new ListMovementsForPlayerDataInput());

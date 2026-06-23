@@ -10,12 +10,14 @@ use App\Domain\DTO\DataOutput\Admin\Training\Muscle\MuscleListItemDataOutput;
 use App\Domain\Gateway\Provider\Training\Muscle\MuscleProviderGateway;
 use App\Domain\Validator\Admin\Training\Muscle\ListMusclesValidator;
 use App\UseCase\AbstractPublicUseCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
-final class ListMusclesUseCase extends AbstractPublicUseCase
+final readonly class ListMusclesUseCase extends AbstractPublicUseCase
 {
     public function __construct(
-        private readonly ListMusclesValidator $listMusclesValidator,
-        private readonly MuscleProviderGateway $muscleProvider,
+        private ListMusclesValidator $listMusclesValidator,
+        private MuscleProviderGateway $muscleProvider,
+        private ObjectMapperInterface $mapper,
     ) {
     }
 
@@ -30,13 +32,11 @@ final class ListMusclesUseCase extends AbstractPublicUseCase
 
         $muscles = $this->muscleProvider->findAllForAdminList($input->sort, $input->direction);
 
-        return array_map(
-            static fn ($muscle) => new MuscleListItemDataOutput(
-                $muscle->id,
-                $muscle->slug,
-                $muscle->label,
-            ),
-            $muscles,
-        );
+        $outputs = [];
+        foreach ($muscles as $muscle) {
+            $outputs[] = $this->mapper->map($muscle, MuscleListItemDataOutput::class);
+        }
+
+        return $outputs;
     }
 }

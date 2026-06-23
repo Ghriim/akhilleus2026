@@ -83,7 +83,9 @@ final readonly class ExerciseSetPlayerController
     #[Route(path: '/api/player/sets/{id}', name: 'player_exercise_set_remove', methods: ['DELETE'])]
     public function remove(string $id, RemoveExerciseSetUseCase $useCase): JsonResponse
     {
-        return new JsonResponse($useCase->execute(new RemoveExerciseSetDataInput($id)));
+        $useCase->execute(new RemoveExerciseSetDataInput($id));
+
+        return new JsonResponse(null, 204);
     }
 
     /**

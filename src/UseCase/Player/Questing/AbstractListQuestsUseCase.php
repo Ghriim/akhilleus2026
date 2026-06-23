@@ -6,13 +6,13 @@ namespace App\UseCase\Player\Questing;
 
 use App\Domain\DTO\DataInput\DataInputInterface;
 use App\Domain\DTO\DataInput\Player\Questing\ListQuestsDataInput;
-use App\Domain\DTO\DataModel\Questing\QuestProgression\QuestProgressionDataModel;
 use App\Domain\DTO\DataOutput\Player\Questing\QuestProgressionDataOutput;
 use App\Domain\Gateway\Provider\Questing\Quest\QuestProviderGateway;
 use App\Domain\Security\LoggedPlayerResolverInterface;
 use App\Domain\Service\Questing\QuestProgressionFactory;
 use App\UseCase\AbstractLoggedPlayerUseCase;
 use Psr\Clock\ClockInterface;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 /**
  * Shared body for the four periodicity-scoped quest listings. Loads the active quests of the
@@ -27,6 +27,7 @@ abstract class AbstractListQuestsUseCase extends AbstractLoggedPlayerUseCase
         private readonly QuestProviderGateway $questProvider,
         private readonly QuestProgressionFactory $progressionFactory,
         private readonly ClockInterface $clock,
+        private readonly ObjectMapperInterface $mapper,
     ) {
     }
 
@@ -44,29 +45,12 @@ abstract class AbstractListQuestsUseCase extends AbstractLoggedPlayerUseCase
 
         $items = [];
         foreach ($this->questProvider->findActiveByPeriodicityForPlayer($this->periodicity(), $now) as $quest) {
-            $items[] = self::toOutput($this->progressionFactory->findOrCreate($quest, $player, $now));
+            $items[] = $this->mapper->map(
+                $this->progressionFactory->findOrCreate($quest, $player, $now),
+                QuestProgressionDataOutput::class,
+            );
         }
 
         return $items;
-    }
-
-    private static function toOutput(QuestProgressionDataModel $progression): QuestProgressionDataOutput
-    {
-        $quest = $progression->quest;
-
-        return new QuestProgressionDataOutput(
-            $progression->id,
-            $quest->id,
-            $quest->label,
-            $quest->kind,
-            $quest->metric,
-            $quest->periodicity,
-            $progression->currentValue,
-            $quest->targetValue,
-            $quest->rewardedXp,
-            $progression->status,
-            $progression->startDate?->format(\DateTimeInterface::ATOM),
-            $progression->endDate?->format(\DateTimeInterface::ATOM),
-        );
     }
 }

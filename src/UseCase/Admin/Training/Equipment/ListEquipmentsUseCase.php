@@ -10,12 +10,14 @@ use App\Domain\DTO\DataOutput\Admin\Training\Equipment\EquipmentListItemDataOutp
 use App\Domain\Gateway\Provider\Training\Equipment\EquipmentProviderGateway;
 use App\Domain\Validator\Admin\Training\Equipment\ListEquipmentsValidator;
 use App\UseCase\AbstractPublicUseCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
-final class ListEquipmentsUseCase extends AbstractPublicUseCase
+final readonly class ListEquipmentsUseCase extends AbstractPublicUseCase
 {
     public function __construct(
-        private readonly ListEquipmentsValidator $listEquipmentsValidator,
-        private readonly EquipmentProviderGateway $equipmentProvider,
+        private ListEquipmentsValidator $listEquipmentsValidator,
+        private EquipmentProviderGateway $equipmentProvider,
+        private ObjectMapperInterface $mapper,
     ) {
     }
 
@@ -30,13 +32,11 @@ final class ListEquipmentsUseCase extends AbstractPublicUseCase
 
         $equipments = $this->equipmentProvider->findAllForAdminList($input->sort, $input->direction);
 
-        return array_map(
-            static fn ($equipment) => new EquipmentListItemDataOutput(
-                $equipment->id,
-                $equipment->slug,
-                $equipment->label,
-            ),
-            $equipments,
-        );
+        $outputs = [];
+        foreach ($equipments as $equipment) {
+            $outputs[] = $this->mapper->map($equipment, EquipmentListItemDataOutput::class);
+        }
+
+        return $outputs;
     }
 }

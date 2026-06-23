@@ -22,6 +22,7 @@ use Doctrine\Persistence\ManagerRegistry;
 use Psr\Clock\ClockInterface;
 use Psr\Container\ContainerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class ListSleepForRangeUseCaseTest extends KernelTestCase
 {
@@ -104,6 +105,7 @@ final class ListSleepForRangeUseCaseTest extends KernelTestCase
             new SleepDailyEntryPersister($em, $clock),
             $container->get(QuestProgressionEvaluator::class),
             $clock,
+            self::getContainer()->get(ObjectMapperInterface::class),
         );
         $logUseCase->execute(new LogSleepDataInput(new \DateTimeImmutable($bedAt), new \DateTimeImmutable($wakeAt)));
     }
@@ -117,6 +119,7 @@ final class ListSleepForRangeUseCaseTest extends KernelTestCase
             new ListSleepForRangeValidator(),
             $resolver,
             new SleepDailyEntryRepository($registry),
+            self::getContainer()->get(ObjectMapperInterface::class),
         );
     }
 

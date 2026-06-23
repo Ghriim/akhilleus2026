@@ -12,6 +12,7 @@ use App\Domain\Gateway\Provider\Tracking\Weight\WeightEntryProviderGateway;
 use App\Domain\Security\LoggedPlayerResolverInterface;
 use App\Domain\Validator\Player\Tracking\Weight\ListWeightForRangeValidator;
 use App\UseCase\AbstractLoggedPlayerUseCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class ListWeightForRangeUseCase extends AbstractLoggedPlayerUseCase
 {
@@ -19,6 +20,7 @@ final class ListWeightForRangeUseCase extends AbstractLoggedPlayerUseCase
         private readonly ListWeightForRangeValidator $validator,
         private readonly LoggedPlayerResolverInterface $loggedPlayerResolver,
         private readonly WeightEntryProviderGateway $weightProvider,
+        private readonly ObjectMapperInterface $mapper,
     ) {
     }
 
@@ -42,12 +44,7 @@ final class ListWeightForRangeUseCase extends AbstractLoggedPlayerUseCase
         );
 
         return array_map(
-            static fn (WeightEntryDataModel $entry) => new WeightEntryDataOutput(
-                $entry->id,
-                $entry->date->format(\DateTimeInterface::ATOM),
-                $entry->loggedAt->format(\DateTimeInterface::ATOM),
-                $entry->valueGrams,
-            ),
+            fn (WeightEntryDataModel $entry): WeightEntryDataOutput => $this->mapper->map($entry, WeightEntryDataOutput::class),
             $entries,
         );
     }

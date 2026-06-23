@@ -12,6 +12,7 @@ use App\Domain\Gateway\Persister\Questing\Quest\QuestPersisterGateway;
 use App\Domain\Gateway\Provider\Questing\Quest\QuestProviderGateway;
 use App\Domain\Validator\Admin\Questing\Quest\UpdateQuestValidator;
 use App\UseCase\AbstractLoggedAdminUseCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class UpdateQuestUseCase extends AbstractLoggedAdminUseCase
 {
@@ -19,6 +20,7 @@ final class UpdateQuestUseCase extends AbstractLoggedAdminUseCase
         private readonly UpdateQuestValidator $updateQuestValidator,
         private readonly QuestProviderGateway $questProvider,
         private readonly QuestPersisterGateway $questPersister,
+        private readonly ObjectMapperInterface $mapper,
     ) {
     }
 
@@ -45,16 +47,6 @@ final class UpdateQuestUseCase extends AbstractLoggedAdminUseCase
         $quest->dateEnd = $input->dateEnd;
         $this->questPersister->update($quest);
 
-        return new QuestDataOutput(
-            $quest->id,
-            $quest->label,
-            $quest->kind,
-            $quest->metric,
-            $quest->periodicity,
-            $quest->targetValue,
-            $quest->rewardedXp,
-            $quest->dateStart->format(\DateTimeInterface::ATOM),
-            $quest->dateEnd?->format(\DateTimeInterface::ATOM),
-        );
+        return $this->mapper->map($quest, QuestDataOutput::class);
     }
 }

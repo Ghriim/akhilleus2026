@@ -15,6 +15,7 @@ use App\Domain\Security\LoggedPlayerResolverInterface;
 use App\Domain\Validator\Player\Training\Workout\StartPlannedWorkoutValidator;
 use App\UseCase\AbstractLoggedPlayerUseCase;
 use Psr\Clock\ClockInterface;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class StartPlannedWorkoutUseCase extends AbstractLoggedPlayerUseCase
 {
@@ -24,6 +25,7 @@ final class StartPlannedWorkoutUseCase extends AbstractLoggedPlayerUseCase
         private readonly WorkoutProviderGateway $workoutProvider,
         private readonly WorkoutPersisterGateway $workoutPersister,
         private readonly ClockInterface $clock,
+        private readonly ObjectMapperInterface $mapper,
     ) {
     }
 
@@ -45,13 +47,6 @@ final class StartPlannedWorkoutUseCase extends AbstractLoggedPlayerUseCase
 
         $this->workoutPersister->update($workout);
 
-        return new WorkoutDataOutput(
-            $workout->id,
-            $workout->name,
-            $workout->status,
-            $workout->plannedAt?->format(\DateTimeInterface::ATOM),
-            $workout->dateStart->format(\DateTimeInterface::ATOM),
-            $workout->dateEnd?->format(\DateTimeInterface::ATOM),
-        );
+        return $this->mapper->map($workout, WorkoutDataOutput::class);
     }
 }

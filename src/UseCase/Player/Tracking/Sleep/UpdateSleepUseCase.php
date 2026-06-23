@@ -16,6 +16,7 @@ use App\Domain\Service\Questing\QuestProgressionEvaluator;
 use App\Domain\Validator\Player\Tracking\Sleep\UpdateSleepValidator;
 use App\UseCase\AbstractLoggedPlayerUseCase;
 use Psr\Clock\ClockInterface;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class UpdateSleepUseCase extends AbstractLoggedPlayerUseCase
 {
@@ -26,6 +27,7 @@ final class UpdateSleepUseCase extends AbstractLoggedPlayerUseCase
         private readonly SleepDailyEntryPersisterGateway $sleepPersister,
         private readonly QuestProgressionEvaluator $questProgressionEvaluator,
         private readonly ClockInterface $clock,
+        private readonly ObjectMapperInterface $mapper,
     ) {
     }
 
@@ -51,13 +53,6 @@ final class UpdateSleepUseCase extends AbstractLoggedPlayerUseCase
 
         $this->questProgressionEvaluator->refreshFor($player, QuestMetricRegistry::SLEEP_DURATION_MINUTES, $this->clock->now());
 
-        return new SleepDailyEntryDataOutput(
-            $entry->id,
-            $entry->date->format(\DateTimeInterface::ATOM),
-            $entry->bedAt->format(\DateTimeInterface::ATOM),
-            $entry->wakeAt->format(\DateTimeInterface::ATOM),
-            $entry->durationMinutes,
-            $entry->quality,
-        );
+        return $this->mapper->map($entry, SleepDailyEntryDataOutput::class);
     }
 }

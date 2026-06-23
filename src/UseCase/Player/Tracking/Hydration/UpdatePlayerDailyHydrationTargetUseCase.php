@@ -11,6 +11,7 @@ use App\Domain\Gateway\Persister\User\PlayerPersisterGateway;
 use App\Domain\Security\LoggedPlayerResolverInterface;
 use App\Domain\Validator\Player\Tracking\Hydration\UpdatePlayerDailyHydrationTargetValidator;
 use App\UseCase\AbstractLoggedPlayerUseCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class UpdatePlayerDailyHydrationTargetUseCase extends AbstractLoggedPlayerUseCase
 {
@@ -18,6 +19,7 @@ final class UpdatePlayerDailyHydrationTargetUseCase extends AbstractLoggedPlayer
         private readonly UpdatePlayerDailyHydrationTargetValidator $validator,
         private readonly LoggedPlayerResolverInterface $loggedPlayerResolver,
         private readonly PlayerPersisterGateway $playerPersister,
+        private readonly ObjectMapperInterface $mapper,
     ) {
     }
 
@@ -32,6 +34,6 @@ final class UpdatePlayerDailyHydrationTargetUseCase extends AbstractLoggedPlayer
         $player->dailyHydrationTargetMl = $input->targetMl;
         $this->playerPersister->update($player);
 
-        return new PlayerHydrationTargetDataOutput($player->dailyHydrationTargetMl);
+        return $this->mapper->map($player, PlayerHydrationTargetDataOutput::class);
     }
 }

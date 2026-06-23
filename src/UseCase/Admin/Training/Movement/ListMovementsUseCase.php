@@ -10,12 +10,14 @@ use App\Domain\DTO\DataOutput\Admin\Training\Movement\MovementListItemDataOutput
 use App\Domain\Gateway\Provider\Training\Movement\MovementProviderGateway;
 use App\Domain\Validator\Admin\Training\Movement\ListMovementsValidator;
 use App\UseCase\AbstractPublicUseCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
-final class ListMovementsUseCase extends AbstractPublicUseCase
+final readonly class ListMovementsUseCase extends AbstractPublicUseCase
 {
     public function __construct(
-        private readonly ListMovementsValidator $listMovementsValidator,
-        private readonly MovementProviderGateway $movementProvider,
+        private ListMovementsValidator $listMovementsValidator,
+        private MovementProviderGateway $movementProvider,
+        private ObjectMapperInterface $mapper,
     ) {
     }
 
@@ -30,14 +32,11 @@ final class ListMovementsUseCase extends AbstractPublicUseCase
 
         $movements = $this->movementProvider->findAllForAdminList($input->sort, $input->direction);
 
-        return array_map(
-            static fn ($movement) => new MovementListItemDataOutput(
-                $movement->id,
-                $movement->slug,
-                $movement->label,
-                $movement->mainMuscle->slug,
-            ),
-            $movements,
-        );
+        $outputs = [];
+        foreach ($movements as $movement) {
+            $outputs[] = $this->mapper->map($movement, MovementListItemDataOutput::class);
+        }
+
+        return $outputs;
     }
 }

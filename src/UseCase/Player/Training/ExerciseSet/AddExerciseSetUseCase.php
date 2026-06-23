@@ -16,6 +16,7 @@ use App\Domain\Security\LoggedPlayerResolverInterface;
 use App\Domain\Service\ExerciseSetCompletionEvaluator;
 use App\Domain\Validator\Player\Training\ExerciseSet\AddExerciseSetValidator;
 use App\UseCase\AbstractLoggedPlayerUseCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class AddExerciseSetUseCase extends AbstractLoggedPlayerUseCase
 {
@@ -25,6 +26,7 @@ final class AddExerciseSetUseCase extends AbstractLoggedPlayerUseCase
         private readonly ExerciseProviderGateway $exerciseProvider,
         private readonly ExerciseSetProviderGateway $exerciseSetProvider,
         private readonly ExerciseSetPersisterGateway $exerciseSetPersister,
+        private readonly ObjectMapperInterface $mapper,
     ) {
     }
 
@@ -67,28 +69,6 @@ final class AddExerciseSetUseCase extends AbstractLoggedPlayerUseCase
         $this->exerciseSetPersister->create($created);
         $exercise->exerciseSets->add($created);
 
-        return self::buildOutput($created);
-    }
-
-    private static function buildOutput(ExerciseSetDataModel $set): ExerciseSetDataOutput
-    {
-        return new ExerciseSetDataOutput(
-            $set->id,
-            $set->exercise->id,
-            $set->position,
-            $set->plannedReps,
-            $set->achievedReps,
-            $set->plannedWeight,
-            $set->achievedWeight,
-            $set->plannedDurationSeconds,
-            $set->achievedDurationSeconds,
-            $set->plannedDistanceMeters,
-            $set->achievedDistanceMeters,
-            $set->plannedInclinePercent,
-            $set->achievedInclinePercent,
-            $set->plannedInclineMeters,
-            $set->achievedInclineMeters,
-            $set->isComplete,
-        );
+        return $this->mapper->map($created, ExerciseSetDataOutput::class);
     }
 }

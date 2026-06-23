@@ -19,6 +19,7 @@ use Doctrine\Persistence\ManagerRegistry;
 use Psr\Clock\ClockInterface;
 use Psr\Container\ContainerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class GetTodayHydrationUseCaseTest extends KernelTestCase
 {
@@ -76,6 +77,7 @@ final class GetTodayHydrationUseCaseTest extends KernelTestCase
             new HydrationDailySummaryRepository($registry),
             new HydrationDailySummaryPersister($em, $clock),
             $clock,
+            self::getContainer()->get(ObjectMapperInterface::class),
         );
     }
 

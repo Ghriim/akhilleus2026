@@ -12,6 +12,7 @@ use App\Domain\Gateway\Persister\Training\Muscle\MusclePersisterGateway;
 use App\Domain\Gateway\Provider\Training\Muscle\MuscleProviderGateway;
 use App\Domain\Validator\Admin\Training\Muscle\UpdateMuscleValidator;
 use App\UseCase\AbstractLoggedAdminUseCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class UpdateMuscleUseCase extends AbstractLoggedAdminUseCase
 {
@@ -19,6 +20,7 @@ final class UpdateMuscleUseCase extends AbstractLoggedAdminUseCase
         private readonly UpdateMuscleValidator $updateMuscleValidator,
         private readonly MuscleProviderGateway $muscleProvider,
         private readonly MusclePersisterGateway $musclePersister,
+        private readonly ObjectMapperInterface $mapper,
     ) {
     }
 
@@ -37,6 +39,6 @@ final class UpdateMuscleUseCase extends AbstractLoggedAdminUseCase
         $muscle->label = $input->label;
         $this->musclePersister->update($muscle);
 
-        return new MuscleDataOutput($muscle->id, $muscle->slug, $muscle->label);
+        return $this->mapper->map($muscle, MuscleDataOutput::class);
     }
 }

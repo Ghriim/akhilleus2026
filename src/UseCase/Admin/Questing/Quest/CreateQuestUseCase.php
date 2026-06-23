@@ -12,6 +12,7 @@ use App\Domain\Gateway\Persister\Questing\Quest\QuestPersisterGateway;
 use App\Domain\Validator\Admin\Questing\Quest\CreateQuestValidator;
 use App\UseCase\AbstractLoggedAdminUseCase;
 use Psr\Clock\ClockInterface;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class CreateQuestUseCase extends AbstractLoggedAdminUseCase
 {
@@ -19,6 +20,7 @@ final class CreateQuestUseCase extends AbstractLoggedAdminUseCase
         private readonly CreateQuestValidator $createQuestValidator,
         private readonly QuestPersisterGateway $questPersister,
         private readonly ClockInterface $clock,
+        private readonly ObjectMapperInterface $mapper,
     ) {
     }
 
@@ -40,16 +42,6 @@ final class CreateQuestUseCase extends AbstractLoggedAdminUseCase
             $input->dateEnd,
         ));
 
-        return new QuestDataOutput(
-            $quest->id,
-            $quest->label,
-            $quest->kind,
-            $quest->metric,
-            $quest->periodicity,
-            $quest->targetValue,
-            $quest->rewardedXp,
-            $quest->dateStart->format(\DateTimeInterface::ATOM),
-            $quest->dateEnd?->format(\DateTimeInterface::ATOM),
-        );
+        return $this->mapper->map($quest, QuestDataOutput::class);
     }
 }

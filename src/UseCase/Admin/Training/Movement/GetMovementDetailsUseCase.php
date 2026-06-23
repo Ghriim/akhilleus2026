@@ -12,11 +12,13 @@ use App\Domain\DTO\DataOutput\Admin\Training\Muscle\MuscleListItemDataOutput;
 use App\Domain\Exception\EntityNotFoundException;
 use App\Domain\Gateway\Provider\Training\Movement\MovementProviderGateway;
 use App\UseCase\AbstractPublicUseCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
-final class GetMovementDetailsUseCase extends AbstractPublicUseCase
+final readonly class GetMovementDetailsUseCase extends AbstractPublicUseCase
 {
     public function __construct(
-        private readonly MovementProviderGateway $movementProvider,
+        private MovementProviderGateway $movementProvider,
+        private ObjectMapperInterface $mapper,
     ) {
     }
 
@@ -32,18 +34,18 @@ final class GetMovementDetailsUseCase extends AbstractPublicUseCase
 
         $secondary = [];
         foreach ($movement->secondaryMuscles as $muscle) {
-            $secondary[] = new MuscleListItemDataOutput($muscle->id, $muscle->slug, $muscle->label);
+            $secondary[] = $this->mapper->map($muscle, MuscleListItemDataOutput::class);
         }
         $equipments = [];
         foreach ($movement->equipments as $equipment) {
-            $equipments[] = new EquipmentListItemDataOutput($equipment->id, $equipment->slug, $equipment->label);
+            $equipments[] = $this->mapper->map($equipment, EquipmentListItemDataOutput::class);
         }
 
         return new MovementDataOutput(
             $movement->id,
             $movement->slug,
             $movement->label,
-            new MuscleListItemDataOutput($movement->mainMuscle->id, $movement->mainMuscle->slug, $movement->mainMuscle->label),
+            $this->mapper->map($movement->mainMuscle, MuscleListItemDataOutput::class),
             $secondary,
             $equipments,
             $movement->tracksRepetitions,

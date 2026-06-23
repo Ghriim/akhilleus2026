@@ -7,10 +7,10 @@ namespace App\UseCase;
 use App\Domain\DTO\DataInput\DataInputInterface;
 use App\Domain\DTO\DataOutput\DataOutputInterface;
 
-abstract class AbstractPublicUseCase implements UseCaseInterface
+abstract readonly class AbstractPublicUseCase implements UseCaseInterface
 {
     /**
-     * @return DataOutputInterface|list<DataOutputInterface>
+     * @return DataOutputInterface|list<DataOutputInterface>|null
      */
-    abstract public function execute(DataInputInterface $input): DataOutputInterface|array;
+    abstract public function execute(DataInputInterface $input): DataOutputInterface|array|null;
 }

@@ -4,15 +4,16 @@ declare(strict_types=1);
 
 namespace App\Domain\DTO\DataOutput\Player\Tracking\Weight;
 
+use App\Domain\DataTransformer\DateDataTransformer;
 use App\Domain\DTO\DataOutput\DataOutputInterface;
+use Symfony\Component\ObjectMapper\Attribute\Map;
 
-final readonly class WeightEntryDataOutput implements DataOutputInterface
+final class WeightEntryDataOutput implements DataOutputInterface
 {
-    public function __construct(
-        public string $id,
-        public string $date,
-        public string $loggedAt,
-        public int $valueGrams,
-    ) {
-    }
+    public string $id;
+    #[Map(transform: [DateDataTransformer::class, 'toAtom'])]
+    public ?string $date;
+    #[Map(transform: [DateDataTransformer::class, 'toAtom'])]
+    public ?string $loggedAt;
+    public int $valueGrams;
 }

@@ -22,6 +22,7 @@ use Doctrine\Persistence\ManagerRegistry;
 use Psr\Clock\ClockInterface;
 use Psr\Container\ContainerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class UpdateStepsDailyTargetUseCaseTest extends KernelTestCase
 {
@@ -50,7 +51,7 @@ final class UpdateStepsDailyTargetUseCaseTest extends KernelTestCase
         $repo = new StepsDailyEntryRepository($registry);
         $persister = new StepsDailyEntryPersister($em, $clock);
 
-        $upsert = new UpsertStepsForDayUseCase(new UpsertStepsForDayValidator($resolver), $resolver, $repo, $persister, $container->get(QuestProgressionEvaluator::class), $clock);
+        $upsert = new UpsertStepsForDayUseCase(new UpsertStepsForDayValidator($resolver), $resolver, $repo, $persister, $container->get(QuestProgressionEvaluator::class), $clock, self::getContainer()->get(ObjectMapperInterface::class));
         $upsert->execute(new UpsertStepsForDayDataInput($clock->now(), 4200));
 
         $useCase = new UpdateStepsDailyTargetUseCase(
@@ -59,6 +60,7 @@ final class UpdateStepsDailyTargetUseCaseTest extends KernelTestCase
             $repo,
             $persister,
             $clock,
+            self::getContainer()->get(ObjectMapperInterface::class),
         );
         $output = $useCase->execute(new UpdateStepsDailyTargetDataInput(12000));
 
@@ -95,6 +97,7 @@ final class UpdateStepsDailyTargetUseCaseTest extends KernelTestCase
             new StepsDailyEntryRepository($registry),
             new StepsDailyEntryPersister($em, $clock),
             $clock,
+            self::getContainer()->get(ObjectMapperInterface::class),
         );
     }
 

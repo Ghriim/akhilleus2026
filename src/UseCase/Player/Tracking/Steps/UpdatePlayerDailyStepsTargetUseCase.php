@@ -11,6 +11,7 @@ use App\Domain\Gateway\Persister\User\PlayerPersisterGateway;
 use App\Domain\Security\LoggedPlayerResolverInterface;
 use App\Domain\Validator\Player\Tracking\Steps\UpdatePlayerDailyStepsTargetValidator;
 use App\UseCase\AbstractLoggedPlayerUseCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class UpdatePlayerDailyStepsTargetUseCase extends AbstractLoggedPlayerUseCase
 {
@@ -18,6 +19,7 @@ final class UpdatePlayerDailyStepsTargetUseCase extends AbstractLoggedPlayerUseC
         private readonly UpdatePlayerDailyStepsTargetValidator $validator,
         private readonly LoggedPlayerResolverInterface $loggedPlayerResolver,
         private readonly PlayerPersisterGateway $playerPersister,
+        private readonly ObjectMapperInterface $mapper,
     ) {
     }
 
@@ -32,6 +34,6 @@ final class UpdatePlayerDailyStepsTargetUseCase extends AbstractLoggedPlayerUseC
         $player->dailyStepsTarget = $input->target;
         $this->playerPersister->update($player);
 
-        return new PlayerStepsTargetDataOutput($player->dailyStepsTarget);
+        return $this->mapper->map($player, PlayerStepsTargetDataOutput::class);
     }
 }

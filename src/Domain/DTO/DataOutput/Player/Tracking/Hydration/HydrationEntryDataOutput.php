@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace App\Domain\DTO\DataOutput\Player\Tracking\Hydration;
 
+use App\Domain\DataTransformer\DateDataTransformer;
 use App\Domain\DTO\DataOutput\DataOutputInterface;
+use Symfony\Component\ObjectMapper\Attribute\Map;
 
-final readonly class HydrationEntryDataOutput implements DataOutputInterface
+final class HydrationEntryDataOutput implements DataOutputInterface
 {
-    public function __construct(
-        public string $id,
-        public string $loggedAt,
-        public int $valueMl,
-    ) {
-    }
+    public string $id;
+    #[Map(transform: [DateDataTransformer::class, 'toAtom'])]
+    public ?string $loggedAt;
+    public int $valueMl;
 }

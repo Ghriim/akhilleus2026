@@ -13,6 +13,7 @@ use App\Domain\Registry\Training\Workout\WorkoutStatusRegistry;
 use App\Domain\Security\LoggedPlayerResolverInterface;
 use App\Domain\Validator\Player\Training\Workout\PlanWorkoutValidator;
 use App\UseCase\AbstractLoggedPlayerUseCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class PlanWorkoutUseCase extends AbstractLoggedPlayerUseCase
 {
@@ -20,6 +21,7 @@ final class PlanWorkoutUseCase extends AbstractLoggedPlayerUseCase
         private readonly PlanWorkoutValidator $planWorkoutValidator,
         private readonly LoggedPlayerResolverInterface $loggedPlayerResolver,
         private readonly WorkoutPersisterGateway $workoutPersister,
+        private readonly ObjectMapperInterface $mapper,
     ) {
     }
 
@@ -36,13 +38,6 @@ final class PlanWorkoutUseCase extends AbstractLoggedPlayerUseCase
 
         $this->workoutPersister->create($workout);
 
-        return new WorkoutDataOutput(
-            $workout->id,
-            $workout->name,
-            $workout->status,
-            $workout->plannedAt->format(\DateTimeInterface::ATOM),
-            $workout->dateStart?->format(\DateTimeInterface::ATOM),
-            $workout->dateEnd?->format(\DateTimeInterface::ATOM),
-        );
+        return $this->mapper->map($workout, WorkoutDataOutput::class);
     }
 }

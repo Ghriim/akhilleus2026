@@ -10,7 +10,7 @@ use App\Domain\DTO\DataOutput\DataOutputInterface;
 abstract class AbstractLoggedPlayerUseCase implements UseCaseInterface
 {
     /**
-     * @return DataOutputInterface|list<DataOutputInterface>
+     * @return DataOutputInterface|list<DataOutputInterface>|null
      */
-    abstract public function execute(DataInputInterface $input): DataOutputInterface|array;
+    abstract public function execute(DataInputInterface $input): DataOutputInterface|array|null;
 }

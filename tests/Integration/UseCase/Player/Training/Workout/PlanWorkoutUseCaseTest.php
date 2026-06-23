@@ -19,6 +19,7 @@ use Doctrine\Persistence\ManagerRegistry;
 use Psr\Clock\ClockInterface;
 use Psr\Container\ContainerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class PlanWorkoutUseCaseTest extends KernelTestCase
 {
@@ -40,6 +41,7 @@ final class PlanWorkoutUseCaseTest extends KernelTestCase
             new PlanWorkoutValidator($resolver, $clock),
             $resolver,
             $workoutPersister,
+            self::getContainer()->get(ObjectMapperInterface::class),
         );
 
         $plannedAt = $clock->now()->modify('+2 days');
@@ -70,6 +72,7 @@ final class PlanWorkoutUseCaseTest extends KernelTestCase
             new PlanWorkoutValidator($resolver, $clock),
             $resolver,
             $workoutPersister,
+            self::getContainer()->get(ObjectMapperInterface::class),
         );
 
         try {

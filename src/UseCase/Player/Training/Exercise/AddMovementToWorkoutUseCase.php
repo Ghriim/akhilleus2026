@@ -16,6 +16,7 @@ use App\Domain\Gateway\Provider\Training\Workout\WorkoutProviderGateway;
 use App\Domain\Security\LoggedPlayerResolverInterface;
 use App\Domain\Validator\Player\Training\Exercise\AddMovementToWorkoutValidator;
 use App\UseCase\AbstractLoggedPlayerUseCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class AddMovementToWorkoutUseCase extends AbstractLoggedPlayerUseCase
 {
@@ -25,6 +26,7 @@ final class AddMovementToWorkoutUseCase extends AbstractLoggedPlayerUseCase
         private readonly WorkoutProviderGateway $workoutProvider,
         private readonly MovementProviderGateway $movementProvider,
         private readonly ExercisePersisterGateway $exercisePersister,
+        private readonly ObjectMapperInterface $mapper,
     ) {
     }
 
@@ -66,19 +68,7 @@ final class AddMovementToWorkoutUseCase extends AbstractLoggedPlayerUseCase
             $workout->id,
             $created->position,
             $created->restDurationSeconds,
-            new ExerciseMovementDataOutput(
-                $movement->id,
-                $movement->slug,
-                $movement->label,
-                $movement->tracksRepetitions,
-                $movement->tracksWeight,
-                $movement->tracksDuration,
-                $movement->tracksDistance,
-                $movement->tracksInclinePercent,
-                $movement->tracksInclineMeters,
-                $movement->videoLink,
-                $movement->gifLink,
-            ),
+            $this->mapper->map($movement, ExerciseMovementDataOutput::class),
         );
     }
 }

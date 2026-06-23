@@ -22,6 +22,7 @@ use Doctrine\Persistence\ManagerRegistry;
 use Psr\Clock\ClockInterface;
 use Psr\Container\ContainerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class ListStepsForRangeUseCaseTest extends KernelTestCase
 {
@@ -45,13 +46,14 @@ final class ListStepsForRangeUseCaseTest extends KernelTestCase
             $persister,
             $container->get(QuestProgressionEvaluator::class),
             $clock,
+            self::getContainer()->get(ObjectMapperInterface::class),
         );
         $upsert->execute(new UpsertStepsForDayDataInput(new \DateTimeImmutable('2026-05-08'), 8000));
         $upsert->execute(new UpsertStepsForDayDataInput(new \DateTimeImmutable('2026-05-05'), 5000));
         $upsert->execute(new UpsertStepsForDayDataInput(new \DateTimeImmutable('2026-05-07'), 7000));
         $upsert->execute(new UpsertStepsForDayDataInput(new \DateTimeImmutable('2026-04-30'), 1000));
 
-        $useCase = new ListStepsForRangeUseCase(new ListStepsForRangeValidator(), $resolver, $repo);
+        $useCase = new ListStepsForRangeUseCase(new ListStepsForRangeValidator(), $resolver, $repo, self::getContainer()->get(ObjectMapperInterface::class));
 
         $output = $useCase->execute(new ListStepsForRangeDataInput(
             new \DateTimeImmutable('2026-05-05'),
@@ -108,6 +110,7 @@ final class ListStepsForRangeUseCaseTest extends KernelTestCase
             new ListStepsForRangeValidator(),
             $resolver,
             new StepsDailyEntryRepository($registry),
+            self::getContainer()->get(ObjectMapperInterface::class),
         );
     }
 

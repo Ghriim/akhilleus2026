@@ -20,6 +20,7 @@ use Doctrine\Persistence\ManagerRegistry;
 use Psr\Clock\ClockInterface;
 use Psr\Container\ContainerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class ListEarnedExperienceUseCaseTest extends KernelTestCase
 {
@@ -148,6 +149,7 @@ final class ListEarnedExperienceUseCaseTest extends KernelTestCase
             new ListEarnedExperienceValidator(),
             $resolver,
             new EarnedExperienceRepository($registry),
+            $container->get(ObjectMapperInterface::class),
         );
     }
 }

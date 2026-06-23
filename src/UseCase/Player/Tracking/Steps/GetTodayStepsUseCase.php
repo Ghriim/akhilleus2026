@@ -13,6 +13,7 @@ use App\Domain\Gateway\Provider\Tracking\Steps\StepsDailyEntryProviderGateway;
 use App\Domain\Security\LoggedPlayerResolverInterface;
 use App\UseCase\AbstractLoggedPlayerUseCase;
 use Psr\Clock\ClockInterface;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class GetTodayStepsUseCase extends AbstractLoggedPlayerUseCase
 {
@@ -21,6 +22,7 @@ final class GetTodayStepsUseCase extends AbstractLoggedPlayerUseCase
         private readonly StepsDailyEntryProviderGateway $stepsProvider,
         private readonly StepsDailyEntryPersisterGateway $stepsPersister,
         private readonly ClockInterface $clock,
+        private readonly ObjectMapperInterface $mapper,
     ) {
     }
 
@@ -38,11 +40,6 @@ final class GetTodayStepsUseCase extends AbstractLoggedPlayerUseCase
             $this->stepsPersister->create($entry);
         }
 
-        return new StepsDailyEntryDataOutput(
-            $entry->id,
-            $entry->date->format(\DateTimeInterface::ATOM),
-            $entry->count,
-            $entry->target,
-        );
+        return $this->mapper->map($entry, StepsDailyEntryDataOutput::class);
     }
 }

@@ -6,7 +6,6 @@ namespace App\UseCase\Player\Tracking\Sleep;
 
 use App\Domain\DTO\DataInput\DataInputInterface;
 use App\Domain\DTO\DataInput\Player\Tracking\Sleep\DeleteSleepDataInput;
-use App\Domain\DTO\DataOutput\Player\Tracking\Sleep\DeleteSleepDataOutput;
 use App\Domain\Exception\EntityNotFoundException;
 use App\Domain\Gateway\Persister\Tracking\Sleep\SleepDailyEntryPersisterGateway;
 use App\Domain\Gateway\Provider\Tracking\Sleep\SleepDailyEntryProviderGateway;
@@ -30,7 +29,7 @@ final class DeleteSleepUseCase extends AbstractLoggedPlayerUseCase
     /**
      * @param DeleteSleepDataInput $input
      */
-    public function execute(DataInputInterface $input): DeleteSleepDataOutput
+    public function execute(DataInputInterface $input): null
     {
         $player = $this->loggedPlayerResolver->getLoggedPlayer();
 
@@ -43,6 +42,6 @@ final class DeleteSleepUseCase extends AbstractLoggedPlayerUseCase
 
         $this->questProgressionEvaluator->refreshFor($player, QuestMetricRegistry::SLEEP_DURATION_MINUTES, $this->clock->now());
 
-        return new DeleteSleepDataOutput($input->id);
+        return null;
     }
 }

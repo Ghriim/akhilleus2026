@@ -9,11 +9,13 @@ use App\Domain\DTO\DataInput\DataInputInterface;
 use App\Domain\DTO\DataOutput\Admin\Leveling\LevelingConfig\LevelingConfigDataOutput;
 use App\Domain\Gateway\Provider\Leveling\LevelingConfig\LevelingConfigProviderGateway;
 use App\UseCase\AbstractPublicUseCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
-final class GetLevelingConfigUseCase extends AbstractPublicUseCase
+final readonly class GetLevelingConfigUseCase extends AbstractPublicUseCase
 {
     public function __construct(
-        private readonly LevelingConfigProviderGateway $levelingConfigProvider,
+        private LevelingConfigProviderGateway $levelingConfigProvider,
+        private ObjectMapperInterface $mapper,
     ) {
     }
 
@@ -24,6 +26,6 @@ final class GetLevelingConfigUseCase extends AbstractPublicUseCase
     {
         $config = $this->levelingConfigProvider->getSingleton();
 
-        return new LevelingConfigDataOutput($config->id, $config->xpPerWorkoutMinute);
+        return $this->mapper->map($config, LevelingConfigDataOutput::class);
     }
 }

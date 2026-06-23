@@ -14,6 +14,7 @@ use App\Domain\Validator\Player\Tracking\Steps\UpdatePlayerDailyStepsTargetValid
 use App\UseCase\Player\Tracking\Steps\UpdatePlayerDailyStepsTargetUseCase;
 use Psr\Container\ContainerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class UpdatePlayerDailyStepsTargetUseCaseTest extends KernelTestCase
 {
@@ -55,6 +56,7 @@ final class UpdatePlayerDailyStepsTargetUseCaseTest extends KernelTestCase
             new UpdatePlayerDailyStepsTargetValidator($resolver),
             $resolver,
             $container->get(PlayerPersisterGateway::class),
+            self::getContainer()->get(ObjectMapperInterface::class),
         );
     }
 

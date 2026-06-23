@@ -23,6 +23,7 @@ use App\UseCase\Player\Questing\ClaimQuestRewardUseCase;
 use Psr\Clock\ClockInterface;
 use Psr\Container\ContainerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class ClaimQuestRewardUseCaseTest extends KernelTestCase
 {
@@ -107,6 +108,7 @@ final class ClaimQuestRewardUseCaseTest extends KernelTestCase
             $container->get(QuestProgressionPersisterGateway::class),
             $container->get(EarnedExperiencePersisterGateway::class),
             $container->get(ClockInterface::class),
+            self::getContainer()->get(ObjectMapperInterface::class),
         );
     }
 }

@@ -39,6 +39,7 @@ use Psr\Clock\ClockInterface;
 use Psr\Container\ContainerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Clock\MockClock;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class FinishWorkoutUseCaseTest extends KernelTestCase
 {
@@ -359,6 +360,7 @@ final class FinishWorkoutUseCaseTest extends KernelTestCase
             new EarnedExperiencePersister($em, $clock),
             $container->get(QuestProgressionEvaluator::class),
             $clock,
+            self::getContainer()->get(ObjectMapperInterface::class),
         );
     }
 }

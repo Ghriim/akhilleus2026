@@ -12,6 +12,7 @@ use App\Domain\Gateway\Persister\Tracking\Weight\WeightEntryPersisterGateway;
 use App\Domain\Security\LoggedPlayerResolverInterface;
 use App\Domain\Validator\Player\Tracking\Weight\LogWeightValidator;
 use App\UseCase\AbstractLoggedPlayerUseCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class LogWeightUseCase extends AbstractLoggedPlayerUseCase
 {
@@ -19,6 +20,7 @@ final class LogWeightUseCase extends AbstractLoggedPlayerUseCase
         private readonly LogWeightValidator $validator,
         private readonly LoggedPlayerResolverInterface $loggedPlayerResolver,
         private readonly WeightEntryPersisterGateway $weightPersister,
+        private readonly ObjectMapperInterface $mapper,
     ) {
     }
 
@@ -33,11 +35,6 @@ final class LogWeightUseCase extends AbstractLoggedPlayerUseCase
         $entry = new WeightEntryDataModel($player, $input->loggedAt, $input->valueGrams);
         $this->weightPersister->create($entry);
 
-        return new WeightEntryDataOutput(
-            $entry->id,
-            $entry->date->format(\DateTimeInterface::ATOM),
-            $entry->loggedAt->format(\DateTimeInterface::ATOM),
-            $entry->valueGrams,
-        );
+        return $this->mapper->map($entry, WeightEntryDataOutput::class);
     }
 }

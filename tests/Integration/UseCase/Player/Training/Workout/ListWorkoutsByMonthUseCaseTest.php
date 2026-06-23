@@ -20,6 +20,7 @@ use Doctrine\Persistence\ManagerRegistry;
 use Psr\Clock\ClockInterface;
 use Psr\Container\ContainerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class ListWorkoutsByMonthUseCaseTest extends KernelTestCase
 {
@@ -202,6 +203,7 @@ final class ListWorkoutsByMonthUseCaseTest extends KernelTestCase
             new ListWorkoutsByMonthValidator(),
             $resolver,
             new WorkoutRepository($registry),
+            self::getContainer()->get(ObjectMapperInterface::class),
         );
     }
 }

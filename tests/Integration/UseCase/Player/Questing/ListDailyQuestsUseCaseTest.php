@@ -13,6 +13,7 @@ use App\Domain\Service\Questing\QuestProgressionFactory;
 use App\UseCase\Player\Questing\ListDailyQuestsUseCase;
 use Psr\Clock\ClockInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 
 final class ListDailyQuestsUseCaseTest extends KernelTestCase
 {
@@ -32,6 +33,7 @@ final class ListDailyQuestsUseCaseTest extends KernelTestCase
             $container->get(QuestProviderGateway::class),
             $container->get(QuestProgressionFactory::class),
             $container->get(ClockInterface::class),
+            self::getContainer()->get(ObjectMapperInterface::class),
         );
 
         $output = $useCase->execute(new ListQuestsDataInput());
