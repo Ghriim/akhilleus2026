@@ -7,11 +7,13 @@ namespace App\Infrastructure\Controller\Player\Tracking;
 use App\Domain\DTO\DataInput\Player\Tracking\Sleep\DeleteSleepDataInput;
 use App\Domain\DTO\DataInput\Player\Tracking\Sleep\ListSleepForRangeDataInput;
 use App\Domain\DTO\DataInput\Player\Tracking\Sleep\LogSleepDataInput;
+use App\Domain\DTO\DataInput\Player\Tracking\Sleep\UpdatePlayerSleepTargetDataInput;
 use App\Domain\DTO\DataInput\Player\Tracking\Sleep\UpdateSleepDataInput;
 use App\Domain\Exception\ValidationException;
 use App\UseCase\Player\Tracking\Sleep\DeleteSleepUseCase;
 use App\UseCase\Player\Tracking\Sleep\ListSleepForRangeUseCase;
 use App\UseCase\Player\Tracking\Sleep\LogSleepUseCase;
+use App\UseCase\Player\Tracking\Sleep\UpdatePlayerSleepTargetUseCase;
 use App\UseCase\Player\Tracking\Sleep\UpdateSleepUseCase;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -34,6 +36,17 @@ final readonly class SleepPlayerController
         ));
 
         return new JsonResponse($output, 201);
+    }
+
+    #[Route(path: '/api/player/tracking/sleep/target', name: 'player_tracking_sleep_target', methods: ['PUT'])]
+    public function updateTarget(Request $request, UpdatePlayerSleepTargetUseCase $useCase): JsonResponse
+    {
+        /** @var array{targetMinutes?: int} $payload */
+        $payload = json_decode($request->getContent(), true) ?? [];
+
+        return new JsonResponse($useCase->execute(new UpdatePlayerSleepTargetDataInput(
+            (int) ($payload['targetMinutes'] ?? 0),
+        )));
     }
 
     #[Route(path: '/api/player/tracking/sleep/{id}', name: 'player_tracking_sleep_update', methods: ['PUT'])]

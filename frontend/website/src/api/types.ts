@@ -25,6 +25,8 @@ export interface PlayerProfileDataOutput {
   level: number;
   currentXp: number;
   xpToNextLevel: number;
+  dailySleepTargetMinutes: number;
+  targetWeightGrams: number | null;
 }
 
 export interface RegisterPlayerResponse {
@@ -203,11 +205,19 @@ export interface SleepDailyEntryDataOutput {
   quality: number | null;
 }
 
+export interface PlayerSleepTargetDataOutput {
+  dailySleepTargetMinutes: number;
+}
+
 export interface WeightEntryDataOutput {
   id: string;
   date: string;
   loggedAt: string;
   valueGrams: number;
+}
+
+export interface PlayerWeightTargetDataOutput {
+  targetWeightGrams: number | null;
 }
 
 export interface EarnedExperienceDataOutput {

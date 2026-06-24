@@ -697,6 +697,8 @@
         <tr><td class="col">display_name</td><td class="type">VARCHAR(100)</td><td></td><td></td></tr>
         <tr><td class="col">daily_hydration_target_ml</td><td class="type">INT</td><td></td><td>default <code>1000</code>; player-wide hydration goal, snapshotted per day into <code>hydration_daily_summary.target_ml</code></td></tr>
         <tr><td class="col">daily_steps_target</td><td class="type">INT</td><td></td><td>default <code>5000</code>; player-wide step goal, snapshotted per day into <code>steps_daily_entry.target</code></td></tr>
+        <tr><td class="col">daily_sleep_target_minutes</td><td class="type">INT</td><td></td><td>default <code>480</code> (8h); player-wide nightly sleep goal, editable; surfaced on the profile for the sleep widget's progress bar</td></tr>
+        <tr><td class="col">target_weight_grams</td><td class="type">INT</td><td class="flags"><span class="badge badge-null">NULL</span></td><td>optional player weight goal (<code>NULL</code> = no goal set), editable; surfaced on the profile for the weight widget's current/target gap</td></tr>
         <tr><td class="col">level</td><td class="type">INT</td><td></td><td>default <code>1</code>; bumped only by the nightly leveling cron (Phase 5/6)</td></tr>
         <tr><td class="col">current_xp</td><td class="type">INT</td><td></td><td>default <code>0</code>; XP accumulated toward the next level (<code>0 ≤ current_xp &lt; xp_to_next_level</code>)</td></tr>
         <tr><td class="col">xp_to_next_level</td><td class="type">INT</td><td></td><td>default <code>4000</code>; marginal cost of the next level, recomputed at registration / level-up by <code>LevelingCalculator</code></td></tr>

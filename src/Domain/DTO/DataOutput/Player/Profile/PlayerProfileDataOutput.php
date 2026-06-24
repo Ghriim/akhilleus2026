@@ -13,4 +13,6 @@ final class PlayerProfileDataOutput implements DataOutputInterface
     public int $level;
     public int $currentXp;
     public int $xpToNextLevel;
+    public int $dailySleepTargetMinutes;
+    public ?int $targetWeightGrams;
 }
