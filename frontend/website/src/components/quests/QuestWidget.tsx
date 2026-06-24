@@ -42,7 +42,7 @@ export function QuestWidget() {
   return (
     <section className="mb-6">
       <h2 className="mb-3 text-(length:--text-xl) font-(--font-display) font-semibold text-(--color-text)">
-        🗡️ Quêtes
+        Quêtes
       </h2>
       <Card>
         <CardHeader>

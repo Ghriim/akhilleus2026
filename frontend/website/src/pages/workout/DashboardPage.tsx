@@ -2,7 +2,6 @@ import { useNavigate } from 'react-router-dom';
 import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { PageHeader } from '@/components/ui/PageHeader';
 import { Spinner } from '@/components/ui/Spinner';
 import { QuestWidget } from '@/components/quests/QuestWidget';
 import { TrackingWidget } from '@/components/tracking/TrackingWidget';
@@ -21,22 +20,21 @@ export function DashboardPage() {
 
   return (
     <>
-      <PageHeader
-        title="Tableau de bord"
-        description="Vos prochaines séances et un raccourci pour démarrer."
-        actions={
-          <>
-            <Button variant="secondary" onClick={() => navigate('/workouts/new')}>
-              Planifier une séance
-            </Button>
-            <Button onClick={handleStart} isLoading={startEmpty.isPending}>
-              Démarrer maintenant
-            </Button>
-          </>
-        }
-      />
       <QuestWidget />
       <TrackingWidget />
+      <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h2 className="text-(length:--text-xl) font-(--font-display) font-semibold text-(--color-text)">
+          Entraînements
+        </h2>
+        <div className="flex gap-2">
+          <Button variant="secondary" onClick={() => navigate('/workouts/new')}>
+            Planifier une séance
+          </Button>
+          <Button onClick={handleStart} isLoading={startEmpty.isPending}>
+            Démarrer maintenant
+          </Button>
+        </div>
+      </div>
       {isLoading ? (
         <Spinner />
       ) : isError ? (

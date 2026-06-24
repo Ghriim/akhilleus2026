@@ -7,6 +7,7 @@ import { Spinner } from '@/components/ui/Spinner';
 import { WorkoutStatusBadge } from '@/components/workout/WorkoutStatusBadge';
 import { useMonthWorkouts } from '@/hooks/workout/useWorkouts';
 import { cn } from '@/lib/cn';
+import { formatDurationSeconds, formatNumber } from '@/lib/format';
 import type { WorkoutDataOutput } from '@/api/types';
 
 function refDate(w: WorkoutDataOutput): Date | null {
@@ -14,6 +15,18 @@ function refDate(w: WorkoutDataOutput): Date | null {
   if (!iso) return null;
   const d = new Date(iso);
   return Number.isNaN(d.getTime()) ? null : d;
+}
+
+/** Non-zero workout metrics for the calendar cell: duration (only once completed) + volume/distance/D+. */
+function workoutMetrics(w: WorkoutDataOutput): string[] {
+  const out: string[] = [];
+  if ('COMPLETED' === w.status && w.duration) out.push(formatDurationSeconds(w.duration));
+  if (null != w.volume && 0 !== Number(w.volume)) out.push(`Vol ${formatNumber(w.volume)}`);
+  if (null != w.distance && 0 !== Number(w.distance)) out.push(`Dist ${formatNumber(w.distance)}`);
+  if (null != w.inclineMeters && 0 !== Number(w.inclineMeters)) {
+    out.push(`D+ ${formatNumber(w.inclineMeters)}`);
+  }
+  return out;
 }
 
 const WEEKDAYS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
@@ -101,19 +114,29 @@ export function PlanningPage() {
                 >
                   <div className="font-mono text-(--color-text-muted) mb-1">{d}</div>
                   <div className="space-y-1">
-                    {items.map((w) => (
-                      <Link
-                        key={w.id}
-                        to={`/workouts/${w.id}`}
-                        className="block truncate rounded-(--radius-sm) bg-(--color-surface-muted) px-1 py-0.5 hover:bg-(--color-border) text-(--color-text)"
-                        title={w.name}
-                      >
-                        <div className="flex items-center gap-1">
-                          <WorkoutStatusBadge status={w.status} className="!px-1 !py-0" />
-                          <span className="truncate">{w.name}</span>
-                        </div>
-                      </Link>
-                    ))}
+                    {items.map((w) => {
+                      const metrics = workoutMetrics(w);
+                      return (
+                        <Link
+                          key={w.id}
+                          to={`/workouts/${w.id}`}
+                          className="block rounded-(--radius-sm) bg-(--color-surface-muted) px-1 py-0.5 hover:bg-(--color-border) text-(--color-text)"
+                          title={w.name}
+                        >
+                          <div className="flex items-center gap-1">
+                            <WorkoutStatusBadge status={w.status} className="!px-1 !py-0" />
+                            <span className="truncate">{w.name}</span>
+                          </div>
+                          {metrics.length > 0 && (
+                            <div className="mt-0.5 flex flex-wrap gap-x-1.5 text-(--color-text-muted)">
+                              {metrics.map((m, idx) => (
+                                <span key={idx}>{m}</span>
+                              ))}
+                            </div>
+                          )}
+                        </Link>
+                      );
+                    })}
                   </div>
                 </div>
               );

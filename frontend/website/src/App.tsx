@@ -14,6 +14,7 @@ import { AchievementsPage } from '@/pages/personal-best/AchievementsPage';
 import { XpJournalPage } from '@/pages/leveling/XpJournalPage';
 import { UniqueQuestsPage } from '@/pages/quests/UniqueQuestsPage';
 import { StatisticsPage } from '@/pages/statistics/StatisticsPage';
+import { SettingsPage } from '@/pages/settings/SettingsPage';
 
 export function App() {
   return (
@@ -34,6 +35,7 @@ export function App() {
               <Route path="/leveling/journal" element={<XpJournalPage />} />
               <Route path="/quests/unique" element={<UniqueQuestsPage />} />
               <Route path="/statistics" element={<StatisticsPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
             </Route>
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
