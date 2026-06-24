@@ -1,0 +1,4 @@
+# Keep this directory under version control, but never commit uploaded files.
+*
+!.gitkeep
+!.gitignore
