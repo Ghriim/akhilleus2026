@@ -41,6 +41,11 @@ function timeOf(iso: string): string {
     : d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
 }
 
+// Sleep durations read in hours/minutes — a zero shows "0h" (not formatDurationSeconds' "0s").
+function formatSleepDuration(minutes: number): string {
+  return 0 === minutes ? '0h' : formatDurationSeconds(minutes * 60);
+}
+
 function defaultBedAt(): string {
   const d = new Date();
   d.setDate(d.getDate() - 1);
@@ -63,10 +68,7 @@ export function SleepCard({ today }: SleepCardProps) {
   const record: SleepDailyEntryDataOutput | undefined = data?.[0];
 
   const targetMinutes = profile?.dailySleepTargetMinutes ?? 0;
-  const pct =
-    record && targetMinutes > 0
-      ? Math.min(100, (record.durationMinutes / targetMinutes) * 100)
-      : 0;
+  const durationMinutes = record?.durationMinutes ?? 0;
 
   const [open, setOpen] = useState(false);
   const [bedAt, setBedAt] = useState('');
@@ -131,28 +133,23 @@ export function SleepCard({ today }: SleepCardProps) {
       <CardBody>
         {isLoading ? (
           <Spinner size="sm" />
-        ) : record ? (
-          <div>
+        ) : (
+          <>
             <div className="flex items-baseline justify-between text-(length:--text-sm) text-(--color-text-muted)">
               <span className="text-(length:--text-2xl) font-semibold text-(--color-text)">
-                {formatDurationSeconds(record.durationMinutes * 60)}{' '}
-                <span className="text-(length:--text-xl)">{qualityEmoji(record.quality)}</span>
+                {formatSleepDuration(durationMinutes)}
+                {record && (
+                  <span className="text-(length:--text-xl)"> {qualityEmoji(record.quality)}</span>
+                )}
               </span>
-              {targetMinutes > 0 && <span>/ {formatDurationSeconds(targetMinutes * 60)}</span>}
+              <span>/ {formatSleepDuration(targetMinutes)}</span>
             </div>
-            {targetMinutes > 0 && (
-              <div className="mt-2 h-2 w-full overflow-hidden rounded-(--radius-sm) bg-(--color-surface-muted)">
-                <div className="h-full bg-(--color-primary)" style={{ width: `${pct}%` }} />
-              </div>
-            )}
             <div className="mt-1 text-(length:--text-sm) text-(--color-text-muted)">
-              Couché {timeOf(record.bedAt)} → Réveil {timeOf(record.wakeAt)}
+              {record
+                ? `Couché ${timeOf(record.bedAt)} → Réveil ${timeOf(record.wakeAt)}`
+                : 'Aucune nuit enregistrée.'}
             </div>
-          </div>
-        ) : (
-          <div className="text-(length:--text-sm) text-(--color-text-muted)">
-            Aucune nuit enregistrée.
-          </div>
+          </>
         )}
       </CardBody>
 

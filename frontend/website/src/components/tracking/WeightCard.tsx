@@ -33,7 +33,6 @@ export function WeightCard({ today }: WeightCardProps) {
 
   const targetGrams = profile?.targetWeightGrams ?? null;
   const targetKg = null !== targetGrams ? targetGrams / 1000 : null;
-  const gapKg = null !== currentKg && null !== targetKg ? currentKg - targetKg : null;
 
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState('');
@@ -92,21 +91,16 @@ export function WeightCard({ today }: WeightCardProps) {
       <CardBody>
         {isLoading ? (
           <Spinner size="sm" />
+        ) : null !== targetKg ? (
+          <div className="flex items-baseline justify-between text-(length:--text-sm) text-(--color-text-muted)">
+            <span className="text-(length:--text-2xl) font-semibold text-(--color-text)">
+              {null !== currentKg ? `${formatNumber(currentKg, 1)} kg` : '—'}
+            </span>
+            <span>/ {formatNumber(targetKg, 1)} kg</span>
+          </div>
         ) : null !== currentKg ? (
-          <div>
-            <div className="flex items-baseline justify-between text-(length:--text-sm) text-(--color-text-muted)">
-              <span className="text-(length:--text-2xl) font-semibold text-(--color-text)">
-                {formatNumber(currentKg, 1)} kg
-              </span>
-              {null !== targetKg && <span>objectif {formatNumber(targetKg, 1)} kg</span>}
-            </div>
-            {null !== gapKg && (
-              <div className="mt-1 text-(length:--text-sm) text-(--color-text-muted)">
-                {Math.abs(gapKg) < 0.05
-                  ? 'Objectif atteint 🎯'
-                  : `${gapKg > 0 ? '+' : '−'}${formatNumber(Math.abs(gapKg), 1)} kg vs objectif`}
-              </div>
-            )}
+          <div className="text-(length:--text-2xl) font-semibold text-(--color-text)">
+            {formatNumber(currentKg, 1)} kg
           </div>
         ) : (
           <div className="text-(length:--text-sm) text-(--color-text-muted)">
