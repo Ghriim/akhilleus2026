@@ -13,6 +13,7 @@ import {
   GearIcon,
   HomeIcon,
   LogoutIcon,
+  PlusIcon,
   StarIcon,
   TrophyIcon,
 } from '@/components/icons';
@@ -47,6 +48,7 @@ const GROUPS: GroupItem[] = [
     label: 'Entraînements',
     Icon: ActivityIcon,
     children: [
+      { to: '/workouts/new', label: 'Nouvelle séance', Icon: PlusIcon },
       { to: '/planning', label: 'Planning', Icon: CalendarIcon },
       { to: '/movements', label: 'Mouvements', Icon: DumbbellIcon },
       { to: '/achievements', label: 'Records', Icon: TrophyIcon },

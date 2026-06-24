@@ -69,6 +69,10 @@ There are two shapes of DataOutput; both are `final class … implements DataOut
 - Only Repository can reference namespace from Domain (DataModel and Gateway/Provider)
 - Only Controllers and Command can reference namespace from UseCase
 
+### Commands
+- Console commands follow the **same principle as Controllers**: they are thin HTTP/CLI entry points that **delegate all business logic to a UseCase**. A command must own a minimum of code — parse/prompt the CLI input, build the matching `DataInput`, call `$useCase->execute(...)`, and render the resulting `DataOutput` (or the `ValidationException` violations, since no `DomainExceptionListener` runs off the HTTP path). No business rule, persistence call, or domain gateway is injected directly into a command.
+- The command therefore injects **only the UseCase** (plus, like a controller, edge-only infrastructure needed to assemble the input — e.g. `ClockInterface` for a field with no CLI flag). The UseCase still owns its validator + persister and is covered by its own integration test (see "Conventions for UseCases").
+
 ### Repositories
 - Repositories implement a Gateway (one repository = one gateway), an interface defined in Domain/Gateway/Provider.
 - This gateway is injected instead of the repository everytime we need it.
