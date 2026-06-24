@@ -4,11 +4,8 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Command\Leveling;
 
-use App\Domain\Gateway\Persister\Leveling\EarnedExperience\EarnedExperiencePersisterGateway;
-use App\Domain\Gateway\Persister\User\PlayerPersisterGateway;
-use App\Domain\Gateway\Provider\Leveling\EarnedExperience\EarnedExperienceProviderGateway;
-use App\Domain\Service\Leveling\LevelingCalculator;
-use Psr\Clock\ClockInterface;
+use App\Domain\DTO\DataInput\Leveling\LockEarnedExperienceDataInput;
+use App\UseCase\Leveling\LockEarnedExperienceUseCase;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -17,11 +14,10 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
 /**
- * Nightly leveling cron: folds every still-unlocked `EarnedExperience` earned before today
- * (00:00 Europe/Paris) into its player's level/XP, then locks the consumed entries so they are
- * never counted twice. Idempotent — a second run finds nothing left to lock (and same-day entries,
- * `earnedAt >= cutoff`, are deliberately left for the following night). The `--cutoff` override is a
- * debug/testing affordance; production runs rely on the wall clock.
+ * Nightly leveling cron. Thin CLI entry point: it only parses the optional `--cutoff` override into
+ * a `\DateTimeImmutable` (surfacing a malformed value as INVALID, the CLI equivalent of a 422) and
+ * delegates to LockEarnedExperienceUseCase, which owns the day-boundary default + the lock logic.
+ * The `--cutoff` override is a debug/testing affordance; production runs rely on the wall clock.
  */
 #[AsCommand(
     name: 'app:leveling:lock-yesterday',
@@ -30,11 +26,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 final class LockYesterdayCommand extends Command
 {
     public function __construct(
-        private readonly EarnedExperienceProviderGateway $earnedExperienceProvider,
-        private readonly EarnedExperiencePersisterGateway $earnedExperiencePersister,
-        private readonly PlayerPersisterGateway $playerPersister,
-        private readonly LevelingCalculator $levelingCalculator,
-        private readonly ClockInterface $clock,
+        private readonly LockEarnedExperienceUseCase $lockEarnedExperience,
     ) {
         parent::__construct();
     }
@@ -54,6 +46,7 @@ final class LockYesterdayCommand extends Command
         $io = new SymfonyStyle($input, $output);
 
         $cutoffOption = $input->getOption('cutoff');
+        $cutoff = null;
         if (null !== $cutoffOption) {
             try {
                 $cutoff = new \DateTimeImmutable((string) $cutoffOption);
@@ -62,49 +55,16 @@ final class LockYesterdayCommand extends Command
 
                 return Command::INVALID;
             }
-        } else {
-            $cutoff = $this->clock->now()
-                ->setTimezone(new \DateTimeZone('Europe/Paris'))
-                ->setTime(0, 0, 0);
         }
 
-        $entries = $this->earnedExperienceProvider->findUnlockedBefore($cutoff);
-
-        $playersTouched = 0;
-        $entriesLocked = 0;
-        $totalXpAwarded = 0;
-
-        // Group by player so each player's level rolls forward once over the summed amount.
-        $groups = [];
-        foreach ($entries as $entry) {
-            $playerId = $entry->player->id;
-            if (false === isset($groups[$playerId])) {
-                $groups[$playerId] = ['player' => $entry->player, 'sum' => 0, 'entries' => []];
-            }
-            $groups[$playerId]['sum'] += $entry->amount;
-            $groups[$playerId]['entries'][] = $entry;
-        }
-
-        foreach ($groups as $group) {
-            $this->levelingCalculator->applyEarnedAmount($group['player'], $group['sum']);
-            $this->playerPersister->update($group['player']);
-
-            foreach ($group['entries'] as $entry) {
-                $entry->isLocked = true;
-                $this->earnedExperiencePersister->update($entry);
-                ++$entriesLocked;
-            }
-
-            $totalXpAwarded += $group['sum'];
-            ++$playersTouched;
-        }
+        $result = $this->lockEarnedExperience->execute(new LockEarnedExperienceDataInput($cutoff));
 
         $io->success(sprintf(
             'Locked %d entries across %d players, awarding %d XP (cutoff %s).',
-            $entriesLocked,
-            $playersTouched,
-            $totalXpAwarded,
-            $cutoff->format(\DateTimeInterface::ATOM),
+            $result->entriesLocked,
+            $result->playersTouched,
+            $result->totalXpAwarded,
+            $result->cutoff,
         ));
 
         return Command::SUCCESS;
