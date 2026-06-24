@@ -39,7 +39,7 @@ export function Modal({ open, onClose, title, children, footer, className }: Mod
         role="dialog"
         aria-modal="true"
         className={cn(
-          'w-full max-w-lg rounded-none bg-(--color-surface) shadow-(--shadow-lg) border border-(--color-border)',
+          'w-full max-w-lg rounded-(--radius-surface) bg-(--color-surface) shadow-(--shadow-lg) border border-(--color-border)',
           '[filter:var(--glow)]',
           className,
         )}

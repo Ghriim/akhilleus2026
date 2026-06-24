@@ -52,7 +52,7 @@ export function QuestWidget() {
                 key={t.id}
                 type="button"
                 className={cn(
-                  'rounded-(--radius-md) px-3 py-1 text-(length:--text-sm) font-medium transition-colors',
+                  'rounded-(--radius-surface) px-3 py-1 text-(length:--text-sm) font-medium transition-colors',
                   t.id === tab
                     ? 'bg-(--color-primary) text-(--color-primary-foreground)'
                     : 'bg-(--color-surface-muted) text-(--color-text) hover:bg-(--color-border)',

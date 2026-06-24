@@ -13,7 +13,7 @@ export function MovementMedia({ movement }: MovementMediaProps) {
         <img
           src={movement.gifLink}
           alt={movement.label}
-          className="h-32 w-auto rounded-(--radius-md) border border-(--color-border) bg-(--color-surface)"
+          className="h-32 w-auto rounded-(--radius-surface) border border-(--color-border) bg-(--color-surface)"
           loading="lazy"
         />
       )}

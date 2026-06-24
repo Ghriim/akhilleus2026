@@ -30,7 +30,7 @@ export function SettingsPage() {
                   aria-pressed={isActive}
                   onClick={() => setTheme(value)}
                   className={cn(
-                    'min-w-28 rounded-(--radius-md) border px-4 py-3 text-(length:--text-sm) font-semibold transition-colors',
+                    'min-w-28 rounded-(--radius-surface) border px-4 py-3 text-(length:--text-sm) font-semibold transition-colors',
                     isActive
                       ? 'border-(--color-primary) bg-(--color-primary-soft) text-(--color-primary)'
                       : 'border-(--color-border) bg-(--color-surface) text-(--color-text-muted) hover:border-(--color-border-strong) hover:text-(--color-text)',

@@ -5,7 +5,7 @@ type RowProps = HTMLAttributes<HTMLTableRowElement> & { children: ReactNode };
 
 export function Table({ className, children, ...rest }: HTMLAttributes<HTMLTableElement>) {
   return (
-    <div className="overflow-x-auto rounded-(--radius-lg) border border-(--color-border) bg-(--color-surface)">
+    <div className="overflow-x-auto rounded-(--radius-surface) border border-(--color-border) bg-(--color-surface)">
       <table className={cn('w-full text-(length:--text-sm)', className)} {...rest}>
         {children}
       </table>

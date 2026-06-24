@@ -48,7 +48,7 @@ export function XpJournalPage() {
             {data.items.map((entry) => (
               <div
                 key={entry.id}
-                className="flex items-center justify-between gap-3 rounded-(--radius-md) border border-(--color-border) bg-(--color-surface) px-4 py-3"
+                className="flex items-center justify-between gap-3 rounded-(--radius-surface) border border-(--color-border) bg-(--color-surface) px-4 py-3"
               >
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 text-(--color-text)">

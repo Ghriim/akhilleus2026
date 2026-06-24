@@ -51,7 +51,7 @@ export function AchievementsPage() {
                   {entry.personalBests.map((pb) => (
                     <li
                       key={`${entry.movement.id}-${pb.type}`}
-                      className="flex items-center justify-between rounded-(--radius-md) bg-(--color-surface-muted) px-3 py-2"
+                      className="flex items-center justify-between rounded-(--radius-surface) bg-(--color-surface-muted) px-3 py-2"
                     >
                       <div>
                         <Badge tone="primary">{TYPE_LABEL[pb.type] ?? pb.type}</Badge>

@@ -13,7 +13,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const base =
-  'inline-flex items-center justify-center gap-2 rounded-none font-medium ' +
+  'inline-flex items-center justify-center gap-2 rounded-(--radius-surface) font-medium ' +
   'transition-colors disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none ' +
   'focus-visible:ring-2 focus-visible:ring-(--color-primary) ' +
   'system:uppercase system:[letter-spacing:var(--label-spacing)] system:text-(length:--text-sm) ' +

@@ -28,7 +28,7 @@ export function SetRow({ workoutId, set, movement, mode, editable }: SetRowProps
 
   if (editing) {
     return (
-      <div className="rounded-(--radius-md) border border-(--color-border) bg-(--color-surface-muted) p-3">
+      <div className="rounded-(--radius-surface) border border-(--color-border) bg-(--color-surface-muted) p-3">
         <SetForm
           movement={movement}
           mode={mode}
@@ -50,7 +50,7 @@ export function SetRow({ workoutId, set, movement, mode, editable }: SetRowProps
   }
 
   return (
-    <div className="flex items-center justify-between gap-3 rounded-(--radius-md) border border-(--color-border) bg-(--color-surface) px-3 py-2">
+    <div className="flex items-center justify-between gap-3 rounded-(--radius-surface) border border-(--color-border) bg-(--color-surface) px-3 py-2">
       <div className="flex items-center gap-3 text-(length:--text-sm) text-(--color-text)">
         <span className="font-mono text-(--color-text-muted)">#{set.position}</span>
         <SetSummary set={set} movement={movement} mode={mode} />

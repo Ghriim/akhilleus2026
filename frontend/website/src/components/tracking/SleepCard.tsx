@@ -192,7 +192,7 @@ export function SleepCard({ today }: SleepCardProps) {
                     type="button"
                     aria-label={`Qualité ${v}`}
                     className={cn(
-                      'rounded-(--radius-md) border px-2 py-1 text-(length:--text-lg)',
+                      'rounded-(--radius-surface) border px-2 py-1 text-(length:--text-lg)',
                       quality === v
                         ? 'border-(--color-primary) bg-(--color-primary-soft)'
                         : 'border-(--color-border) bg-(--color-surface) opacity-60 hover:opacity-100',

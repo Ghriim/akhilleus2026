@@ -21,7 +21,7 @@ export function Alert({ tone = 'info', title, className, children }: AlertProps)
   return (
     <div
       className={cn(
-        'rounded-(--radius-md) border-l-4 px-4 py-3 text-(length:--text-sm)',
+        'rounded-(--radius-surface) border-l-4 px-4 py-3 text-(length:--text-sm)',
         toneClass[tone],
         className,
       )}

@@ -87,7 +87,7 @@ export function PlanningPage() {
       ) : isError ? (
         <Alert tone="danger">{(error as Error).message}</Alert>
       ) : (
-        <div className="rounded-(--radius-lg) bg-(--color-surface) border border-(--color-border) p-2">
+        <div className="rounded-(--radius-surface) bg-(--color-surface) border border-(--color-border) p-2">
           <div className="grid grid-cols-7 gap-1 text-(length:--text-xs) text-(--color-text-muted) px-1 pb-1">
             {WEEKDAYS.map((w, i) => (
               <div key={i} className="text-center">

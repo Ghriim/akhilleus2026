@@ -29,7 +29,7 @@ export function AddSetButton({ workoutId, exerciseId, movement, mode }: AddSetBu
   }
 
   return (
-    <div className="rounded-(--radius-md) border border-(--color-border) bg-(--color-surface-muted) p-3">
+    <div className="rounded-(--radius-surface) border border-(--color-border) bg-(--color-surface-muted) p-3">
       <SetForm
         movement={movement}
         mode={mode}

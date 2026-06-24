@@ -45,6 +45,7 @@
   /* Surface palette */
   --color-bg: #f6f7f9;
   --color-surface: #ffffff;
+  --color-surface-2: #ffffff;
   --color-surface-muted: #f1f3f5;
   --color-border: #e2e5e9;
   --color-border-strong: #cbd0d6;
@@ -94,6 +95,14 @@
  * and consume the capability tokens declared here.
  */
 :root {
+  /*
+   * Corner radius for box surfaces & controls (cards, buttons, modals, list items, empty-state
+   * placeholders, form fields…). 0 in every current theme. A future "rounded" theme overrides this
+   * single token in its [data-theme] block — no component change needed. Pills/progress bars keep
+   * their own --radius-sm / rounded-full.
+   */
+  --radius-surface: 0px;
+
   /* Capability tokens — inert in Basic, activated in System (consumed from Phase B on). */
   --glow: none;
   --bar-glow: none;
@@ -106,6 +115,7 @@
   /* Surface palette */
   --color-bg: #05070e;
   --color-surface: #0d1626;
+  --color-surface-2: #090f1c;
   --color-surface-muted: #111d31;
   --color-border: #1d3a59;
   --color-border-strong: #2a4d72;

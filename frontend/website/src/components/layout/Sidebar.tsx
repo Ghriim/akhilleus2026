@@ -89,7 +89,7 @@ export function Sidebar() {
 
   const leafClass = (isActive: boolean) =>
     cn(
-      'flex items-center gap-3 rounded-(--radius-md) px-3 py-2 text-(length:--text-sm)',
+      'flex items-center gap-3 rounded-(--radius-surface) px-3 py-2 text-(length:--text-sm)',
       collapsed && 'justify-center px-0',
       isActive
         ? 'bg-(--color-primary-soft) font-semibold text-(--color-primary) system:shadow-(--bar-glow)'
@@ -111,11 +111,11 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        'sticky top-0 z-10 flex h-dvh shrink-0 flex-col border-r border-(--color-border) bg-(--color-surface) transition-[width] duration-200',
+        'sticky top-0 z-10 flex h-dvh shrink-0 flex-col border-r border-(--color-border) bg-(--color-surface-2) transition-[width] duration-200',
         collapsed ? 'w-16' : 'w-60',
       )}
     >
-      <div className="flex items-center gap-2 border-b border-(--color-border) px-3 py-3">
+      <div className="flex items-center gap-2 px-3 py-3">
         {!collapsed && (
           <NavLink
             to="/"
@@ -158,7 +158,7 @@ export function Sidebar() {
         ))}
       </nav>
 
-      <div className="border-t border-(--color-border) px-2 py-3">
+      <div className="px-2 py-3">
         <ul className="space-y-1">
           <li>{renderLeaf(SETTINGS)}</li>
           <li>
@@ -167,7 +167,7 @@ export function Sidebar() {
               title={collapsed ? 'Déconnexion' : undefined}
               onClick={handleLogout}
               className={cn(
-                'flex w-full items-center gap-3 rounded-(--radius-md) px-3 py-2 text-(length:--text-sm) text-(--color-text-muted) hover:bg-(--color-surface-muted)',
+                'flex w-full items-center gap-3 rounded-(--radius-surface) px-3 py-2 text-(length:--text-sm) text-(--color-text-muted) hover:bg-(--color-surface-muted)',
                 collapsed && 'justify-center px-0',
               )}
             >

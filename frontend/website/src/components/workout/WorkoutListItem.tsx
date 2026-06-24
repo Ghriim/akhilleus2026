@@ -12,7 +12,7 @@ export function WorkoutListItem({ workout }: WorkoutListItemProps) {
   return (
     <Link
       to={`/workouts/${workout.id}`}
-      className="block rounded-(--radius-lg) bg-(--color-surface) border border-(--color-border) px-4 py-3 hover:border-(--color-border-strong) hover:shadow-(--shadow-sm) transition-colors"
+      className="block rounded-(--radius-surface) bg-(--color-surface) border border-(--color-border) px-4 py-3 hover:border-(--color-border-strong) hover:shadow-(--shadow-sm) transition-colors"
     >
       <div className="flex items-center justify-between gap-3">
         <div>
