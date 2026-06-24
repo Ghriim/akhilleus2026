@@ -18,8 +18,8 @@ export function TrackingWidget() {
         Suivi du jour
       </h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <StepsCard />
         <HydrationCard />
+        <StepsCard />
         <SleepCard today={today} />
         <WeightCard today={today} />
       </div>
