@@ -43,6 +43,21 @@ class PlayerDataModel implements DataModelInterface
     #[ORM\Column(type: Types::INTEGER, options: ['default' => 5000])]
     public int $dailyStepsTarget = 5000;
 
+    /**
+     * Player-wide nightly sleep goal in minutes. Initialised to 480 (8h) for new players (and
+     * backfilled to 480 on existing rows by the migration). Editable by the player. Surfaced on
+     * the profile so the sleep widget can render an objective + progress bar.
+     */
+    #[ORM\Column(type: Types::INTEGER, options: ['default' => 480])]
+    public int $dailySleepTargetMinutes = 480;
+
+    /**
+     * Optional player weight goal in grams (null = no goal set). Editable by the player and
+     * surfaced on the profile so the weight widget can show the current/target gap.
+     */
+    #[ORM\Column(type: Types::INTEGER, nullable: true)]
+    public ?int $targetWeightGrams = null;
+
     /** Current player level (≥ 1). Bumped only by the nightly leveling cron (Phase 5/6). */
     #[ORM\Column(type: Types::INTEGER, options: ['default' => 1])]
     public int $level = 1;

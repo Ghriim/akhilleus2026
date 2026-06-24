@@ -1,12 +1,21 @@
 import { useState } from 'react';
 import type { SleepDailyEntryDataOutput } from '@/api/types';
+import { PencilIcon, PlusIcon } from '@/components/icons';
 import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
+import { IconButton } from '@/components/ui/IconButton';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
+import { Modal } from '@/components/ui/Modal';
 import { Spinner } from '@/components/ui/Spinner';
-import { useLogSleep, useSleepRange, useUpdateSleep } from '@/hooks/tracking/useTracking';
+import { useProfile } from '@/hooks/profile/useProfile';
+import {
+  useLogSleep,
+  useSleepRange,
+  useUpdatePlayerSleepTarget,
+  useUpdateSleep,
+} from '@/hooks/tracking/useTracking';
 import { cn } from '@/lib/cn';
 import {
   formatDurationSeconds,
@@ -47,20 +56,36 @@ function defaultWakeAt(): string {
 
 export function SleepCard({ today }: SleepCardProps) {
   const { data, isLoading } = useSleepRange(today, today);
+  const { data: profile } = useProfile();
   const logSleep = useLogSleep();
   const updateSleep = useUpdateSleep();
+  const updateTarget = useUpdatePlayerSleepTarget();
   const record: SleepDailyEntryDataOutput | undefined = data?.[0];
 
-  const [editing, setEditing] = useState(false);
+  const targetMinutes = profile?.dailySleepTargetMinutes ?? 0;
+  const pct =
+    record && targetMinutes > 0
+      ? Math.min(100, (record.durationMinutes / targetMinutes) * 100)
+      : 0;
+
+  const [open, setOpen] = useState(false);
   const [bedAt, setBedAt] = useState('');
   const [wakeAt, setWakeAt] = useState('');
   const [quality, setQuality] = useState<number | null>(null);
 
-  const startEditing = () => {
+  const [targetOpen, setTargetOpen] = useState(false);
+  const [targetHours, setTargetHours] = useState('');
+
+  const openModal = () => {
     setBedAt(record ? toDatetimeLocalValue(record.bedAt) : defaultBedAt());
     setWakeAt(record ? toDatetimeLocalValue(record.wakeAt) : defaultWakeAt());
     setQuality(record?.quality ?? null);
-    setEditing(true);
+    setOpen(true);
+  };
+
+  const openTarget = () => {
+    setTargetHours(targetMinutes > 0 ? String(targetMinutes / 60) : '');
+    setTargetOpen(true);
   };
 
   const save = async () => {
@@ -75,87 +100,51 @@ export function SleepCard({ today }: SleepCardProps) {
     } else {
       await logSleep.mutateAsync(input);
     }
-    setEditing(false);
+    setOpen(false);
   };
 
-  const mutationError =
-    (logSleep.error as Error | null) ?? (updateSleep.error as Error | null);
+  const saveTarget = async () => {
+    const hours = Number(targetHours);
+    if ('' === targetHours.trim() || Number.isNaN(hours) || hours <= 0) return;
+    await updateTarget.mutateAsync(Math.round(hours * 60));
+    setTargetOpen(false);
+  };
+
+  const mutationError = (logSleep.error as Error | null) ?? (updateSleep.error as Error | null);
 
   return (
     <Card>
       <CardHeader>
         <span className="font-(--font-display) font-semibold text-(--color-text)">😴 Sommeil</span>
-        {!editing && (
-          <Button size="sm" variant="ghost" onClick={startEditing}>
-            {record ? 'Modifier' : 'Ajouter'}
-          </Button>
-        )}
+        <span className="flex items-center gap-1">
+          <IconButton label="Changer l'objectif" onClick={openTarget}>
+            <PencilIcon />
+          </IconButton>
+          <IconButton
+            label={record ? 'Modifier la valeur' : 'Ajouter une valeur'}
+            onClick={openModal}
+          >
+            <PlusIcon />
+          </IconButton>
+        </span>
       </CardHeader>
       <CardBody>
         {isLoading ? (
           <Spinner size="sm" />
-        ) : editing ? (
-          <div className="space-y-3">
-            <div>
-              <Label>Couché</Label>
-              <Input
-                type="datetime-local"
-                value={bedAt}
-                onChange={(e) => setBedAt(e.target.value)}
-              />
-            </div>
-            <div>
-              <Label>Réveil</Label>
-              <Input
-                type="datetime-local"
-                value={wakeAt}
-                onChange={(e) => setWakeAt(e.target.value)}
-              />
-            </div>
-            <div>
-              <Label>Qualité</Label>
-              <div className="flex gap-1">
-                {QUALITY_EMOJI.map((emoji, idx) => {
-                  const v = idx + 1;
-                  return (
-                    <button
-                      key={v}
-                      type="button"
-                      aria-label={`Qualité ${v}`}
-                      className={cn(
-                        'rounded-(--radius-md) border px-2 py-1 text-(length:--text-lg)',
-                        quality === v
-                          ? 'border-(--color-primary) bg-(--color-primary-soft)'
-                          : 'border-(--color-border) bg-(--color-surface) opacity-60 hover:opacity-100',
-                      )}
-                      onClick={() => setQuality(quality === v ? null : v)}
-                    >
-                      {emoji}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>
-                Annuler
-              </Button>
-              <Button
-                size="sm"
-                isLoading={logSleep.isPending || updateSleep.isPending}
-                onClick={save}
-              >
-                Enregistrer
-              </Button>
-            </div>
-            {mutationError && <Alert tone="danger">{mutationError.message}</Alert>}
-          </div>
         ) : record ? (
           <div>
-            <div className="text-(length:--text-2xl) font-semibold text-(--color-text)">
-              {formatDurationSeconds(record.durationMinutes * 60)}{' '}
-              <span className="text-(length:--text-xl)">{qualityEmoji(record.quality)}</span>
+            <div className="flex items-baseline justify-between text-(length:--text-sm) text-(--color-text-muted)">
+              <span className="text-(length:--text-2xl) font-semibold text-(--color-text)">
+                {formatDurationSeconds(record.durationMinutes * 60)}{' '}
+                <span className="text-(length:--text-xl)">{qualityEmoji(record.quality)}</span>
+              </span>
+              {targetMinutes > 0 && <span>/ {formatDurationSeconds(targetMinutes * 60)}</span>}
             </div>
+            {targetMinutes > 0 && (
+              <div className="mt-2 h-2 w-full overflow-hidden rounded-(--radius-sm) bg-(--color-surface-muted)">
+                <div className="h-full bg-(--color-primary)" style={{ width: `${pct}%` }} />
+              </div>
+            )}
             <div className="mt-1 text-(length:--text-sm) text-(--color-text-muted)">
               Couché {timeOf(record.bedAt)} → Réveil {timeOf(record.wakeAt)}
             </div>
@@ -166,6 +155,92 @@ export function SleepCard({ today }: SleepCardProps) {
           </div>
         )}
       </CardBody>
+
+      <Modal
+        open={open}
+        onClose={() => setOpen(false)}
+        title="😴 Sommeil"
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => setOpen(false)}>
+              Annuler
+            </Button>
+            <Button isLoading={logSleep.isPending || updateSleep.isPending} onClick={save}>
+              Enregistrer
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-3">
+          <div>
+            <Label>Couché</Label>
+            <Input type="datetime-local" value={bedAt} onChange={(e) => setBedAt(e.target.value)} />
+          </div>
+          <div>
+            <Label>Réveil</Label>
+            <Input
+              type="datetime-local"
+              value={wakeAt}
+              onChange={(e) => setWakeAt(e.target.value)}
+            />
+          </div>
+          <div>
+            <Label>Qualité</Label>
+            <div className="flex gap-1">
+              {QUALITY_EMOJI.map((emoji, idx) => {
+                const v = idx + 1;
+                return (
+                  <button
+                    key={v}
+                    type="button"
+                    aria-label={`Qualité ${v}`}
+                    className={cn(
+                      'rounded-(--radius-md) border px-2 py-1 text-(length:--text-lg)',
+                      quality === v
+                        ? 'border-(--color-primary) bg-(--color-primary-soft)'
+                        : 'border-(--color-border) bg-(--color-surface) opacity-60 hover:opacity-100',
+                    )}
+                    onClick={() => setQuality(quality === v ? null : v)}
+                  >
+                    {emoji}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          {mutationError && <Alert tone="danger">{mutationError.message}</Alert>}
+        </div>
+      </Modal>
+
+      <Modal
+        open={targetOpen}
+        onClose={() => setTargetOpen(false)}
+        title="Changer l'objectif"
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => setTargetOpen(false)}>
+              Annuler
+            </Button>
+            <Button isLoading={updateTarget.isPending} onClick={saveTarget}>
+              Enregistrer
+            </Button>
+          </div>
+        }
+      >
+        <Label>Objectif (heures)</Label>
+        <Input
+          type="number"
+          min="0"
+          step="0.5"
+          value={targetHours}
+          onChange={(e) => setTargetHours(e.target.value)}
+        />
+        {updateTarget.error && (
+          <Alert tone="danger" className="mt-2">
+            {(updateTarget.error as Error).message}
+          </Alert>
+        )}
+      </Modal>
     </Card>
   );
 }

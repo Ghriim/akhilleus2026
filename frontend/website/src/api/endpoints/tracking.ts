@@ -2,7 +2,9 @@ import { apiRequest } from '../client';
 import type {
   HydrationDayDataOutput,
   PlayerHydrationTargetDataOutput,
+  PlayerSleepTargetDataOutput,
   PlayerStepsTargetDataOutput,
+  PlayerWeightTargetDataOutput,
   SleepDailyEntryDataOutput,
   StepsDailyEntryDataOutput,
   WeightEntryDataOutput,
@@ -111,6 +113,15 @@ export function updateSleep(id: string, input: SleepInput): Promise<SleepDailyEn
   });
 }
 
+export function updatePlayerSleepTarget(
+  targetMinutes: number,
+): Promise<PlayerSleepTargetDataOutput> {
+  return apiRequest<PlayerSleepTargetDataOutput>('/api/player/tracking/sleep/target', {
+    method: 'PUT',
+    body: { targetMinutes },
+  });
+}
+
 export function deleteSleep(id: string): Promise<void> {
   return apiRequest<void>(`/api/player/tracking/sleep/${id}`, { method: 'DELETE' });
 }
@@ -138,6 +149,15 @@ export function updateWeight(
   return apiRequest<WeightEntryDataOutput>(`/api/player/tracking/weight/${id}`, {
     method: 'PUT',
     body: { loggedAt, valueGrams },
+  });
+}
+
+export function updatePlayerWeightTarget(
+  targetGrams: number,
+): Promise<PlayerWeightTargetDataOutput> {
+  return apiRequest<PlayerWeightTargetDataOutput>('/api/player/tracking/weight/target', {
+    method: 'PUT',
+    body: { targetGrams },
   });
 }
 

@@ -7,11 +7,13 @@ namespace App\Infrastructure\Controller\Player\Tracking;
 use App\Domain\DTO\DataInput\Player\Tracking\Weight\DeleteWeightDataInput;
 use App\Domain\DTO\DataInput\Player\Tracking\Weight\ListWeightForRangeDataInput;
 use App\Domain\DTO\DataInput\Player\Tracking\Weight\LogWeightDataInput;
+use App\Domain\DTO\DataInput\Player\Tracking\Weight\UpdatePlayerWeightTargetDataInput;
 use App\Domain\DTO\DataInput\Player\Tracking\Weight\UpdateWeightDataInput;
 use App\Domain\Exception\ValidationException;
 use App\UseCase\Player\Tracking\Weight\DeleteWeightUseCase;
 use App\UseCase\Player\Tracking\Weight\ListWeightForRangeUseCase;
 use App\UseCase\Player\Tracking\Weight\LogWeightUseCase;
+use App\UseCase\Player\Tracking\Weight\UpdatePlayerWeightTargetUseCase;
 use App\UseCase\Player\Tracking\Weight\UpdateWeightUseCase;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -33,6 +35,17 @@ final readonly class WeightPlayerController
         ));
 
         return new JsonResponse($output, 201);
+    }
+
+    #[Route(path: '/api/player/tracking/weight/target', name: 'player_tracking_weight_target', methods: ['PUT'])]
+    public function updateTarget(Request $request, UpdatePlayerWeightTargetUseCase $useCase): JsonResponse
+    {
+        /** @var array{targetGrams?: int} $payload */
+        $payload = json_decode($request->getContent(), true) ?? [];
+
+        return new JsonResponse($useCase->execute(new UpdatePlayerWeightTargetDataInput(
+            (int) ($payload['targetGrams'] ?? 0),
+        )));
     }
 
     #[Route(path: '/api/player/tracking/weight/{id}', name: 'player_tracking_weight_update', methods: ['PUT'])]

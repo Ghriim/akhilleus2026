@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as trackingApi from '@/api/endpoints/tracking';
 import type { SleepInput } from '@/api/endpoints/tracking';
+import { profileKeys } from '@/hooks/profile/keys';
 import { trackingKeys } from './keys';
 
 // --- Queries ---
@@ -52,6 +53,18 @@ function useTrackingMutation<TArgs, TResult>(fn: (args: TArgs) => Promise<TResul
   });
 }
 
+// Player-level goals live on the profile (not the tracking tree), so these refresh both.
+function usePlayerTargetMutation<TArgs, TResult>(fn: (args: TArgs) => Promise<TResult>) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: fn,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: profileKeys.all });
+      qc.invalidateQueries({ queryKey: trackingKeys.all });
+    },
+  });
+}
+
 export function useUpsertSteps() {
   return useTrackingMutation(({ date, count }: { date: string; count: number }) =>
     trackingApi.upsertSteps(date, count),
@@ -80,6 +93,18 @@ export function useUpdateHydrationEntry() {
 
 export function useDeleteHydrationEntry() {
   return useTrackingMutation((id: string) => trackingApi.deleteHydrationEntry(id));
+}
+
+export function useUpdatePlayerSleepTarget() {
+  return usePlayerTargetMutation((targetMinutes: number) =>
+    trackingApi.updatePlayerSleepTarget(targetMinutes),
+  );
+}
+
+export function useUpdatePlayerWeightTarget() {
+  return usePlayerTargetMutation((targetGrams: number) =>
+    trackingApi.updatePlayerWeightTarget(targetGrams),
+  );
 }
 
 export function useLogSleep() {
