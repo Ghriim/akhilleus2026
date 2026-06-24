@@ -117,7 +117,7 @@ export function SleepCard({ today }: SleepCardProps) {
   return (
     <Card>
       <CardHeader>
-        <span className="font-(--font-display) font-semibold text-(--color-text)">😴 Sommeil</span>
+        <span className="font-(--font-display) font-semibold text-(--color-text)">Sommeil</span>
         <span className="flex items-center gap-1">
           <IconButton label="Changer l'objectif" onClick={openTarget}>
             <PencilIcon />

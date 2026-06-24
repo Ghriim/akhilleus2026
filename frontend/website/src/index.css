@@ -1,6 +1,13 @@
 @import 'tailwindcss';
 
 /*
+ * `system:` variant — applies a utility only under the System theme (matches when an ancestor
+ * carries data-theme="system"). Lets components opt into HUD-only treatment (uppercase labels,
+ * mono digits, glow) without affecting Basic. Capability tokens cover the value-based cases.
+ */
+@custom-variant system (&:where([data-theme='system'] *));
+
+/*
  * Single source of truth for the player website design tokens.
  * Every utility in the codebase resolves to one of these custom properties,
  * so swapping a theme later is "rewrite this block".
@@ -75,6 +82,74 @@
   --color-status-canceled-bg: #e9ecef;
 }
 
+/*
+ * Theme layers. The @theme block above is the "Basic" theme (default values at :root).
+ * A theme is selected by `data-theme` on <html> (set pre-paint in index.html, then owned
+ * by ThemeProvider). Because every utility resolves to var(--token), overriding the token
+ * VALUES under a higher-specificity selector reskins the whole app with no markup change:
+ * `:root[data-theme="system"]` (0,2,0) beats the @theme `:root` (0,1,0) regardless of order.
+ *
+ * "System" — Solo Leveling-inspired holographic HUD: deep blue-black ground, electric cyan,
+ * violet accent. Component-level flourishes (glow, HUD labels, scanlines) land in later phases
+ * and consume the capability tokens declared here.
+ */
+:root {
+  /* Capability tokens — inert in Basic, activated in System (consumed from Phase B on). */
+  --glow: none;
+  --bar-glow: none;
+  --label-spacing: 0.01em;
+  --grid-line: transparent;
+  --scanline: transparent;
+}
+
+:root[data-theme='system'] {
+  /* Surface palette */
+  --color-bg: #05070e;
+  --color-surface: #0d1626;
+  --color-surface-muted: #111d31;
+  --color-border: #1d3a59;
+  --color-border-strong: #2a4d72;
+
+  /* Text palette */
+  --color-text: #dce8f7;
+  --color-text-muted: #8298b6;
+  --color-text-subtle: #5a6f8e;
+  --color-text-inverse: #05070e;
+
+  /* Brand & semantic */
+  --color-primary: #46c8ff;
+  --color-primary-hover: #6fd4ff;
+  --color-primary-foreground: #04101c;
+  --color-primary-soft: #0f273d;
+
+  --color-success: #57e08a;
+  --color-success-soft: #0e2a1c;
+  --color-warning: #ffb454;
+  --color-warning-soft: #2e2410;
+  --color-danger: #ff5d66;
+  --color-danger-hover: #ff7b82;
+  --color-danger-soft: #2e1418;
+  --color-info: #46c8ff;
+  --color-info-soft: #0f273d;
+
+  /* Workout status palette */
+  --color-status-planned: #46c8ff;
+  --color-status-planned-bg: #0f273d;
+  --color-status-in-progress: #ffb454;
+  --color-status-in-progress-bg: #2e2410;
+  --color-status-completed: #57e08a;
+  --color-status-completed-bg: #0e2a1c;
+  --color-status-canceled: #8298b6;
+  --color-status-canceled-bg: #16202e;
+
+  /* Capability tokens — activated */
+  --glow: drop-shadow(0 0 7px rgba(70, 200, 255, 0.28)) drop-shadow(0 0 20px rgba(70, 200, 255, 0.1));
+  --bar-glow: 0 0 9px rgba(70, 200, 255, 0.6);
+  --label-spacing: 0.18em;
+  --grid-line: rgba(70, 200, 255, 0.045);
+  --scanline: rgba(0, 0, 0, 0.2);
+}
+
 html,
 body,
 #root {
@@ -88,4 +163,67 @@ body {
   font-size: var(--text-base);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/*
+ * System ground: a faint cyan halo + grid behind all content. --grid-line is transparent in
+ * Basic, so scoping the radial halo is the only System-specific part.
+ */
+:root[data-theme='system'] body {
+  background-image:
+    radial-gradient(1100px 520px at 82% -12%, rgba(70, 200, 255, 0.08), transparent 60%),
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 100% 100%, 44px 44px, 44px 44px;
+  background-attachment: fixed;
+}
+
+/*
+ * CRT scanline overlay above content (never blocks clicks; modals sit on their own z-index above
+ * it). --scanline is transparent in Basic, so this layer is invisible there.
+ */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(180deg, transparent 0 3px, var(--scanline) 3px 4px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    scroll-behavior: auto;
+  }
+}
+
+/*
+ * HUD titles — page/section/widget titles. In System they go uppercase with bracketed cyan
+ * delimiters `[ … ]` (the Solo Leveling window-header look). Inert in Basic (no rule applies).
+ */
+:root[data-theme='system'] .hud-title {
+  text-transform: uppercase;
+  letter-spacing: var(--label-spacing);
+}
+:root[data-theme='system'] .hud-title::before {
+  content: '[ ';
+  color: var(--color-primary);
+  font-weight: 400;
+}
+:root[data-theme='system'] .hud-title::after {
+  content: ' ]';
+  color: var(--color-primary);
+  font-weight: 400;
+}
+
+/* System "materialize" — windows fade + rise in on mount (applied via system:motion-safe utility). */
+@keyframes system-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }

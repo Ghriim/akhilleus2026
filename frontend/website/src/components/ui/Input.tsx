@@ -18,6 +18,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         'border border-(--color-border) text-(--color-text)',
         'placeholder:text-(--color-text-subtle)',
         'focus:outline-none focus:border-(--color-primary) focus:ring-1 focus:ring-(--color-primary)',
+        'system:focus:shadow-(--bar-glow)',
         'disabled:cursor-not-allowed disabled:opacity-60',
         invalid && 'border-(--color-danger) focus:border-(--color-danger) focus:ring-(--color-danger)',
         className,

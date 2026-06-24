@@ -23,6 +23,7 @@ export function Badge({ tone = 'neutral', className, children }: BadgeProps) {
     <span
       className={cn(
         'inline-flex items-center rounded-(--radius-sm) px-2 py-0.5 text-(length:--text-xs) font-medium',
+        'system:font-mono system:uppercase system:[letter-spacing:var(--label-spacing)]',
         toneClass[tone],
         className,
       )}

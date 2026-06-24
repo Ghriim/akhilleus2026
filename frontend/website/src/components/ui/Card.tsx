@@ -9,7 +9,9 @@ export function Card({ className, children, ...rest }: CardProps) {
   return (
     <div
       className={cn(
-        'rounded-(--radius-lg) bg-(--color-surface) border border-(--color-border) shadow-(--shadow-sm)',
+        'rounded-none bg-(--color-surface) border border-(--color-border) shadow-(--shadow-sm)',
+        '[filter:var(--glow)]',
+        'system:motion-safe:animate-[system-rise_0.45s_cubic-bezier(0.2,0.7,0.2,1)_both]',
         className,
       )}
       {...rest}

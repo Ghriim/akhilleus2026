@@ -13,18 +13,20 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const base =
-  'inline-flex items-center justify-center gap-2 rounded-(--radius-md) font-medium ' +
+  'inline-flex items-center justify-center gap-2 rounded-none font-medium ' +
   'transition-colors disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none ' +
-  'focus-visible:ring-2 focus-visible:ring-(--color-primary)';
+  'focus-visible:ring-2 focus-visible:ring-(--color-primary) ' +
+  'system:uppercase system:[letter-spacing:var(--label-spacing)] system:text-(length:--text-sm) ' +
+  'system:motion-safe:active:translate-y-px';
 
 const variantClass: Record<Variant, string> = {
   primary:
-    'bg-(--color-primary) text-(--color-primary-foreground) hover:bg-(--color-primary-hover)',
+    'bg-(--color-primary) text-(--color-primary-foreground) hover:bg-(--color-primary-hover) shadow-(--bar-glow)',
   secondary:
     'bg-(--color-surface) text-(--color-text) border border-(--color-border) hover:bg-(--color-surface-muted)',
   ghost: 'bg-transparent text-(--color-text) hover:bg-(--color-surface-muted)',
   danger:
-    'bg-(--color-danger) text-(--color-text-inverse) hover:bg-(--color-danger-hover)',
+    'bg-(--color-danger) text-(--color-text-inverse) hover:bg-(--color-danger-hover) shadow-(--bar-glow)',
 };
 
 const sizeClass: Record<Size, string> = {

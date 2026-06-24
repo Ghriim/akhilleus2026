@@ -23,7 +23,7 @@ export function DashboardPage() {
       <QuestWidget />
       <TrackingWidget />
       <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-(length:--text-xl) font-(--font-display) font-semibold text-(--color-text)">
+        <h2 className="hud-title text-(length:--text-xl) system:text-(length:--text-lg) font-(--font-display) font-semibold text-(--color-text)">
           Entraînements
         </h2>
         <div className="flex gap-2">

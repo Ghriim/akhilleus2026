@@ -52,7 +52,7 @@ export function QuestRow({ quest, onClaim, isClaiming = false, showProgress = fa
             <span>/ {formatNumber(target, 0)}</span>
           </div>
           <div className="mt-1 h-2 w-full overflow-hidden rounded-(--radius-sm) bg-(--color-surface)">
-            <div className="h-full bg-(--color-primary)" style={{ width: `${pct}%` }} />
+            <div className="h-full bg-(--color-primary) shadow-(--bar-glow)" style={{ width: `${pct}%` }} />
           </div>
         </>
       )}

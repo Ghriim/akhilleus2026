@@ -1,5 +1,8 @@
 import { useEffect } from 'react';
 import type { ReactNode } from 'react';
+import { createPortal } from 'react-dom';
+import { XMarkIcon } from '@/components/icons';
+import { IconButton } from '@/components/ui/IconButton';
 import { cn } from '@/lib/cn';
 
 interface ModalProps {
@@ -23,9 +26,11 @@ export function Modal({ open, onClose, title, children, footer, className }: Mod
 
   if (!open) return null;
 
-  return (
+  // Portaled to <body> so the fixed overlay escapes any ancestor stacking context (e.g. a Card's
+  // `filter` glow), guaranteeing a full-viewport backdrop, true centering and top-most layering.
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-4"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -34,18 +39,21 @@ export function Modal({ open, onClose, title, children, footer, className }: Mod
         role="dialog"
         aria-modal="true"
         className={cn(
-          'w-full max-w-lg rounded-(--radius-lg) bg-(--color-surface) shadow-(--shadow-lg) border border-(--color-border)',
+          'w-full max-w-lg rounded-none bg-(--color-surface) shadow-(--shadow-lg) border border-(--color-border)',
+          '[filter:var(--glow)]',
           className,
         )}
       >
-        {title && (
-          <div className="px-5 py-3 border-b border-(--color-border) text-(length:--text-lg) font-semibold">
-            {title}
-          </div>
-        )}
+        <div className="flex items-center justify-between gap-3 px-5 py-3 border-b border-(--color-border)">
+          <div className="text-(length:--text-lg) font-semibold">{title}</div>
+          <IconButton label="Fermer" onClick={onClose}>
+            <XMarkIcon />
+          </IconButton>
+        </div>
         <div className="px-5 py-4">{children}</div>
         {footer && <div className="px-5 py-3 border-t border-(--color-border)">{footer}</div>}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

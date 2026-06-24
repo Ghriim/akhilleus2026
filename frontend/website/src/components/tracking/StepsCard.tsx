@@ -53,7 +53,7 @@ export function StepsCard() {
   return (
     <Card>
       <CardHeader>
-        <span className="font-(--font-display) font-semibold text-(--color-text)">👣 Pas</span>
+        <span className="font-(--font-display) font-semibold text-(--color-text)">Pas</span>
         {data && (
           <span className="flex items-center gap-1">
             <IconButton label="Changer l'objectif" onClick={openTarget}>
@@ -79,7 +79,7 @@ export function StepsCard() {
               <span>/ {formatNumber(data.target, 0)} pas</span>
             </div>
             <div className="mt-2 h-2 w-full overflow-hidden rounded-(--radius-sm) bg-(--color-surface-muted)">
-              <div className="h-full bg-(--color-primary)" style={{ width: `${pct}%` }} />
+              <div className="h-full bg-(--color-primary) shadow-(--bar-glow)" style={{ width: `${pct}%` }} />
             </div>
           </>
         ) : null}

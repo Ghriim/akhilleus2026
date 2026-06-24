@@ -75,7 +75,7 @@ export function WeightCard({ today }: WeightCardProps) {
   return (
     <Card>
       <CardHeader>
-        <span className="font-(--font-display) font-semibold text-(--color-text)">⚖️ Poids</span>
+        <span className="font-(--font-display) font-semibold text-(--color-text)">Poids</span>
         <span className="flex items-center gap-1">
           <IconButton label="Changer l'objectif" onClick={openTarget}>
             <PencilIcon />

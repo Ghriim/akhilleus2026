@@ -30,6 +30,15 @@ export function PlusIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+export function XMarkIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...BASE} {...props}>
+      <path d="M18 6 6 18" />
+      <path d="M6 6l12 12" />
+    </svg>
+  );
+}
+
 export function ListIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg {...BASE} {...props}>
