@@ -12,7 +12,6 @@ import {
   LogoutIcon,
   PlusIcon,
   StarIcon,
-  TrophyIcon,
 } from '@/components/icons';
 import { PlayerLevelBadge } from '@/components/layout/PlayerLevelBadge';
 import { IconButton } from '@/components/ui/IconButton';
@@ -44,7 +43,6 @@ const SECTIONS: MenuSection[] = [
       { to: '/workouts/new', label: 'Nouvelle séance', Icon: PlusIcon },
       { to: '/planning', label: 'Planning', Icon: CalendarIcon },
       { to: '/movements', label: 'Mouvements', Icon: DumbbellIcon },
-      { to: '/achievements', label: 'Records', Icon: TrophyIcon },
       { to: '/statistics', label: 'Statistiques', Icon: ChartIcon },
     ],
   },

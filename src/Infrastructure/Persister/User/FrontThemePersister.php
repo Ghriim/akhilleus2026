@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Infrastructure\Persister\User\FrontTheme;
+namespace App\Infrastructure\Persister\User;
 
 use App\Domain\DTO\DataModel\User\FrontThemeDataModel;
 use App\Domain\Gateway\Persister\User\FrontThemePersisterGateway;

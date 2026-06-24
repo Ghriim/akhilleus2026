@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Infrastructure\Repository\User\FrontTheme;
+namespace App\Infrastructure\Repository\User;
 
 use App\Domain\DTO\DataModel\User\FrontThemeDataModel;
 use App\Domain\Gateway\Provider\User\FrontThemeProviderGateway;

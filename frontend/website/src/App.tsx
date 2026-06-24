@@ -10,7 +10,6 @@ import { HistoryPage } from '@/pages/workout/HistoryPage';
 import { WorkoutNewPage } from '@/pages/workout/WorkoutNewPage';
 import { WorkoutDetailsPage } from '@/pages/workout/WorkoutDetailsPage';
 import { MovementsPage } from '@/pages/movement/MovementsPage';
-import { AchievementsPage } from '@/pages/personal-best/AchievementsPage';
 import { XpJournalPage } from '@/pages/leveling/XpJournalPage';
 import { UniqueQuestsPage } from '@/pages/quests/UniqueQuestsPage';
 import { StatisticsPage } from '@/pages/statistics/StatisticsPage';
@@ -31,7 +30,7 @@ export function App() {
               <Route path="/workouts/new" element={<WorkoutNewPage />} />
               <Route path="/workouts/:id" element={<WorkoutDetailsPage />} />
               <Route path="/movements" element={<MovementsPage />} />
-              <Route path="/achievements" element={<AchievementsPage />} />
+              <Route path="/achievements" element={<Navigate to="/movements" replace />} />
               <Route path="/leveling/journal" element={<XpJournalPage />} />
               <Route path="/quests/unique" element={<UniqueQuestsPage />} />
               <Route path="/statistics" element={<StatisticsPage />} />
