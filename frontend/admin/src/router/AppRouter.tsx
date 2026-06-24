@@ -17,6 +17,9 @@ import { LevelBracketEditPage } from '@/features/levelBrackets/LevelBracketEditP
 import { QuestListPage } from '@/features/quests/QuestListPage';
 import { QuestCreatePage } from '@/features/quests/QuestCreatePage';
 import { QuestEditPage } from '@/features/quests/QuestEditPage';
+import { FrontThemeListPage } from '@/features/frontThemes/FrontThemeListPage';
+import { FrontThemeCreatePage } from '@/features/frontThemes/FrontThemeCreatePage';
+import { FrontThemeEditPage } from '@/features/frontThemes/FrontThemeEditPage';
 
 export const AppRouter = () => (
   <Routes>
@@ -54,6 +57,11 @@ export const AppRouter = () => (
         <Route index element={<QuestListPage />} />
         <Route path="new" element={<QuestCreatePage />} />
         <Route path=":id" element={<QuestEditPage />} />
+      </Route>
+      <Route path="front-themes">
+        <Route index element={<FrontThemeListPage />} />
+        <Route path="new" element={<FrontThemeCreatePage />} />
+        <Route path=":id" element={<FrontThemeEditPage />} />
       </Route>
     </Route>
     <Route path="*" element={<Navigate to="/" replace />} />

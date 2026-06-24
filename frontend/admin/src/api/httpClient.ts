@@ -58,7 +58,9 @@ export const request = async <TResponse = unknown>(
     Accept: 'application/json',
   };
 
-  if (options.body !== undefined) {
+  const isFormData = options.body instanceof FormData;
+  // For FormData, let the browser set Content-Type (incl. the multipart boundary).
+  if (options.body !== undefined && !isFormData) {
     headers['Content-Type'] = 'application/json';
   }
 
@@ -72,7 +74,7 @@ export const request = async <TResponse = unknown>(
     headers,
   };
   if (options.body !== undefined) {
-    init.body = JSON.stringify(options.body);
+    init.body = isFormData ? (options.body as FormData) : JSON.stringify(options.body);
   }
   if (options.signal !== undefined) {
     init.signal = options.signal;

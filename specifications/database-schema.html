@@ -176,6 +176,7 @@
     <li><a href="#equipment"><code>equipment</code></a> — admin-managed reference (barbell, dumbbell, …)</li>
     <li><a href="#exercise"><code>exercise</code></a> — one movement inside a workout, ordered by position</li>
     <li><a href="#exercise_set"><code>exercise_set</code></a> — one set inside an exercise, with planned/achieved metrics</li>
+    <li><a href="#front_theme"><code>front_theme</code></a> — admin-managed display theme catalog (name, description, preview image)</li>
     <li><a href="#hydration_daily_summary"><code>hydration_daily_summary</code></a> — one row per player per day; snapshotted target + summed intake</li>
     <li><a href="#hydration_entry"><code>hydration_entry</code></a> — a single drink logged against a day's hydration summary</li>
     <li><a href="#level_bracket"><code>level_bracket</code></a> — one contiguous slice of the leveling curve (marginal XP cost <code>a·n^k + b</code>)</li>
@@ -507,6 +508,23 @@
 </ul>
 <ul class="fks">
     <li><span class="badge badge-fk">FK</span> <code>exercise_id</code> → <code>exercise.id</code> ON DELETE CASCADE</li>
+</ul>
+
+<h3 id="front_theme">front_theme</h3>
+<p class="summary">Admin-managed catalog of front-end display themes (name unique, optional description, optional stored preview image). The preview image is stored under <code>public/uploads/front-themes/&lt;ulid&gt;.&lt;ext&gt;</code> and served directly; only the filename is persisted.</p>
+<table>
+    <thead><tr><th>Column</th><th>Type</th><th>Flags</th><th>Notes</th></tr></thead>
+    <tbody>
+        <tr class="pk"><td class="col">id</td><td class="type">VARCHAR(26)</td><td class="flags"><span class="badge badge-pk">PK</span></td><td>ULID</td></tr>
+        <tr class="uniq"><td class="col">name</td><td class="type">VARCHAR(100)</td><td class="flags"><span class="badge badge-uniq">UNIQUE</span></td><td></td></tr>
+        <tr><td class="col">description</td><td class="type">LONGTEXT</td><td class="flags"><span class="badge badge-null">NULL</span></td><td></td></tr>
+        <tr><td class="col">image_filename</td><td class="type">VARCHAR(255)</td><td class="flags"><span class="badge badge-null">NULL</span></td><td>stored under <code>public/uploads/front-themes/</code></td></tr>
+        <tr><td class="col">created_at</td><td class="type">DATETIME</td><td></td><td></td></tr>
+        <tr><td class="col">updated_at</td><td class="type">DATETIME</td><td></td><td></td></tr>
+    </tbody>
+</table>
+<ul class="idx">
+    <li><span class="badge badge-uniq">UNIQUE</span> <code>UNIQ_front_theme_name (name)</code></li>
 </ul>
 
 <h3 id="hydration_daily_summary">hydration_daily_summary</h3>

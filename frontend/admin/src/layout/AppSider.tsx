@@ -1,5 +1,5 @@
 import { Layout, Menu } from 'antd';
-import { ToolOutlined, ThunderboltOutlined, ApartmentOutlined, LineChartOutlined, TrophyOutlined } from '@ant-design/icons';
+import { ToolOutlined, ThunderboltOutlined, ApartmentOutlined, LineChartOutlined, TrophyOutlined, BgColorsOutlined } from '@ant-design/icons';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 const { Sider } = Layout;
@@ -29,6 +29,11 @@ const items = [
     key: '/quests',
     icon: <TrophyOutlined />,
     label: 'Quests',
+  },
+  {
+    key: '/front-themes',
+    icon: <BgColorsOutlined />,
+    label: 'Front themes',
   },
 ];
 
