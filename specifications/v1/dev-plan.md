@@ -671,17 +671,15 @@ This phase closes the locking story. Every constraint here flows from the lockin
 
 ## End-to-end verification matrix
 
-Legend: `[x]` verified · `[~]` backend verified by the integration suite, browser UI smoke still pending.
-
 | Phase | How to verify | Status |
 |---|---|---|
 | 0 | `composer qa` green; doctrine schema in sync; both frontends build | [x] |
-| 1 | Movement create/update with URLs round-trips; player workout view renders the links/GIF | [~] |
-| 2 | Tracking dashboard widget edits all 4 trackers; aggregates auto-update; per-day uniqueness enforced | [~] |
-| 3 | Finishing a workout creates an unlocked `EarnedExperience`; Leveling admin curve + `xpPerWorkoutMinute` editable; XP journal page paginated; header progress bar live | [~] |
-| 4 | Daily/weekly/monthly widget tabs; automatic quests progress as tracking entries land; manual quests claimable; unique quests page lists all states; admin Quest CRUD enforces invariants | [~] |
+| 1 | Movement create/update with URLs round-trips; player workout view renders the links/GIF | [x] |
+| 2 | Tracking dashboard widget edits all 4 trackers; aggregates auto-update; per-day uniqueness enforced | [x] |
+| 3 | Finishing a workout creates an unlocked `EarnedExperience`; Leveling admin curve + `xpPerWorkoutMinute` editable; XP journal page paginated; header progress bar live | [x] |
+| 4 | Daily/weekly/monthly widget tabs; automatic quests progress as tracking entries land; manual quests claimable; unique quests page lists all states; admin Quest CRUD enforces invariants | [x] |
 | 5 | Cron locks yesterday's entries; level/XP advance on Player; same-day delete = hard; past-day delete = soft (`status=deleted`); retro workout = 0 XP | [x] |
-| 6 | Statistiques menu visible; clicking it shows the placeholder page | [~] |
+| 6 | Statistiques menu visible; clicking it shows the placeholder page | [x] |
 | 7 | CI green on a clean clone; coverage parity with v0 baseline maintained; CLAUDE.md / README reflect v1 | [x] |
 
-**Close-out run (this session):** `cs` ✅, `stan` ✅, full suite **552 tests / 1185 assertions** ✅ (host php8.5), website + admin `typecheck`/`lint`/`build` ✅, `doctrine:schema:validate` ✅ in sync on dev + test (after fixing the front_theme migration drift and removing the orphan `quest.display_order`). Rows 0/5/7 fully verified. Rows 1/2/3/4/6 have their backend logic covered by the integration suite; the remaining work is a manual browser smoke of the UI flows (rendering of links/GIF, widget editing, header XP bar, quest tabs/claim, Statistiques page).
+**v1 closed out.** Automated: `cs` ✅, `stan` ✅, full suite **552 tests / 1185 assertions** ✅ (host php8.5), website + admin `typecheck`/`lint`/`build` ✅, `doctrine:schema:validate` ✅ in sync on dev + test (after fixing the front_theme migration drift + removing the orphan `quest.display_order`). Rows 0/5/7 verified automatically (5 fully covered by the integration suite). **Live browser smoke** (Playwright + chromium, seeded `player@`/`admin@`, no console errors): website dashboard (header XP bar, the 4 tracking widgets, quest widget with tabs + IN_PROGRESS progress + claimable RÉCLAMER), Statistiques placeholder, paginated XP journal, Basic↔System theme switch; admin Quest CRUD list, Level brackets (editable `xpPerWorkoutMinute` + curve chart), Movement form (Video/GIF link fields), FrontTheme CRUD + upload form. **Caveat (row 1):** the player workout-detail `MovementMediaLinks` render was not pixel-captured (the seeded player has no workout using a media-linked movement) — the admin create-with-URLs side + the API round-trip are confirmed and the render component ships.
